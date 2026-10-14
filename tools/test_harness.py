@@ -13,7 +13,7 @@ from tools.harness_manager import HarnessManager
 
 def run_tests():
     print("=== STARTING HARNESS FLOCI DYNAMODB SELF-TEST ===")
-    mgr = HarnessManager(backend="floci")
+    mgr = HarnessManager()
 
     # 1. Test Syntax Validation
     print("1. Testing Validation Rules...")

@@ -102,6 +102,9 @@ CREATE TABLE IF NOT EXISTS work_item (
     actual_result        TEXT,
     expected_result      TEXT,
     steps                TEXT,
+    source               TEXT    NOT NULL DEFAULT 'local',
+    created_by_profile   TEXT,
+    assigned_to_profile  TEXT,
     created_at           TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at           TEXT    NOT NULL DEFAULT (datetime('now'))
 );

@@ -108,6 +108,9 @@ class HarnessManager:
         if self.backend == "floci":
             self.floci_db = FlociHarnessDB()
             self.floci_db.init_schema()
+        else:
+            with open(os.path.join(BASE_DIR, "scripts/schema/full_schema.sql")) as f, self._get_sqlite_db() as conn:
+                conn.executescript(f.read())
 
     def _get_sqlite_db(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
@@ -271,7 +274,7 @@ class HarnessManager:
             query = f"UPDATE work_item SET {', '.join(updates)} WHERE id = ?"
             cursor.execute(query, tuple(params))
             conn.commit()
-            return {"success": True, "id": item_id, "previous_state": current_state, "new_state": target_state, "storage": "sqlite"}
+            return {"success": True, "id": item_id, "previous_state": current_state, "new_state": target_state, "assigned_to": assigned_to, "storage": "sqlite"}
 
     def list_work_items(self, wi_type: Optional[str] = None, state: Optional[str] = None, source: Optional[str] = None, assigned_to_profile: Optional[str] = None, parent_id: Optional[int] = None) -> List[Dict[str, Any]]:
         if self.backend == "floci":
@@ -315,14 +318,8 @@ class HarnessManager:
 
         with self._get_sqlite_db() as conn:
             cursor = conn.cursor()
-            stats = {}
-            for t in ["Epic", "Feature", "User Story", "Technical Story", "Task", "Bug", "Testcase"]:
-                try:
-                    count = cursor.execute("SELECT COUNT(*) FROM work_item WHERE type = ?", (t,)).fetchone()[0]
-                    stats[t] = count
-                except Exception:
-                    stats[t] = 0
-            return stats
+            by_type = {r[0]: r[1] for r in cursor.execute("SELECT type, COUNT(*) FROM work_item GROUP BY type")}
+            return {"total_work_items": sum(by_type.values()), "by_type": by_type}
 
 def main():
     parser = argparse.ArgumentParser(description="Harness Operating Framework Manager Tool (Floci / DynamoDB)")
