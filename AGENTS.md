@@ -7,7 +7,7 @@
 ## 1. Workspace Identity & Canonical Paths
 
 - **Root Workspace**: `/home/baoltb/Desktop/Paseo_Project`
-- **Frontend Source Code**: `/home/baoltb/Desktop/Paseo_Project/projects/crm-fe` (Angular 18, Module Federation, Nx, TDS-UI)
+- **Frontend Source Code**: `/home/baoltb/Desktop/Paseo_Project/projects/crm-fe` (Angular 18, Module Federation, Nx, UI-Lib)
 - **REMOTE Docs Repository**: `/home/baoltb/Desktop/crm-doc` (REMOTE `_git/crm` branch `docs/base`)
 - **Obsidian Knowledge Base**: `/home/baoltb/Desktop/obsidian-obsidian` (Specs, ADRs, Protocols, Beats, Metas)
 - **Harness Cloud Storage**: Floci DynamoDB & S3 (`http://<FLOCI_HOST>:14566`, Web UI `http://<FLOCI_HOST>:4566`)
@@ -41,8 +41,8 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
 1. **BA (`ba`, `crm-doc-read`)**: Phân tích nghiệp vụ từ REMOTE Use Cases (`UC1.01`..`UC4.09`), viết Acceptance Criteria (AC), quản lý `docs/spec/`.
 2. **Scrum Master (`scrum-master`, `harness-ops`)**: Quản trị bảng điều khiển Harness, theo dõi trạng thái `New ➔ Accepted ➔ Active ➔ Resolved ➔ Closed`, kiểm soát gates.
 3. **API Analyst (`api-analyst`)**: Swagger/OpenAPI contracts, Ingestion APIs, mock data mapping.
-4. **Architect & Reviewer (`grandmaster`, `code-review`)**: Thiết kế kiến trúc Micro-Frontend, module boundaries, audit token TDS-UI, duyệt PR.
-5. **Frontend Engineer (`angular-fe`, `fe-jr`, `tds-ui-usage`, `tds-ui-figma`)**: Lập trình Angular 18 tại `projects/crm-fe/`, sử dụng TDS UI tokens, tuân thủ TDD.
+4. **Architect & Reviewer (`grandmaster`, `code-review`)**: Thiết kế kiến trúc Micro-Frontend, module boundaries, audit token UI-Lib, duyệt PR.
+5. **Frontend Engineer (`angular-fe`, `fe-jr`, `ui-lib-usage`, `ui-lib-figma`)**: Lập trình Angular 18 tại `projects/crm-fe/`, sử dụng UI Lib tokens, tuân thủ TDD.
 6. **QC & Tester (`qc`, `automation-functional-testing`)**: Viết E2E test cases, xác thực `verify_command` và cập nhật Test Matrix trên Harness.
 
 ---
@@ -66,9 +66,9 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
 - **Mục đích**: Duyệt cấu trúc thư mục chống lỗi `EISDIR`, tìm kiếm ngữ cảnh chính xác cao bằng thuật toán BM25.
 - **Lệnh thực thi**: `python3 tools/query_reader.py <folder_path> ["<từ_khóa>"]`
 
-### D. TDS-UI & Figma Skills (`tds-ui-usage`, `tds-ui-figma`)
-- **`tds-ui-figma`**: Token lookup qua `tds-token-lookup.js`, chuyển đổi Figma sang Angular TDS UI.
-- **`tds-ui-usage`**: Danh mục gần 80 components TDS UI, recipes, troubleshooting.
+### D. UI-Lib & Figma Skills (`ui-lib-usage`, `ui-lib-figma`)
+- **`ui-lib-figma`**: Token lookup qua `ui-token-lookup.js`, chuyển đổi Figma sang Angular UI Lib.
+- **`ui-lib-usage`**: Danh mục gần 80 components UI Lib, recipes, troubleshooting.
 
 ---
 

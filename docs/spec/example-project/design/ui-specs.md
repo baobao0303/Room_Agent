@@ -2,15 +2,15 @@
 
 ## 1. Design System & Theme
 - **Theme Preset**: `default` / `blue`
-- **Component Library**: `tds-ui` Angular Components
+- **Component Library**: `ui-lib` Angular Components
 
-## 2. Component Mapping (Figma to TDS-UI)
+## 2. Component Mapping (Figma to UI-Lib)
 
-| UI Element | TDS UI Component / Module | Utility & Styling Classes |
+| UI Element | UI Lib Component / Module | Utility & Styling Classes |
 | :--- | :--- | :--- |
-| Nút thêm mới | `button[tds-button]` (`TDSButtonModule`) | `color="primary"`, `size="md"` |
-| Bảng dữ liệu | `tds-data-table` (`TDSDataTableModule`) | `tds-table-bordered` |
-| Tìm kiếm | `tds-form-field` + `input[tds-input]` | `tds-input-search` |
-| Phân trang | `tds-pagination` (`TDSPaginationModule`) | `[tdsPageSize]="10"` |
-| Bộ lọc trạng thái | `tds-select` (`TDSSelectModule`) | Multi-select / Single |
-| Avatar người dùng | `tds-avatar` (`TDSAvatarModule`) | `size="sm"` |
+| Nút thêm mới | `button[ui-button]` (`UIButtonModule`) | `color="primary"`, `size="md"` |
+| Bảng dữ liệu | `ui-data-table` (`UIDataTableModule`) | `ui-table-bordered` |
+| Tìm kiếm | `ui-form-field` + `input[ui-input]` | `ui-input-search` |
+| Phân trang | `ui-pagination` (`UIPaginationModule`) | `[uiPageSize]="10"` |
+| Bộ lọc trạng thái | `ui-select` (`UISelectModule`) | Multi-select / Single |
+| Avatar người dùng | `ui-avatar` (`UIAvatarModule`) | `size="sm"` |

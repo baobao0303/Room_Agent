@@ -63,7 +63,7 @@
     <description>Review code song song (Standards & Spec).</description>
     <instructions>
       Thực hiện rà soát code. Tạo 2 luồng đánh giá: 
-      1. Code standard (Angular 18, Nx, TDS UI rule).
+      1. Code standard (Angular 18, Nx, UI Lib rule).
       2. Business spec (khớp với yêu cầu từ spec.md và REMOTE).
     </instructions>
   </command>

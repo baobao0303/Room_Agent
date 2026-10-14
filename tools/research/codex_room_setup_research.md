@@ -38,7 +38,7 @@ Hệ thống phân chia thành 3 nhóm tác nhân chính:
 
 ### A. Tầng Lãnh đạo (Lead Roles)
 - **Lead BA**: Sở hữu phạm vi phân tích nghiệp vụ, tạo User Stories, Use Cases và Acceptance Criteria (AC).
-- **Lead Design**: Sở hữu giao diện UI/UX, Design Tokens, wireframes, và mapping components (Figma sang TDS-UI).
+- **Lead Design**: Sở hữu giao diện UI/UX, Design Tokens, wireframes, và mapping components (Figma sang UI-Lib).
 - **Lead Dev**: Sở hữu kiến trúc hệ thống, API contracts, schema database, phân rã task và phê duyệt kỹ thuật trước khi merge.
 
 ### B. Tầng Thực thi (Peer Roles)
@@ -73,5 +73,5 @@ Khi một Peer gặp trở ngại, không được tự ý sửa phạm vi mà p
 
 Bộ cấu hình trong `codex-room-setup` đã được tích hợp đầy đủ vào hệ sinh thái Paseo hiện tại:
 1. **`~/.paseo/config.json`**: Đã load sẵn toàn bộ 9 Profiles (`Lead BA`, `Lead Design`, `Lead Dev`, `Peer BA`, `Peer Design`, `Peer Dev`, `Lead`, `Peer`, `Supervisor`).
-2. **`AGENTS.md`**: Đã đồng bộ quy chuẩn phân vai, handoff pipeline (BA -> DESIGN -> DEV) và cơ chế gọi tools (`harness_manager`, `query_reader`, `tds-ui-figma`, `tds-ui-usage`).
+2. **`AGENTS.md`**: Đã đồng bộ quy chuẩn phân vai, handoff pipeline (BA -> DESIGN -> DEV) và cơ chế gọi tools (`harness_manager`, `query_reader`, `ui-lib-figma`, `ui-lib-usage`).
 3. **`docs/spec/`**: Đã cấu trúc chuẩn theo 3 thư mục `ba/`, `design/`, `dev/` cho từng dự án.

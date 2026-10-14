@@ -2,7 +2,7 @@
 
 ## 1. Technical Stack
 - **Framework**: Angular 18+ (Standalone Components, Signals)
-- **UI Library**: `tds-ui`
+- **UI Library**: `ui-lib`
 - **State Management**: Angular Signals / RxJS
 
 ## 2. API Contract & DTOs

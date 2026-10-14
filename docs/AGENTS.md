@@ -19,4 +19,4 @@ Mọi dự án nằm trong `docs/spec/<project-name>/` với 3 phân vùng độ
    - Chuyển thảo luận thành tài liệu đặc tả qua `mattpocock-skills/skills/engineering/to-spec/SKILL.md`.
    - Đồng bộ User Stories lên Harness qua `tools/harness_manager.py add ...`.
 2. **UI/UX Design**:
-   - Sử dụng `tds-ui-figma/SKILL.md` để mapping component Figma sang TDS Angular và tra cứu color tokens.
+   - Sử dụng `ui-lib-figma/SKILL.md` để mapping component Figma sang UI Angular và tra cứu color tokens.

@@ -15,8 +15,8 @@ Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 │       ├── hermes-research/ # Skill nghiên cứu kỹ thuật & xuất báo cáo Markdown
 │       ├── mattpocock-skills/# Bộ kỹ năng kỹ thuật & năng suất chuẩn Matt Pocock
 │       ├── query-read/      # Skill tìm kiếm ngữ cảnh BM25 & duyệt thư mục an toàn
-│       ├── tds-ui-figma/    # Skill phân tích & chuyển đổi Figma sang TDS Angular
-│       ├── tds-ui-usage/    # Skill tra cứu API & mẫu code Angular TDS-UI
+│       ├── ui-lib-figma/    # Skill phân tích & chuyển đổi Figma sang UI Angular
+│       ├── ui-lib-usage/    # Skill tra cứu API & mẫu code Angular UI-Lib
 │       ├── crm-doc-read/   # Skill tra cứu User Stories & Specs từ REMOTE crm
 │       └── workflow-launch-exec/     # Skill điều phối thực thi workflow đa tác nhân
 ├── docs/                    # Tài liệu đặc tả và thiết kế

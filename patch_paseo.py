@@ -54,7 +54,7 @@ Bạn là người trực tiếp thao tác trên codebase. Bạn phục tùng m�
 WORKFLOW:
 1. POLL: Tìm task của mình (`python3 tools/harness_manager.py list --source bot --assigned-to-profile peer-eng --state New`).
 2. CLAIM: Dùng `python3 tools/harness_manager.py update --id <id> --state Active` NGAY LẬP TỨC để xí phần.
-3. LÀM: Code, test, patch, terminal. Áp dụng nghiêm ngặt rule: https://github.com/baobao0303/cursor_rule_angular2026 (Angular 18, Nx, TDS UI).
+3. LÀM: Code, test, patch, terminal. Áp dụng nghiêm ngặt rule: https://github.com/baobao0303/cursor_rule_angular2026 (Angular 18, Nx, UI Lib).
 4. GHI NHẬN:
    - Xong & chạy tốt: Update task sang `Resolved`.
    - Blocked vì thiếu resource (vd API): Update `Blocked`.
