@@ -1,4 +1,4 @@
-# Paseo Project Workspace
+# Room_Agent — Paseo Project Workspace
 
 Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 
@@ -26,6 +26,11 @@ Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 │           ├── ba/          # User Stories, Acceptance Criteria (BA)
 │           ├── design/      # Figma Component & Token Mapping (Design)
 │           └── dev/         # API Contracts, Architecture, DTOs (Dev)
+├── profiles/                # Profile agent: supervisor, lead, peer
+├── scripts/                 # Harness CLI, dashboard UI, init/seed DB
+│   ├── harness              # CLI chính (./scripts/harness)
+│   └── harness_dashboard.py # Dashboard realtime (UI web)
+├── setup_harness.sh         # Setup Harness lần đầu
 ├── projects/                # Thư mục chứa mã nguồn các dự án thực tế
 ├── tools/                   # Bộ công cụ mở rộng
 │   ├── README.md
@@ -43,7 +48,35 @@ Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 └── README.md
 ```
 
-## 2. Hướng dẫn sử dụng Tools
+## 2. Chạy Harness & Dashboard UI
+
+### A. Setup lần đầu
+```bash
+cp .env.example .env          # điền FLOCI_ENDPOINT, AWS_*, ...
+./setup_harness.sh            # tạo .env nếu thiếu, init bảng, seed, kiểm tra
+```
+
+### B. Harness CLI (`./scripts/harness`)
+```bash
+./scripts/harness init                      # Khởi tạo bảng DynamoDB & S3
+./scripts/harness seed                      # Seed dữ liệu mẫu
+./scripts/harness query stats               # Thống kê
+./scripts/harness query matrix [--source remote|local]
+./scripts/harness query backlog [--sprint "Sprint 1"] [--type Task] [--state Active] [--source remote|local] [--top 25]
+./scripts/harness query item <id>
+./scripts/harness query tools [--json] [--responsibility <r>]
+./scripts/harness sync-remote               # Đồng bộ backlog từ remote
+./scripts/harness work-item ...             # Quản lý work item
+```
+
+### C. Dashboard UI (realtime)
+```bash
+python3 scripts/harness_dashboard.py          # Sinh /tmp/harness_dashboard.html + chạy server nền, cổng 8765
+python3 scripts/harness_dashboard.py --serve  # Chạy foreground, cổng 8765
+```
+Mở `http://localhost:8765`.
+
+## 3. Hướng dẫn sử dụng Tools
 
 ### A. Harness Manager Tool (`tools/harness_manager.py`)
 Quản lý Work Item chuẩn Company DDD và State Machine:
@@ -98,4 +131,3 @@ Kết quả báo cáo Markdown sẽ tự động lưu vào `tools/research/<tên
 ```bash
 npx tsx tools/research/research_agent.ts "Đánh giá Redis Cache Pattern"
 ```
-# Room_Agent
