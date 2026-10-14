@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""
+scripts/harness - Executable wrapper for Harness Framework CLI connected to Floci (DynamoDB/S3).
+Supports multi-source (REMOTE & LOCAL) backlog, test matrix, and statistics across all sprints.
+"""
+
+import os
+import sys
+import json
+import argparse
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
+
+from tools.floci_client import FlociHarnessDB
+
+def get_floci_db():
+    return FlociHarnessDB()
+
+# 1. Query Commands
+def handle_query_matrix(args):
+    db = get_floci_db()
+    stories = db.list_stories(source=args.source)
+
+    if not stories:
+        wi_rows = db.list_work_items(source=args.source)
+        user_stories = [r for r in wi_rows if r.get("type") in ["User Story", "Technical Story"]]
+
+        if not user_stories:
+            print("No stories or test matrix entries found in Floci DynamoDB.")
+            print("Tip: Run './scripts/harness sync-remote' to pull from REMOTE or './scripts/harness work-item add' to add local items.")
+            return
+
+        print("\n=== STORY VERIFICATION & TEST MATRIX (FLOCI DYNAMODB) ===")
+        print(f"{'ID':<6} | {'Source':<6} | {'Priority':<8} | {'State':<10} | {'Title':<45} | {'AC / Verification'}")
+        print("-" * 110)
+        for r in user_stories:
+            src = (r.get("source") or "local").upper()
+            ac_snippet = (r.get("acceptance_criteria") or "No AC defined")[:35].replace("\n", " ")
+            print(f"{r.get('id', 0):<6} | {src:<6} | {r.get('priority', 'P2'):<8} | {r.get('state', 'New'):<10} | {r.get('title', '')[:43]:<45} | {ac_snippet}")
+        print("-" * 110)
+        return
+
+    print("\n=== STORY VERIFICATION MATRIX (FLOCI DYNAMODB) ===")
+    print(f"{'ID':<6} | {'Source':<6} | {'Priority':<8} | {'State':<10} | {'Title':<35} | {'Verify Command':<25} | {'Result'}")
+    print("-" * 115)
+    for r in stories:
+        src = (r.get("source") or "local").upper()
+        res = r.get("last_verified_result") or "UNVERIFIED"
+        cmd = (r.get("verify_command") or "N/A")[:23]
+        print(f"{r.get('id', 0):<6} | {src:<6} | {r.get('priority', 'P2'):<8} | {r.get('state', 'New'):<10} | {r.get('title', '')[:33]:<35} | {cmd:<25} | {res}")
+    print("-" * 115)
+
+def handle_query_backlog(args):
+    db = get_floci_db()
+    items = db.list_work_items(
+        wi_type=args.type,
+        state=args.state,
+        source=args.source,
+        iteration=args.sprint
+    )
+
+    if not items:
+        print(f"No backlog items found with criteria (Source: {args.source or 'ALL'}, Sprint: {args.sprint or 'ALL'}).")
+        return
+
+    top_n = args.top if args.top else len(items)
+    displayed = items[:top_n]
+
+    print(f"\n=== HARNESS BACKLOG ({len(displayed)}/{len(items)} items) ===")
+    print(f"{'ID':<7} | {'Source':<6} | {'Type':<12} | {'State':<10} | {'Sprint':<14} | {'Priority':<8} | {'Title':<40} | {'Assignee'}")
+    print("-" * 125)
+    for r in displayed:
+        src = (r.get("source") or "local").upper()
+        it = r.get("iteration_path") or "N/A"
+        sprint = it.split("\\")[-1][:12]
+        title = (r.get("title") or "")[:38]
+        assigned = (r.get("assigned_to") or "Unassigned")[:18]
+        print(f"{r.get('id', 0):<7} | {src:<6} | {r.get('type', 'Task')[:10]:<12} | {r.get('state', 'New')[:8]:<10} | {sprint:<14} | {r.get('priority', 'P2'):<8} | {title:<40} | {assigned}")
+    print("-" * 125)
+
+def handle_query_tools(args):
+    db = get_floci_db()
+    rows = db.list_tools(responsibility=args.responsibility)
+    if not rows:
+        print("No external tools registered in Floci.")
+        return
+    if args.json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return
+    print(f"\n=== HARNESS REGISTERED TOOLS (FLOCI DYNAMODB) ===")
+    print(f"{'Tool Name':<22} | {'Responsibility':<20} | {'Description'}")
+    print("-" * 85)
+    for r in rows:
+        print(f"{r.get('name', ''):<22} | {r.get('responsibility', ''):<20} | {r.get('description', '')}")
+    print("-" * 85)
+
+def handle_query_item(args):
+    db = get_floci_db()
+    item = db.get_work_item(args.id)
+    if not item:
+        print(f"Error: Work item #{args.id} not found in Floci DynamoDB.", file=sys.stderr)
+        sys.exit(1)
+    print(json.dumps(item, indent=2, ensure_ascii=False))
+
+def handle_query_stats(args):
+    db = get_floci_db()
+    stats = db.get_stats()
+    print("\n=== HARNESS REPOSITORY & WORK ITEM STATISTICS (FLOCI) ===")
+    print(f"• Total Work Items : {stats.get('total_work_items', 0)}")
+    print(f"• Total Stories    : {stats.get('total_stories', 0)}")
+    print(f"• Total Tools      : {stats.get('total_tools', 0)}")
+
+    print("\nWork Items by Source:")
+    by_src = stats.get("by_source", {})
+    print(f"  - REMOTE (Remote)   : {by_src.get('remote', 0)}")
+    print(f"  - Local (Native) : {by_src.get('local', 0)}")
+
+    print("\nWork Items by Sprint / Iteration:")
+    by_it = stats.get("by_iteration", {})
+    for it, c in sorted(by_it.items()):
+        print(f"  - {it:<20}: {c}")
+
+    print("\nWork Items by Type:")
+    by_type = stats.get("by_type", {})
+    for t, c in sorted(by_type.items()):
+        print(f"  - {t:<20}: {c}")
+    print("-" * 60)
+
+# 2. Sync REMOTE
+def handle_sync_remote(args):
+    from tools.remote_sync import sync_full_backlog
+    res = sync_full_backlog()
+    print(f"--> Done! Synced {res.get('total_synced')} items into Floci DynamoDB.")
+
+# 3. Init / Migrate / Seed
+def handle_init(args):
+    db = get_floci_db()
+    res = db.init_schema()
+    print(f"--> Initialized Floci DynamoDB & S3 at {res['endpoint']}")
+    print(f"    Tables verified: {', '.join(res.get('existing_tables', []) + res.get('created_tables', []))}")
+    print(f"    S3 Bucket: {res.get('s3_bucket')}")
+    print("--> Floci schema initialization completed successfully!")
+
+def handle_seed(args):
+    seed_script = BASE_DIR / "scripts/harness_seed.py"
+    if seed_script.exists():
+        os.system(f"{sys.executable} {seed_script}")
+
+# 4. Work Item Subcommands
+def handle_work_item(args):
+    mgr_script = BASE_DIR / "tools/harness_manager.py"
+    cmd_args = sys.argv[2:]
+    os.execv(sys.executable, [sys.executable, str(mgr_script)] + cmd_args)
+
+def main():
+    parser = argparse.ArgumentParser(description="Harness CLI (Floci Cloud Storage)", prog="./scripts/harness")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # query
+    p_q = subparsers.add_parser("query", help="Query Floci database tables")
+    q_sub = p_q.add_subparsers(dest="subcommand", required=True)
+    
+    # query matrix
+    p_qm = q_sub.add_parser("matrix", help="Query story test matrix")
+    p_qm.add_argument("--source", choices=["remote", "local"], default=None, help="Filter by source (remote or local)")
+
+    # query backlog
+    p_qb = q_sub.add_parser("backlog", help="Query full sprint backlog")
+    p_qb.add_argument("--sprint", default=None, help="Filter by sprint name (e.g. 'Sprint 1', 'Sprint 5')")
+    p_qb.add_argument("--type", default=None, help="Filter by type (User Story, Task, Bug, Epic)")
+    p_qb.add_argument("--state", default=None, help="Filter by state (New, Active, Resolved, Closed)")
+    p_qb.add_argument("--source", choices=["remote", "local"], default=None, help="Filter by source (remote or local)")
+    p_qb.add_argument("--top", type=int, default=25, help="Number of items to display (default: 25)")
+
+    # query tools
+    p_qt = q_sub.add_parser("tools", help="Query registered tools")
+    p_qt.add_argument("--json", action="store_true")
+    p_qt.add_argument("--responsibility", default=None)
+    
+    # query stats
+    q_sub.add_parser("stats", help="Query database statistics")
+
+    # query item
+    p_qi = q_sub.add_parser("item", help="Query a specific work item by ID")
+    p_qi.add_argument("id", type=int, help="Work item ID")
+
+    # sync-remote
+    subparsers.add_parser("sync-remote", help="Synchronize full backlog from REMOTE across all sprints")
+
+    # work-item
+    subparsers.add_parser("work-item", help="Manage portfolio work items")
+
+    # init / seed
+    subparsers.add_parser("init", help="Initialize Floci DynamoDB tables & S3")
+    subparsers.add_parser("seed", help="Seed sample stories and tools into Floci")
+
+    args, unknown = parser.parse_known_args()
+
+    if args.command == "query":
+        if args.subcommand == "matrix": handle_query_matrix(args)
+        elif args.subcommand == "backlog": handle_query_backlog(args)
+        elif args.subcommand == "tools": handle_query_tools(args)
+        elif args.subcommand == "stats": handle_query_stats(args)
+        elif args.subcommand == "item": handle_query_item(args)
+    elif args.command == "sync-remote":
+        handle_sync_remote(args)
+    elif args.command == "work-item":
+        handle_work_item(args)
+    elif args.command == "init":
+        handle_init(args)
+    elif args.command == "seed":
+        handle_seed(args)
+
+if __name__ == "__main__":
+    main()
