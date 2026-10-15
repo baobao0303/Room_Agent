@@ -14,7 +14,7 @@ pipeline {
         CONTAINER_NAME   = "paseo-harness-ui"
         UI_PORT          = "4321"
         API_PORT         = "8765"
-        BACKEND_UPSTREAM = "http://172.17.0.1:8765"
+        BACKEND_UPSTREAM = "http://100.92.98.99:8765"
     }
 
     stages {

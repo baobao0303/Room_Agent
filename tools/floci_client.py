@@ -82,13 +82,14 @@ _REACHABLE_CACHE = {"ok": None, "checked_at": 0.0}
 
 def _check_endpoint_reachable(endpoint_url: str) -> bool:
     now = time.time()
-    if _REACHABLE_CACHE["ok"] is not None and (now - _REACHABLE_CACHE["checked_at"] < 20.0):
+    ttl = 15.0 if _REACHABLE_CACHE["ok"] else 2.0
+    if _REACHABLE_CACHE["ok"] is not None and (now - _REACHABLE_CACHE["checked_at"] < ttl):
         return bool(_REACHABLE_CACHE["ok"])
     try:
         parsed = urlparse(endpoint_url)
         host = parsed.hostname or "127.0.0.1"
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
-        with socket.create_connection((host, port), timeout=0.4):
+        with socket.create_connection((host, port), timeout=1.0):
             _REACHABLE_CACHE["ok"] = True
             _REACHABLE_CACHE["checked_at"] = now
             return True
@@ -404,9 +405,21 @@ class FlociHarnessDB:
                 decoded = [DecimalEncoder.decode(i) for i in items]
                 if not any([wi_type, state, source, iteration, assigned_to_profile, parent_item_id is not None]) and decoded:
                     store = _load_local_store()
+                    local_map = store.get("work_items", {})
+                    merged_by_id: Dict[str, Dict[str, Any]] = {}
                     for d in decoded:
-                        store["work_items"][str(d["id"])] = d
+                        sid = str(d["id"])
+                        loc = local_map.get(sid)
+                        if isinstance(loc, dict) and str(loc.get("updated_at") or "") > str(d.get("updated_at") or ""):
+                            merged_by_id[sid] = loc
+                        else:
+                            merged_by_id[sid] = d
+                    for sid, loc in local_map.items():
+                        if sid not in merged_by_id and isinstance(loc, dict) and loc.get("id") is not None:
+                            merged_by_id[sid] = loc
+                    store["work_items"] = merged_by_id
                     _save_local_store(store)
+                    decoded = list(merged_by_id.values())
                 decoded.sort(key=lambda x: x.get("id", 0), reverse=True)
                 return decoded
             except Exception:

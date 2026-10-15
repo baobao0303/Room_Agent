@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-15 14:44:55 +0700`
+- **Cập nhật lần cuối**: `2026-10-15 15:09:54 +0700`
 - **Agent cập nhật gần nhất**: `Paseo/Agent`
-- **Trọng tâm hiện tại**: Nghiệm thu toàn bộ Epic #265 hoàn tất; Sẵn sàng cho phân hệ Hồ sơ khách hàng 360
+- **Trọng tâm hiện tại**: Task #1535: Typography tab Du lieu tho & Mapping du lieu sang tds-body-2 font-semibold icon 14px
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > QC chạy kiểm thử tự động nghiệm thu toàn bộ 93 test cases và xác nhận deep linking.
+  > Theo doi subagent Peer Dev thuc thi Task #1535 va kiem tra ket qua test
 
 ---
 
@@ -163,6 +163,25 @@
 - [x] Hoàn thành & đóng trọn bộ 16 work items (#265..#280) của Epic #265
 - [x] 54/54 unit tests pass 100%
 - [x] 1. Tạo và phân công Task #1458 trên Harness DB. 2. Đã tích hợp ActivatedRoute & Router đồng bộ hai chiều URL query params (?tab=raw-data|mapping, ?step=1..4, ?channelId=...). Khi chia sẻ link có query param, hệ thống tự động nhảy vào đúng tab và step. 3. Test suites: 6/6 passed, 93/93 tests pass (100%). Chuyển Task #1458 sang Resolved bàn giao QC.
+- [x] 1. Đã tạo và điều phối Task #1460 trên Harness DB. 2. Loại bỏ hoàn toàn thanh tab nguồn thừa khỏi raw-event-list.component.html theo chỉ đạo của user và nguyên tắc YAGNI. 3. Giữ lại thanh tác vụ hàng loạt (selected rows / compare) khi có dòng được chọn. 4. Kiểm thử 6/6 suites passed, 93/93 tests pass (100%). Chuyển Task #1460 sang Resolved bàn giao QC.
+- [x] Tạo Epic #1461
+- [x] Tạo 4 User Stories #1462..#1465
+- [x] Tạo 11 Tasks #1466..#1476
+- [x] Dispatch Lead Dev 120f7242 (Task #1466)
+- [x] Dispatch QC 14b43bd1 (Task #1467..#1470)
+- [x] 1. Đã khôi phục thanh Source Tabs (Tất cả nguồn, Facebook, Partner, TPOS, Website) trên raw-event-list.component.html. 2. Đã tích hợp đồng bộ URL hai chiều với query param ?source= (ví dụ ?source=facebook). 3. Khi mở link có ?source=facebook, hệ thống tự động nhảy vào đúng tab nguồn và tải dữ liệu sự kiện tương ứng. 4. Pass 93/93 tests (100%). Chuyển Task #1477 sang Resolved bàn giao QC.
+- [x] Dispatch thành công Lead Dev 120f724 và QC 14b43bd
+- [x] Toàn bộ 16 work items C360 đã lên Harness DB
+- [x] Tạo và verify 5 bộ unit test 5-Stage ISTQB cho 4 Step Raw Data Mapping
+- [x] Verify 70/70 unit tests pass 100% không lỗi
+- [x] Đóng 924 child Testcase items trên Harness DB
+- [x] Đóng Tasks #271, #272, #273, #275, #276 và các task QC #277, #279, #280 bàn giao Lead
+- [x] 1. Đã tạo và điều phối Task #1478 trên Harness DB. 2. Khi chuyển sang tab Mapping dữ liệu, hệ thống tự động reset và xóa query param ?source= khỏi URL. 3. Khi truy cập link chứa tab=mapping và dính source=, ngOnInit tự động strip ?source=. 4. Khi quay về tab Dữ liệu thô, dọn dẹp ?channelId= và ?step=. 5. Kiểm thử 6/6 suites passed, 93/93 tests pass (100%). Chuyển Task #1478 sang Resolved bàn giao QC.
+- [x] Tạo Bug #1534 trên Harness DB ([Data-Raw]: Lệch vị trí Stepper 4 bước và sai scope 2-pane khi xem tab Mapping dữ liệu)
+- [x] 1. Đã xóa work item #127 khỏi Harness DB. 2. Đã kích hoạt chuyển trạng thái các Task #1466, #1471..#1476 sang Active trên Harness DB. 3. Đã spawn đồng loạt 3 sub-agents chuyên trách qua Paseo: Lead Dev (e910fec - Task #1466 Store/DTO), Peer Dev (0527405 - Tasks #1471..#1476 UI Components), và QC (bbdbe9d - Epic #1461 ISTQB Test Suite) theo docs/spec/customer-360-profile-spec.md.
+- [x] Tao Task #1535 tren Harness DB
+- [x] Dispatch agent Peer Dev 0235d109 qua Paseo
+- [x] Chay profile_research_gen cho Task #1535
 
 ---
 
@@ -170,10 +189,326 @@
 
 - [ ] **[M1]** Push code lên GitHub để kích hoạt workflow
 - [ ] **[M2]** Không còn
+- [ ] **[M3]** Peer Dev sửa layout Stepper và scope Bước 1
+- [ ] **[M4]** QC nghiệm thu
+- [ ] **[M5]** Giám sát Lead Dev, Peer Dev và QC hoàn thành code & kiểm thử nghiệm thu.
 
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #191 — `2026-10-15 15:09:07 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo doi subagent Peer Dev thuc thi Task #1535 va kiem tra ket qua test
+
+### Phiên #190 — `2026-10-15 15:09:01 +0700` | **Supervisor**
+- **Tóm tắt**: Tao Task #1535 tren Harness DB va dispatch Peer Dev cap nhat typography tab Du lieu tho sang tds-body-2 font-semibold icon 14px
+- **Đã thực hiện**:
+  - Tao Task #1535 tren Harness DB
+  - Dispatch agent Peer Dev 0235d109 qua Paseo
+  - Chay profile_research_gen cho Task #1535
+- **Bàn giao bước tiếp theo**: Theo doi subagent Peer Dev thuc thi Task #1535 va kiem tra ket qua test
+
+### Phiên #189 — `2026-10-15 15:08:49 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Work Item #1535 [Task]: [UI/Data-Raw]: Cap nhat tab Du lieu tho & Mapping du lieu sang tds-body-2 font-semibold icon 14px
+Cap nhat typography cac tab Du lieu tho va Mapping du lieu tren raw-event-list.component.html: ap dung tds-body-2 font-semibold va icon 14px (text-[14px]).
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_work_item_1535_task_ui_data_raw.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_work_item_1535_task_ui_data_raw.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_work_item_1535_task_ui_data_raw.md`, `tools/research/gen_brief_peer_work_item_1535_task_ui_data_raw.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_work_item_1535_task_ui_data_raw.md và tools/research/gen_brief_peer_work_item_1535_task_ui_data_raw.md.
+
+### Phiên #188 — `2026-10-15 15:08:31 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi tiến độ chạy ngầm của Peer Dev và QC, sau đó kiểm tra kết quả unit test.
+
+### Phiên #187 — `2026-10-15 15:07:52 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Typography tab Du lieu tho va Mapping du lieu tds-body-2 font-semibold icon 14px
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_typography_tab_du_lieu_th.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_typography_tab_du_lieu_th.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_typography_tab_du_lieu_th.md`, `tools/research/gen_brief_supervisor_typography_tab_du_lieu_th.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_typography_tab_du_lieu_th.md và tools/research/gen_brief_supervisor_typography_tab_du_lieu_th.md.
+
+### Phiên #186 — `2026-10-15 15:06:44 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi tiến độ chạy ngầm của Peer Dev và QC, sau đó kiểm tra kết quả unit test.
+
+### Phiên #185 — `2026-10-15 15:06:25 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi tiến độ chạy ngầm của Peer Dev và QC, sau đó kiểm tra kết quả unit test.
+
+### Phiên #184 — `2026-10-15 15:05:48 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi tiến độ chạy ngầm của Peer Dev và QC, sau đó kiểm tra kết quả unit test.
+
+### Phiên #183 — `2026-10-15 15:05:21 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi tiến độ chạy ngầm của Peer Dev và QC, sau đó kiểm tra kết quả unit test.
+
+### Phiên #182 — `2026-10-15 15:05:05 +0700` | **Supervisor**
+- **Tóm tắt**: Spawn 3 subagents (Lead Dev, Peer Dev, QC) triển khai Epic #1461 Hồ sơ Khách hàng 360
+- **Đã thực hiện**:
+  - 1. Đã xóa work item #127 khỏi Harness DB. 2. Đã kích hoạt chuyển trạng thái các Task #1466, #1471..#1476 sang Active trên Harness DB. 3. Đã spawn đồng loạt 3 sub-agents chuyên trách qua Paseo: Lead Dev (e910fec - Task #1466 Store/DTO), Peer Dev (0527405 - Tasks #1471..#1476 UI Components), và QC (bbdbe9d - Epic #1461 ISTQB Test Suite) theo docs/spec/customer-360-profile-spec.md.
+- **Bàn giao bước tiếp theo**: Theo dõi tiến độ chạy ngầm của Peer Dev và QC, sau đó kiểm tra kết quả unit test.
+
+### Phiên #181 — `2026-10-15 15:04:39 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Thiết lập kịch bản kiểm thử 5-Stage ISTQB và sinh unit test cases cho Epic #1461 Hồ Sơ Khách Hàng 360 theo docs/spec/customer-360-profile-spec.md
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_thi_t_l_p_k_ch_b_n_ki_m_th_5_stag.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_thi_t_l_p_k_ch_b_n_ki_m_th_5_stag.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_thi_t_l_p_k_ch_b_n_ki_m_th_5_stag.md`, `tools/research/gen_brief_qc_thi_t_l_p_k_ch_b_n_ki_m_th_5_stag.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_thi_t_l_p_k_ch_b_n_ki_m_th_5_stag.md và tools/research/gen_brief_qc_thi_t_l_p_k_ch_b_n_ki_m_th_5_stag.md.
+
+### Phiên #180 — `2026-10-15 15:03:54 +0700` | **Peer Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer Dev: Triển khai các Task #1471, #1472, #1473, #1474, #1475, #1476: Xây dựng Dashboard 3 cột Customer 360 và 6 components con theo docs/spec/customer-360-profile-spec.md
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_dev_tri_n_khai_c_c_task_1471_14.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_dev_tri_n_khai_c_c_task_1471_14.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_dev_tri_n_khai_c_c_task_1471_14.md`, `tools/research/gen_brief_peer_dev_tri_n_khai_c_c_task_1471_14.md`
+- **Bàn giao bước tiếp theo**: Profile Peer Dev tiếp tục hoàn thiện task dựa trên tools/research/research_peer_dev_tri_n_khai_c_c_task_1471_14.md và tools/research/gen_brief_peer_dev_tri_n_khai_c_c_task_1471_14.md.
+
+### Phiên #179 — `2026-10-15 15:03:07 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #178 — `2026-10-15 15:02:55 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #177 — `2026-10-15 15:02:51 +0700` | **Lead Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead Dev: Triển khai Task #1466: [CORE/STORE] Customer360Store (Signals), DTOs và route /customers/:id theo docs/spec/customer-360-profile-spec.md
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_dev_tri_n_khai_task_1466_core_s.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_dev_tri_n_khai_task_1466_core_s.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_dev_tri_n_khai_task_1466_core_s.md`, `tools/research/gen_brief_lead_dev_tri_n_khai_task_1466_core_s.md`
+- **Bàn giao bước tiếp theo**: Profile Lead Dev tiếp tục hoàn thiện task dựa trên tools/research/research_lead_dev_tri_n_khai_task_1466_core_s.md và tools/research/gen_brief_lead_dev_tri_n_khai_task_1466_core_s.md.
+
+### Phiên #176 — `2026-10-15 15:01:52 +0700` | **Lead Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead Dev: Triển khai Task #1466: Customer360Store
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_dev_tri_n_khai_task_1466_custom.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_dev_tri_n_khai_task_1466_custom.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_dev_tri_n_khai_task_1466_custom.md`, `tools/research/gen_brief_lead_dev_tri_n_khai_task_1466_custom.md`
+- **Bàn giao bước tiếp theo**: Profile Lead Dev tiếp tục hoàn thiện task dựa trên tools/research/research_lead_dev_tri_n_khai_task_1466_custom.md và tools/research/gen_brief_lead_dev_tri_n_khai_task_1466_custom.md.
+
+### Phiên #175 — `2026-10-15 15:00:03 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #174 — `2026-10-15 14:59:16 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #173 — `2026-10-15 14:58:01 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #172 — `2026-10-15 14:57:24 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #171 — `2026-10-15 14:57:16 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #170 — `2026-10-15 14:57:10 +0700` | **Supervisor**
+- **Tóm tắt**: Đã tạo Bug #1534 chuẩn hóa Stepper 4 bước và layout 2-pane
+- **Đã thực hiện**:
+  - Tạo Bug #1534 trên Harness DB ([Data-Raw]: Lệch vị trí Stepper 4 bước và sai scope 2-pane khi xem tab Mapping dữ liệu)
+- **Bàn giao bước tiếp theo**: Điều phối Peer Dev nhận task #1534 và fix code
+
+### Phiên #169 — `2026-10-15 14:56:05 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm tra URL state hygiene khi chuyển qua lại giữa 2 tab.
+
+### Phiên #168 — `2026-10-15 14:55:39 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm tra URL state hygiene khi chuyển qua lại giữa 2 tab.
+
+### Phiên #167 — `2026-10-15 14:54:28 +0700` | **Peer Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer Dev: Fix layout Stepper 4 buoc tren cung va dua 2 pane vao Step 1
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_dev_fix_layout_stepper_4_buoc_t.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_dev_fix_layout_stepper_4_buoc_t.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_dev_fix_layout_stepper_4_buoc_t.md`, `tools/research/gen_brief_peer_dev_fix_layout_stepper_4_buoc_t.md`
+- **Bàn giao bước tiếp theo**: Profile Peer Dev tiếp tục hoàn thiện task dựa trên tools/research/research_peer_dev_fix_layout_stepper_4_buoc_t.md và tools/research/gen_brief_peer_dev_fix_layout_stepper_4_buoc_t.md.
+
+### Phiên #166 — `2026-10-15 14:53:22 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Bắt đầu triển khai 4 bộ Unit Test (ISTQB 5 giai đoạn) cho Epic 1461 Cột 1 CustomerSummaryCard & CustomerOrganizationsCard
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md`, `tools/research/gen_brief_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md và tools/research/gen_brief_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md.
+
+### Phiên #165 — `2026-10-15 14:52:46 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm tra URL state hygiene khi chuyển qua lại giữa 2 tab.
+
+### Phiên #164 — `2026-10-15 14:52:41 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Fix layout Stepper 4 buoc va Scope Wizard Raw Data Mapping
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_fix_layout_stepper_4_buoc.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_fix_layout_stepper_4_buoc.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_fix_layout_stepper_4_buoc.md`, `tools/research/gen_brief_supervisor_fix_layout_stepper_4_buoc.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_fix_layout_stepper_4_buoc.md và tools/research/gen_brief_supervisor_fix_layout_stepper_4_buoc.md.
+
+### Phiên #163 — `2026-10-15 14:52:28 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm tra URL state hygiene khi chuyển qua lại giữa 2 tab.
+
+### Phiên #162 — `2026-10-15 14:52:22 +0700` | **Supervisor**
+- **Tóm tắt**: Dọn dẹp query params theo phân hệ tab (xóa ?source khi sang mapping, xóa channelId/step khi về raw-data) (Task #1478)
+- **Đã thực hiện**:
+  - 1. Đã tạo và điều phối Task #1478 trên Harness DB. 2. Khi chuyển sang tab Mapping dữ liệu, hệ thống tự động reset và xóa query param ?source= khỏi URL. 3. Khi truy cập link chứa tab=mapping và dính source=, ngOnInit tự động strip ?source=. 4. Khi quay về tab Dữ liệu thô, dọn dẹp ?channelId= và ?step=. 5. Kiểm thử 6/6 suites passed, 93/93 tests pass (100%). Chuyển Task #1478 sang Resolved bàn giao QC.
+- **Bàn giao bước tiếp theo**: QC kiểm tra URL state hygiene khi chuyển qua lại giữa 2 tab.
+
+### Phiên #161 — `2026-10-15 14:51:22 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead nghiệm thu bàn giao các User Story #266, #267, #268, #269 và kiểm tra Task #1458 (Deep Linking)
+
+### Phiên #160 — `2026-10-15 14:51:18 +0700` | **QC**
+- **Tóm tắt**: Nghiệm thu hoàn tất 5 Task #271, #272, #273, #275, #276: 70/70 unit tests pass 100%, 924 child Testcases Closed
+- **Đã thực hiện**:
+  - Tạo và verify 5 bộ unit test 5-Stage ISTQB cho 4 Step Raw Data Mapping
+  - Verify 70/70 unit tests pass 100% không lỗi
+  - Đóng 924 child Testcase items trên Harness DB
+  - Đóng Tasks #271, #272, #273, #275, #276 và các task QC #277, #279, #280 bàn giao Lead
+- **File đã tạo/cập nhật**: `apps/mfe-cdp/src/app/pages/data-raw/step2-behavior-events.spec.ts`, `apps/mfe-cdp/src/app/pages/data-raw/step3-field-mapping.spec.ts`, `apps/mfe-cdp/src/app/pages/data-raw/step4-dryrun-versioning.spec.ts`, `apps/mfe-cdp/src/app/pages/data-raw/raw-data-mapping.component.spec.ts`
+- **Bàn giao bước tiếp theo**: Lead nghiệm thu bàn giao các User Story #266, #267, #268, #269 và kiểm tra Task #1458 (Deep Linking)
+
+### Phiên #159 — `2026-10-15 14:50:59 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Đôn đốc QC hoàn thiện 4 bộ Unit Test và Lead Dev chốt DTOs & Store
+
+### Phiên #158 — `2026-10-15 14:50:51 +0700` | **Supervisor**
+- **Tóm tắt**: Nhịp Heartbeat: Giám sát Lead Dev & QC triển khai phân hệ Hồ sơ khách hàng 360 (Epic #1461)
+- **Đã thực hiện**:
+  - Dispatch thành công Lead Dev 120f724 và QC 14b43bd
+  - Toàn bộ 16 work items C360 đã lên Harness DB
+- **Bàn giao bước tiếp theo**: Đôn đốc QC hoàn thiện 4 bộ Unit Test và Lead Dev chốt DTOs & Store
+
+### Phiên #157 — `2026-10-15 14:50:38 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC nghiệm thu tính năng deep linking cho tab nguồn.
+
+### Phiên #156 — `2026-10-15 14:50:31 +0700` | **Supervisor**
+- **Tóm tắt**: Khôi phục Source Tabs và đồng bộ query param ?source= lên URL (Task #1477)
+- **Đã thực hiện**:
+  - 1. Đã khôi phục thanh Source Tabs (Tất cả nguồn, Facebook, Partner, TPOS, Website) trên raw-event-list.component.html. 2. Đã tích hợp đồng bộ URL hai chiều với query param ?source= (ví dụ ?source=facebook). 3. Khi mở link có ?source=facebook, hệ thống tự động nhảy vào đúng tab nguồn và tải dữ liệu sự kiện tương ứng. 4. Pass 93/93 tests (100%). Chuyển Task #1477 sang Resolved bàn giao QC.
+- **Bàn giao bước tiếp theo**: QC nghiệm thu tính năng deep linking cho tab nguồn.
+
+### Phiên #155 — `2026-10-15 14:49:41 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead Dev thiết kế Customer360Store và QC hoàn thiện bộ Unit Test 5 giai đoạn trước khi Peer Dev code UI
+
+### Phiên #154 — `2026-10-15 14:49:19 +0700` | **Supervisor**
+- **Tóm tắt**: Đã khởi tạo hoàn chỉnh Epic #1461, 4 User Stories (#1462-#1465), 11 Tasks (#1466-#1476) và dispatch Lead Dev / QC bắt đầu TDD
+- **Đã thực hiện**:
+  - Tạo Epic #1461
+  - Tạo 4 User Stories #1462..#1465
+  - Tạo 11 Tasks #1466..#1476
+  - Dispatch Lead Dev 120f7242 (Task #1466)
+  - Dispatch QC 14b43bd1 (Task #1467..#1470)
+- **Bàn giao bước tiếp theo**: Lead Dev thiết kế Customer360Store và QC hoàn thiện bộ Unit Test 5 giai đoạn trước khi Peer Dev code UI
+
+### Phiên #153 — `2026-10-15 14:48:58 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Bắt đầu triển khai 4 bộ Unit Test (ISTQB 5 giai đoạn) cho Epic #1461 Hồ sơ khách hàng 360 theo chuẩn TDD:
+- Task #1467: Unit Test Cột 1 (CustomerSummaryCard & CustomerOrganizationsCard)
+- Task #1468: Unit Test Cột 2 trên (CustomerPurchaseInfo Hero KPI & Grid gói mua hàng)
+- Task #1469: Unit Test Cột 2 dưới (CustomerActivityHeatmap Ma trận 4 kênh, Tooltip & Event Log)
+- Task #1470: Unit Test Cột 3 (CustomerUpcomingAppointments & CustomerNotesFeed)
+Đặc tả chi tiết tại: docs/spec/customer-360-profile-spec.md.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md`, `tools/research/gen_brief_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md và tools/research/gen_brief_qc_b_t_u_tri_n_khai_4_b_unit_test_is.md.
+
+### Phiên #152 — `2026-10-15 14:48:38 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC nghiệm thu Task #1460 và xác nhận giao diện dữ liệu thô tinh gọn.
+
+### Phiên #151 — `2026-10-15 14:48:15 +0700` | **Lead Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead Dev: Bắt đầu triển khai Epic #1461 Hồ sơ khách hàng 360 (Customer 360 Profile).
+Nhiệm vụ:
+1. Thiết kế DTOs và Customer360Store (Signals) quản lý state của 3 cột (Profile, Purchase, Heatmap, Appointments, Notes) theo đặc tả docs/spec/customer-360-profile-spec.md.
+2. Cấu hình route /customers/:id trong mfe-cdp và app-shell.
+3. Chỉ đạo QC triển khai trước 4 bộ Unit Test (Tasks #1467..#1470) theo chuẩn TDD trước khi Peer Dev code UI.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_dev_b_t_u_tri_n_khai_epic_1461_.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_dev_b_t_u_tri_n_khai_epic_1461_.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_dev_b_t_u_tri_n_khai_epic_1461_.md`, `tools/research/gen_brief_lead_dev_b_t_u_tri_n_khai_epic_1461_.md`
+- **Bàn giao bước tiếp theo**: Profile Lead Dev tiếp tục hoàn thiện task dựa trên tools/research/research_lead_dev_b_t_u_tri_n_khai_epic_1461_.md và tools/research/gen_brief_lead_dev_b_t_u_tri_n_khai_epic_1461_.md.
+
+### Phiên #150 — `2026-10-15 14:48:06 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC nghiệm thu Task #1460 và xác nhận giao diện dữ liệu thô tinh gọn.
+
+### Phiên #149 — `2026-10-15 14:48:00 +0700` | **Supervisor**
+- **Tóm tắt**: Gỡ bỏ thanh Source Tabs (Tất cả nguồn, Facebook, TPOS,...) khỏi màn hình Dữ liệu thô (Task #1460)
+- **Đã thực hiện**:
+  - 1. Đã tạo và điều phối Task #1460 trên Harness DB. 2. Loại bỏ hoàn toàn thanh tab nguồn thừa khỏi raw-event-list.component.html theo chỉ đạo của user và nguyên tắc YAGNI. 3. Giữ lại thanh tác vụ hàng loạt (selected rows / compare) khi có dòng được chọn. 4. Kiểm thử 6/6 suites passed, 93/93 tests pass (100%). Chuyển Task #1460 sang Resolved bàn giao QC.
+- **Bàn giao bước tiếp theo**: QC nghiệm thu Task #1460 và xác nhận giao diện dữ liệu thô tinh gọn.
+
+### Phiên #148 — `2026-10-15 14:47:16 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC chạy kiểm thử tự động nghiệm thu toàn bộ 93 test cases và xác nhận deep linking.
+
+### Phiên #147 — `2026-10-15 14:45:13 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC chạy kiểm thử tự động nghiệm thu toàn bộ 93 test cases và xác nhận deep linking.
 
 ### Phiên #146 — `2026-10-15 14:44:55 +0700` | **Paseo/Agent**
 - **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session

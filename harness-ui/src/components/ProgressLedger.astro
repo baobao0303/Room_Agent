@@ -760,6 +760,8 @@ if (view === 'all' || view === 'specs') {
     setupEvents();
     loadProgressData();
     initSpecPortal();
+    window.addEventListener('force-refresh-all', loadProgressData);
+    window.setInterval(loadProgressData, 4000);
   }
 
   if (document.readyState === 'loading') {

@@ -431,12 +431,33 @@
     }
   }
 
+  let lastSprintListKey = '';
+  let lastDataSignature = '';
+
+  function computeItemsSignature(items: WorkItem[]): string {
+    if (!items || items.length === 0) return '0';
+    const head = items
+      .slice(0, 80)
+      .map((x) => `${x.id}:${x.state || ''}:${x.assigned_to_profile || ''}:${x.priority || ''}:${x.updated_at || ''}:${x.title || ''}`)
+      .join('|');
+    const tail = items
+      .slice(-20)
+      .map((x) => `${x.id}:${x.state || ''}`)
+      .join('|');
+    return `${items.length}#${head}#${tail}`;
+  }
+
   // Populate Sprint Filter with unique iteration paths
   function populateSprintFilter(items: WorkItem[]) {
     const select = document.getElementById('wi-filter-sprint') as HTMLSelectElement | null;
     if (!select) return;
     const currentVal = select.value;
     const sprints = Array.from(new Set(items.map((x) => x.iteration_path || '').filter(Boolean))).sort();
+    const sprintKey = sprints.join('||');
+    if (sprintKey === lastSprintListKey && select.options.length > 1) {
+      return;
+    }
+    lastSprintListKey = sprintKey;
 
     select.innerHTML = '<option value="">Tất cả Sprint</option>' +
       sprints
@@ -1182,25 +1203,47 @@
       renderTable();
     }) as EventListener);
 
-    // Listen to work items feed from layout poll
+    // Listen to work items feed from layout poll or child components
     window.addEventListener('work-items-updated', ((e: CustomEvent<WorkItem[]>) => {
       if (Array.isArray(e.detail) && e.detail.length > 0) {
+        const sig = computeItemsSignature(e.detail);
         allWorkItems = e.detail;
         populateSprintFilter(allWorkItems);
-        renderTable();
+        if (sig !== lastDataSignature) {
+          lastDataSignature = sig;
+          renderTable();
+        }
+      } else {
+        fetchInitialWorkItems(true);
       }
     }) as EventListener);
+
+    window.addEventListener('force-refresh-all', () => {
+      fetchInitialWorkItems(true);
+    });
   }
 
-  // Fetch initial items if not yet loaded
-  async function fetchInitialWorkItems() {
+  let isFetchingWorkItems = false;
+
+  // Fetch initial or refreshed items directly from backend
+  async function fetchInitialWorkItems(force = false) {
+    if (isFetchingWorkItems && !force) return;
+    isFetchingWorkItems = true;
     try {
-      const res = await fetch('/api/work-items?t=' + Date.now());
+      const url = '/api/work-items?' + (force ? 'force=1&' : '') + 't=' + Date.now();
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      allWorkItems = Array.isArray(data) ? data : data.items || [];
-      populateSprintFilter(allWorkItems);
-      renderTable();
+      const items: WorkItem[] = Array.isArray(data) ? data : data.items || [];
+      if (items.length > 0 || allWorkItems.length === 0) {
+        const sig = computeItemsSignature(items);
+        allWorkItems = items;
+        populateSprintFilter(allWorkItems);
+        if (force || sig !== lastDataSignature) {
+          lastDataSignature = sig;
+          renderTable();
+        }
+      }
     } catch {
       const tbody = document.getElementById('wi-table-body');
       if (tbody && allWorkItems.length === 0) {
@@ -1215,12 +1258,15 @@
             </td>
           </tr>`;
       }
+    } finally {
+      isFetchingWorkItems = false;
     }
   }
 
   function initWorkItemsBoard() {
     setupEvents();
-    fetchInitialWorkItems();
+    fetchInitialWorkItems(false);
+    window.setInterval(() => fetchInitialWorkItems(false), 3000);
   }
 
   if (document.readyState === 'loading') {

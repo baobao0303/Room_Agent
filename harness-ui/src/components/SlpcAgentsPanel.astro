@@ -540,8 +540,19 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
     loadAgentProfiles();
     pollAgentJobs();
 
-    // Start background job polling every 3.5s
-    agentLogPollInterval = window.setInterval(pollAgentJobs, 3500);
+    window.addEventListener('work-items-updated', () => {
+      loadAgentProfiles();
+    });
+    window.addEventListener('force-refresh-all', () => {
+      loadAgentProfiles();
+      pollAgentJobs();
+    });
+
+    // Start background job & profile polling every 3.5s
+    agentLogPollInterval = window.setInterval(() => {
+      pollAgentJobs();
+      loadAgentProfiles();
+    }, 3500);
   }
 
   if (document.readyState === 'loading') {

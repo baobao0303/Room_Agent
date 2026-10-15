@@ -93,12 +93,21 @@ FIELDS = [
 ]
 
 LOCAL_CACHE_FILE = Path("/tmp/harness_work_items_cache.json")
+LOCAL_DB_FILE = BASE_DIR / ".harness_local_db.json"
+
+try:
+    import signal
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+except Exception:
+    pass
 
 _CACHE = {
     "data": [],
     "json_str": "[]",
     "last_fetch": 0.0,
     "floci_backoff_until": 0.0,
+    "local_db_mtime": 0.0,
+    "cache_file_mtime": 0.0,
 }
 _LOCK = threading.Lock()
 
@@ -247,6 +256,48 @@ def save_local_cache(rows):
     _CACHE["last_fetch"] = time.time()
     try:
         LOCAL_CACHE_FILE.write_text(_CACHE["json_str"], encoding="utf-8")
+        _CACHE["cache_file_mtime"] = LOCAL_CACHE_FILE.stat().st_mtime
+    except Exception:
+        pass
+    try:
+        if LOCAL_DB_FILE.is_file():
+            _CACHE["local_db_mtime"] = LOCAL_DB_FILE.stat().st_mtime
+    except Exception:
+        pass
+
+
+def _merge_local_db_if_modified():
+    """Instantly reflect any CLI harness_manager.py write to .harness_local_db.json in <1ms."""
+    try:
+        if not LOCAL_DB_FILE.is_file():
+            return
+        mtime = LOCAL_DB_FILE.stat().st_mtime
+        if mtime <= _CACHE.get("local_db_mtime", 0.0):
+            return
+        with _LOCK:
+            if mtime <= _CACHE.get("local_db_mtime", 0.0):
+                return
+            store = json.loads(LOCAL_DB_FILE.read_text(encoding="utf-8"))
+            local_items = store.get("work_items", {}) if isinstance(store, dict) else {}
+            if not local_items:
+                _CACHE["local_db_mtime"] = mtime
+                return
+            by_id = {str(r.get("id")): dict(r) for r in (_CACHE["data"] or []) if r.get("id") is not None}
+            changed = False
+            for sid, loc in local_items.items():
+                if not isinstance(loc, dict) or loc.get("id") is None:
+                    continue
+                cur = by_id.get(str(sid))
+                if cur is None or str(loc.get("updated_at") or "") >= str(cur.get("updated_at") or ""):
+                    norm = _infer_slpc_profile({k: loc.get(k) for k in FIELDS})
+                    if cur != norm:
+                        by_id[str(sid)] = norm
+                        changed = True
+            if changed:
+                merged = sorted(by_id.values(), key=lambda x: int(x.get("id") or 0), reverse=True)
+                _CACHE["data"] = merged
+                _CACHE["json_str"] = json.dumps(merged, ensure_ascii=False)
+            _CACHE["local_db_mtime"] = mtime
     except Exception:
         pass
 
@@ -268,7 +319,7 @@ def sync_from_floci():
     except Exception as e:
         print(f"[Dashboard Server] Floci sync warning: {e}", file=sys.stderr, flush=True)
         with _LOCK:
-            _CACHE["floci_backoff_until"] = time.time() + 10.0
+            _CACHE["floci_backoff_until"] = time.time() + 5.0
             _CACHE["last_fetch"] = time.time()
             if not _CACHE["data"]:
                 _bootstrap_local_cache()
@@ -278,11 +329,12 @@ def sync_from_floci():
 
 
 def get_cached_rows(force=False, wait_if_empty=False):
+    _merge_local_db_if_modified()
     now = time.time()
     if wait_if_empty and not _CACHE["data"]:
         return sync_from_floci()
     if force or (not _CACHE["data"] and now >= _CACHE["floci_backoff_until"]) or (
-        (now - _CACHE["last_fetch"] > 6.0) and (now >= _CACHE["floci_backoff_until"])
+        (now - _CACHE["last_fetch"] > 2.5) and (now >= _CACHE["floci_backoff_until"])
     ):
         threading.Thread(target=sync_from_floci, daemon=True).start()
     return _CACHE["data"], _CACHE["json_str"]
@@ -2248,12 +2300,20 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             force = "force" in qs
             _, json_str = get_cached_rows(force=force)
             body = json_str.encode("utf-8")
+            ui_ver = str(len(HTML_TEMPLATE))
+            try:
+                if INDEX_FILE.is_file():
+                    st = INDEX_FILE.stat()
+                    ui_ver = f"{len(HTML_TEMPLATE)}-{int(st.st_mtime)}-{st.st_size}"
+            except Exception:
+                pass
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Expose-Headers", "X-UI-Version")
-            self.send_header("X-UI-Version", str(len(HTML_TEMPLATE)))
-            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("X-UI-Version", ui_ver)
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self._safe_write(body)
@@ -2752,7 +2812,16 @@ def _bg_floci_sync_loop(out_path="/tmp/harness_dashboard.html"):
                     fh.write(content)
         except Exception:
             pass
-        time.sleep(8.0)
+        time.sleep(3.0)
+
+
+def _is_port_healthy(port: int) -> bool:
+    try:
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/api/work-items?force=1")
+        with urllib.request.urlopen(req, timeout=1.5) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
 
 
 def run_server(port=8765, host="0.0.0.0", out_path="/tmp/harness_dashboard.html"):
@@ -2769,12 +2838,27 @@ def main():
     parser = argparse.ArgumentParser(description="Harness Dashboard Realtime Server & Static Generator")
     parser.add_argument("--serve", action="store_true", help="Chạy foreground HTTP server trên cổng 8765")
     parser.add_argument("--daemon", action="store_true", help="Khởi động HTTP server chạy ngầm (background daemon) và thoát ngay")
+    parser.add_argument("--restart", action="store_true", help="Buộc khởi động lại daemon đang chạy")
     parser.add_argument("--port", type=int, default=8765, help="Cổng server HTTP (default 8765)")
     parser.add_argument("out", nargs="?", default="/tmp/harness_dashboard.html", help="Đường dẫn file html output")
     args = parser.parse_args()
 
     if args.daemon:
         generate_html(args.out, wait_if_empty=False)
+        if not args.restart and _is_port_healthy(args.port):
+            print(f"Existing dashboard server is healthy at http://127.0.0.1:{args.port}/harness_dashboard.html (triggered force sync)", flush=True)
+            return
+        if args.port == 8765:
+            try:
+                unit_path = Path.home() / ".config" / "systemd" / "user" / "paseo-harness-dashboard.service"
+                if unit_path.is_file():
+                    subprocess.run(["systemctl", "--user", "restart", "paseo-harness-dashboard.service"], check=True, timeout=5)
+                    time.sleep(0.4)
+                    if _is_port_healthy(args.port):
+                        print(f"Started systemd user service paseo-harness-dashboard.service on port {args.port}", flush=True)
+                        return
+            except Exception:
+                pass
         _stop_existing_dashboard_server(port=args.port)
         log_fh = open("/tmp/harness_dashboard_server.log", "w", encoding="utf-8")
         proc = subprocess.Popen(
@@ -2793,6 +2877,10 @@ def main():
         return
 
     count = generate_html(args.out, wait_if_empty=True)
+    try:
+        _is_port_healthy(args.port)
+    except Exception:
+        pass
     print(f"{count} items -> {args.out}", flush=True)
 
 

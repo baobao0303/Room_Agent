@@ -47,62 +47,83 @@ const harnessEnv = {
         }
 
         let activeNodeUrl = "";
+        let lastGoodBase = "";
         try {
-          activeNodeUrl = normalizeNodeUrl(localStorage.getItem("paseo_active_node") || "");
+          const saved = normalizeNodeUrl(localStorage.getItem("paseo_active_node") || "");
+          // Ignore static frontend port :4321 as an API node
+          if (saved && !saved.endsWith(":4321")) {
+            activeNodeUrl = saved;
+          }
         } catch (e) {}
         window["__PASEO_ACTIVE_NODE__"] = activeNodeUrl || configuredBase;
 
         window["__PASEO_SET_NODE__"] = function (newUrl) {
           const norm = normalizeNodeUrl(newUrl);
-          activeNodeUrl = norm;
-          window["__PASEO_ACTIVE_NODE__"] = norm || configuredBase;
+          activeNodeUrl = (norm && !norm.endsWith(":4321")) ? norm : "";
+          lastGoodBase = activeNodeUrl || "";
+          window["__PASEO_ACTIVE_NODE__"] = activeNodeUrl || configuredBase;
           try {
-            if (norm) localStorage.setItem("paseo_active_node", norm);
+            if (activeNodeUrl) localStorage.setItem("paseo_active_node", activeNodeUrl);
             else localStorage.removeItem("paseo_active_node");
           } catch (e) {}
           window.dispatchEvent(new CustomEvent("paseo-node-changed", { detail: { url: window["__PASEO_ACTIVE_NODE__"] } }));
         };
 
-        function getCandidateUrls(apiPath) {
-          const candidates = [];
+        function getCandidateBases() {
+          const bases = [];
           const loc = window.location;
           const isSameBackendPort = loc.port === "8765";
           if (activeNodeUrl) {
-            candidates.push(activeNodeUrl + apiPath);
+            bases.push(activeNodeUrl);
+          }
+          if (lastGoodBase) {
+            bases.push(lastGoodBase);
           }
           if (isSameBackendPort && (loc.protocol === "http:" || loc.protocol === "https:")) {
-            candidates.push(apiPath);
+            bases.push("");
           }
           if (configuredBase) {
-            candidates.push(configuredBase + apiPath);
+            bases.push(configuredBase);
           }
           if (tailscaleBase) {
-            candidates.push(tailscaleBase + apiPath);
+            bases.push(tailscaleBase);
           }
           if (loc.hostname && loc.hostname !== "127.0.0.1") {
-            candidates.push(`http://${loc.hostname}:8765${apiPath}`);
+            bases.push(`http://${loc.hostname}:8765`);
           }
-          candidates.push(`http://127.0.0.1:8765${apiPath}`);
+          bases.push("http://127.0.0.1:8765");
           if (!isSameBackendPort && (loc.protocol === "http:" || loc.protocol === "https:")) {
-            candidates.push(apiPath);
+            bases.push("");
           }
-          return Array.from(new Set(candidates));
+          return Array.from(new Set(bases));
         }
 
         window.fetch = async function (input, init) {
           const urlStr = typeof input === "string" ? input : (input instanceof URL ? input.toString() : null);
           if (urlStr && urlStr.startsWith("/api/")) {
-            const candidates = getCandidateUrls(urlStr);
+            const bases = getCandidateBases();
+            const method = (init && init.method ? String(init.method) : "GET").toUpperCase();
             let lastErr = null;
             let lastRes = null;
-            for (const candidate of candidates) {
+            for (const base of bases) {
+              const candidate = base + urlStr;
+              const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+              const timeoutMs = method === "GET" ? 4000 : 15000;
+              const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
               try {
-                const res = await rawFetch(candidate, init);
+                const reqInit = Object.assign({ cache: "no-store" }, init || {});
+                if (controller && !reqInit.signal) {
+                  reqInit.signal = controller.signal;
+                }
+                const res = await rawFetch(candidate, reqInit);
+                if (timer) clearTimeout(timer);
                 if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 404)) {
+                  lastGoodBase = base;
                   return res;
                 }
                 lastRes = res;
               } catch (err) {
+                if (timer) clearTimeout(timer);
                 lastErr = err;
               }
             }
@@ -326,15 +347,19 @@ const harnessEnv = {
         }
       }
 
-      async function pollHeartbeat() {
+      let isPollingHeartbeat = false;
+
+      async function pollHeartbeat(force = false) {
+        if (isPollingHeartbeat && !force) return;
+        isPollingHeartbeat = true;
         const statusEl = document.getElementById('backend-status');
         const statusText = document.getElementById('st-text');
         const navCount = document.getElementById('nav-count');
         const footerSync = document.getElementById('footer-last-sync');
 
         try {
-          const url = '/api/work-items?t=' + Date.now();
-          const res = await fetch(url);
+          const url = '/api/work-items?' + (force ? 'force=1&' : '') + 't=' + Date.now();
+          const res = await fetch(url, { cache: 'no-store' });
 
           if (!res.ok) {
             throw new Error(`HTTP ${res.status}`);
@@ -368,7 +393,7 @@ const harnessEnv = {
             footerSync.textContent = `Đồng bộ lúc ${timeStr}`;
           }
 
-          // Broadcast work items to components (e.g. KpiStrip)
+          // Broadcast work items to components (e.g. KpiStrip, WorkItemsBoard, SlpcAgentsPanel)
           window.dispatchEvent(new CustomEvent('work-items-updated', { detail: items }));
         } catch (err) {
           if (statusEl && statusText) {
@@ -379,12 +404,14 @@ const harnessEnv = {
             footerSync.textContent = 'Mất kết nối backend (:8765)';
           }
           window.dispatchEvent(new CustomEvent('backend-offline'));
+        } finally {
+          isPollingHeartbeat = false;
         }
       }
 
       async function syncBackendEnv() {
         try {
-          const res = await fetch('/api/env?t=' + Date.now());
+          const res = await fetch('/api/env?t=' + Date.now(), { cache: 'no-store' });
           if (!res.ok) return;
           const envData = await res.json();
           const elBackend = document.getElementById('env-backend-label');
@@ -407,13 +434,21 @@ const harnessEnv = {
         if (refreshBtn) {
           refreshBtn.addEventListener('click', () => {
             syncBackendEnv();
-            pollHeartbeat();
+            pollHeartbeat(true);
+            window.dispatchEvent(new CustomEvent('force-refresh-all'));
           });
         }
 
+        window.addEventListener('focus', () => pollHeartbeat(false));
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            pollHeartbeat(false);
+          }
+        });
+
         syncBackendEnv();
-        pollHeartbeat();
-        pollInterval = window.setInterval(pollHeartbeat, 3000);
+        pollHeartbeat(false);
+        pollInterval = window.setInterval(() => pollHeartbeat(false), 2500);
       }
 
       // Initialize on DOM ready
