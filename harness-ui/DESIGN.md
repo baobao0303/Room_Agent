@@ -1,27 +1,23 @@
 ---
 version: "alpha"
-name: "Retro-Futurism"
-description: "Retro-futuristic (cyberpunk/vaporwave) interface with neon colors (blue, pink, cyan), deep black background, 80s aesthetic, CRT scanlines, glitch effects, neon glow text/borders, monospace fonts, geometric patterns. Ideal for landing pages, saas. AI-ready template."
+name: "Hand-Drawn Sketch-Note"
+description: "Hand drawn landing page, notebook paper background, sketch style, doodles, handwriting font, casual and fun design. Ideal for landing pages, modern websites. AI-ready template."
 colors:
-  primary: "#0080FF"
-  secondary: "#FF006E"
-  tertiary: "#00FFFF"
-  neutral: "#1A1A2E"
-  surface: "#5D34D0"
-  accent: "#C0C0C0"
+  primary: "#F4F1EA"
+  secondary: "#0E2A5C"
+  tertiary: "#D12828"
+  neutral: "#333333"
+  surface: "#FFFFA5"
+  accent: "#0000FF"
 typography:
   h1:
-    fontFamily: monospace
-    fontSize: 2.25rem
+    fontFamily: Patrick Hand
+    fontSize: 2.5rem
     fontWeight: 700
   body-md:
-    fontFamily: monospace
+    fontFamily: Patrick Hand
     fontSize: 1rem
     fontWeight: 400
-  label-caps:
-    fontFamily: monospace
-    fontSize: 0.75rem
-    fontWeight: 500
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
@@ -31,39 +27,37 @@ components:
 
 ## Overview
 
-Retro-futuristic (cyberpunk/vaporwave) interface with neon colors (blue, pink, cyan), deep black background, 80s aesthetic, CRT scanlines, glitch effects, neon glow text/borders, monospace fonts, geometric patterns. Ideal for landing pages, saas. AI-ready template. Retro-futurism didn't start as a design trend. It started as a feeling — that electric hum of Vangelis synths over rain-soaked Los Angeles in Blade Runner, the light-cycle grids of Tron. These films didn't just imagine the future; they built an aesthetic language that refused to die. For decades it lived in the margins, in VHS cover art and forgotten arcade cabinets.
+Hand drawn landing page, notebook paper background, sketch style, doodles, handwriting font, casual and fun design. Ideal for landing pages, modern websites. AI-ready template. Mike Rohde didn't invent doodling in meetings — everyone does that. What he did with The Sketchnote Handbook in 2012 was give permission. He said: your notes don't need to be linear. They don't need to be pretty. They need to be yours. That single idea unlocked visual thinking for people who'd never picked up a Micron pen.
 
-Then synthwave happened. Musicians like Kavinsky and Perturbator weren't just making music — they were art-directing an entire visual movement. Album covers became mood boards. The neon grids, the chrome type, the sunset gradients — suddenly designers had a shared vocabulary that felt both familiar and impossibly cool.
+The hand-drawn aesthetic carries something typed text never will — vulnerability. A wobbly arrow says "I'm figuring this out with you." A boxed keyword says "this matters, but loosely." There's no pretense of finality. Dan Roam's Back of the Napkin work pushed this further into business contexts, proving that rough visuals communicate faster than polished decks.
 
-Stranger Things blew the door wide open in 2016. What had been a niche nostalgia play became mainstream visual language overnight. But here's what matters: it stuck. Unlike most nostalgia cycles that burn hot and vanish, retro-futurism evolved into a legitimate design system. Designers learned to extract the principles — the contrast, the glow, the geometry — without requiring a DeLorean in every hero image.
+Then Excalidraw arrived and changed the game for digital products. Suddenly every whiteboard tool wanted that sketchy, imperfect look. Miro, FigJam, tldraw — they all lean into hand-drawn strokes because users feel less precious about rough-looking canvases. The aesthetic lowers the barrier to contribution. That's not decoration. That's interaction design.
 
 - Density: 5/10 — Balanced
 - Variance: 8/10 — Expressive
 - Motion: 4/10 — Subtle
 
-- **Style:** Nostalgic, Neon, Futuristic, Retro
-- **Keywords:** Vintage sci-fi, 80s aesthetic, neon glow, geometric patterns, CRT scanlines, pixel art, cyberpunk, synthwave
-- **Era:** 1980s Retro
-- **Light/Dark:** ✓ Full / ✓ Dark focused
+- **Style:** Authentic, Informal, Creative
+- **Keywords:** sketch, note, hand-drawn, doodle, paper, notebook, pencil, casual, fun
+- **Era:** Modern Casual
+- **Light/Dark:** ✓ Full / ✗ No
 
 ## Colors
 
-- **Neon Blue** (#0080FF) — Accent highlight, links and focus states
-- **Hot Pink** (#FF006E) — Primary text color
-- **Cyan** (#00FFFF) — Accent highlight, links and focus states
-- **Deep Black** (#1A1A2E) — Dark surface, primary background
-- **Purple** (#5D34D0) — Accent color, emphasis elements
-- **Metallic Silver** (#C0C0C0) — Extended palette, decorative use
-- **Gold** (#FFD700) — Premium accent, decorative highlights
-- **80s Pink** (#FF10F0) — Primary text color
+- **Background** (#F4F1EA) — Primary background surface
+- **Text** (#0E2A5C) — Primary text color
+- **Accent** (#D12828) — Primary accent, CTAs and interactive elements
+- **Graphite Grey** (#333333) — Secondary text, borders, muted elements
+- **Highlighter Yellow** (#FFFFA5) — Warning states, attention indicators
+- **Ballpoint Blue** (#0000FF) — Secondary accent
 
 
 ## Typography
 
-- **Display / Hero:** monospace — Weight 700, tight tracking, used for headline impact
-- **Body:** monospace — Weight 400, 16px/1.6 line-height, max 72ch per line
-- **UI Labels / Captions:** monospace — 0.875rem, weight 500, slight letter-spacing
-- **Monospace:** monospace — Used for code, metadata, and technical values
+- **Display / Hero:** Patrick Hand — Weight 700, tight tracking, used for headline impact
+- **Body:** Patrick Hand — Weight 400, 16px/1.6 line-height, max 72ch per line
+- **UI Labels / Captions:** Patrick Hand — 0.875rem, weight 500, slight letter-spacing
+- **Monospace:** JetBrains Mono — Used for code, metadata, and technical values
 
 Scale:
 - Hero: clamp(2.5rem, 5vw, 4rem)
@@ -86,7 +80,7 @@ Scale:
 
 ## Elevation & Depth
 
-CRT scanlines (::before overlay), neon glow (text-shadow+box-shadow), glitch effects (skew/offset keyframes)
+Spiral binding, coffee ring stains, arrows, stick figures, speech bubbles, matte paper grain, horizontal rule lines, ink bleed.
 
 - **Physics:** Ease-out curves, 200-300ms duration. Smooth and predictable.
 - **Entry animations:** Fade + translate-Y (16px → 0) over 420ms ease-out. Staggered cascades for lists: 80ms between items.
@@ -114,7 +108,7 @@ Base corner radius: 8px. See rounded tokens in front matter for the full scale.
 ## Do's and Don'ts
 
 - No emojis in UI — use icon system only (Lucide, Heroicons)
-- No pure white (#FFFFFF) backgrounds — use off-white or dark surfaces
+- No pure black (#000000) — use off-black or charcoal variants
 - No oversaturated accent colors (saturation cap: 80%)
 - No 3-column equal-width feature layouts — use zig-zag or asymmetric grid
 - No `h-screen` — use `min-h-[100dvh]`
@@ -122,15 +116,13 @@ Base corner radius: 8px. See rounded tokens in front matter for the full scale.
 - No broken external image links — use picsum.photos or inline SVG
 - No generic lorem ipsum in demos
 
-- Do Neon colors used
-- Do CRT scanlines effect
-- Do Glitch animations active
-- Do Monospace font
-- Do Deep black background
-- Do Glow effects applied
-- Do 80s patterns present
+- Do Notebook paper background (lines/grid)
+- Do Handwriting-style fonts
+- Do Doodle/Sketch illustrations
+- Do Imperfect/Organic shapes
+- Do 'Sticker' or 'Tape' effects
 
 
 ## Use Case
 
-Landing pages, SaaS
+Landing pages, Modern websites

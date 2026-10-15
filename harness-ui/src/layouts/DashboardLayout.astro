@@ -26,7 +26,7 @@ const harnessEnv = {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Paseo Control Center - SLPC Autonomous Harness UI (Retro-Futurism)" />
+    <meta name="description" content="Paseo Control Center - SLPC Autonomous Harness UI (Hand-Drawn Sketch-Note)" />
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -92,15 +92,15 @@ const harnessEnv = {
       <header class="topbar">
         <div class="topbar-brand">
           <div class="brand-logo">
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-              <rect width="32" height="32" rx="8" fill="#1A1A2E" stroke="#00FFFF" stroke-width="1.5" stroke-opacity="0.7"/>
-              <path d="M7 16H11L14 10L18 22L21 16H25" stroke="#FF006E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="25" cy="16" r="2.5" fill="#00FFFF"/>
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect width="30" height="30" x="1" y="1" rx="8" fill="#FFFFA5" stroke="#333333" stroke-width="2"/>
+              <path d="M7 16H11L14 10L18 22L21 16H25" stroke="#0E2A5C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="25" cy="16" r="2.5" fill="#D12828"/>
             </svg>
           </div>
           <div class="brand-text">
             <span class="brand-title">PASEO CONTROL CENTER</span>
-            <span class="brand-sub">SLPC HARNESS &amp; ORCHESTRATION</span>
+            <span class="brand-sub">SLPC SKETCH-NOTE HARNESS</span>
           </div>
         </div>
 
@@ -208,7 +208,7 @@ const harnessEnv = {
         <div class="footer-right">
           <span id="footer-last-sync">Chưa đồng bộ</span>
           <span class="dot-separator">•</span>
-          <span class="badge-tag">Retro-Futurism • Astro 5 (.env Connected)</span>
+          <span class="badge-tag">Hand-Drawn Sketch-Note • Astro 5 (.env Connected)</span>
         </div>
       </footer>
     </div>
@@ -425,10 +425,9 @@ const harnessEnv = {
         gap: 16px;
         padding: 0 24px;
         height: 62px;
-        background: rgba(26, 26, 46, 0.92);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0 2px 18px rgba(0, 128, 255, 0.16);
+        background: var(--bg-surface);
+        border-bottom: 2px solid var(--color-neutral);
+        box-shadow: 0 3px 0 rgba(51, 51, 51, 0.14);
         position: sticky;
         top: 0;
         z-index: var(--z-sticky-nav);
@@ -445,7 +444,6 @@ const harnessEnv = {
         display: flex;
         align-items: center;
         justify-content: center;
-        filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.45));
       }
 
       .brand-text {
@@ -454,22 +452,20 @@ const harnessEnv = {
       }
 
       .brand-title {
-        font-family: var(--font-mono);
-        font-size: 14px;
+        font-family: var(--font);
+        font-size: 18px;
         font-weight: 700;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.03em;
         color: var(--color-secondary);
-        text-shadow: var(--text-glow-pink);
-        animation: retro-glitch 7s infinite ease-out;
+        line-height: 1.1;
       }
 
       .brand-sub {
         font-family: var(--font-mono);
         font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
+        font-weight: 700;
+        letter-spacing: 0.08em;
         color: var(--color-tertiary);
-        text-shadow: var(--text-glow-cyan);
       }
 
       /* Navigation Tabs */
@@ -485,32 +481,32 @@ const harnessEnv = {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        height: 42px;
+        height: 40px;
         padding: 0 14px;
         background: transparent;
-        border: 1px solid transparent;
+        border: 1.5px solid transparent;
         border-radius: var(--radius);
         color: var(--text-secondary);
-        font-family: var(--font-mono);
-        font-size: 0.8125rem;
-        font-weight: 500;
+        font-family: var(--font);
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: none;
         transition: transform 200ms ease-out, opacity 200ms ease-out, background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
         white-space: nowrap;
       }
 
       .nav-tab:hover {
-        background: rgba(93, 52, 208, 0.22);
-        border-color: rgba(0, 255, 255, 0.28);
-        color: var(--text);
+        background: var(--bg-elevated);
+        border-color: var(--color-neutral);
+        color: var(--color-secondary);
       }
 
       .nav-tab.active {
-        background: rgba(0, 128, 255, 0.18);
-        border-color: rgba(0, 255, 255, 0.45);
-        color: var(--color-tertiary);
-        font-weight: 600;
-        text-shadow: var(--text-glow-cyan);
-        box-shadow: inset 0 -2px 0 var(--color-secondary), var(--glow-blue);
+        background: var(--color-surface);
+        border-color: var(--color-neutral);
+        color: var(--color-secondary);
+        font-weight: 700;
+        box-shadow: 2px 2px 0 var(--color-neutral);
       }
 
       .tab-pill {
@@ -520,16 +516,16 @@ const harnessEnv = {
         padding: 1px 6px;
         border-radius: 9999px;
         background: var(--bg-input);
-        border: 1px solid var(--border);
+        border: 1px solid var(--color-neutral);
         font-family: var(--font-mono);
         font-size: 11px;
         color: var(--text-secondary);
       }
 
       .nav-tab.active .tab-pill {
-        background: rgba(255, 0, 110, 0.24);
-        color: #FF80B7;
-        border-color: rgba(255, 0, 110, 0.55);
+        background: var(--color-tertiary);
+        color: #FFFFFF;
+        border-color: var(--color-neutral);
       }
 
       /* Topbar Actions */
