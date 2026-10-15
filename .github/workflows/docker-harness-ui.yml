@@ -1,0 +1,113 @@
+name: Build & Publish Harness UI Docker
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - "harness-ui/**"
+      - ".github/workflows/docker-harness-ui.yml"
+  workflow_dispatch:
+
+env:
+  GHCR_REGISTRY: ghcr.io
+  IMAGE_NAME: harness-ui
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Normalize repository owner & name for GHCR
+        id: repo
+        run: |
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "owner=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
+          echo "repo=${REPO_LOWER}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REGISTRY }}/${{ steps.repo.outputs.repo }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+
+      - name: Build and push Docker image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: ./harness-ui
+          file: ./harness-ui/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export Docker image archive & static dist for Jenkins
+        run: |
+          docker build -t harness-ui:latest ./harness-ui
+          docker save harness-ui:latest | gzip > harness-ui-docker-latest.tar.gz
+          cid=$(docker create harness-ui:latest)
+          docker cp "$cid:/usr/share/nginx/html" ./dist-export
+          docker rm "$cid"
+          tar -czf harness-ui-dist.tar.gz -C ./dist-export .
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-ui-build
+          path: |
+            harness-ui-docker-latest.tar.gz
+            harness-ui-dist.tar.gz
+          retention-days: 14
+
+      - name: Publish rolling Release (harness-ui-latest) for Jenkins direct pull
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: harness-ui-latest
+          name: "Harness UI Latest Build (Docker & Static)"
+          body: |
+            Automated build of `harness-ui` (Astro + Nginx Docker) from commit `${{ github.sha }}`.
+
+            ### 1. Pull Docker Image from GHCR (Recommended for Jenkins)
+            ```bash
+            docker pull ghcr.io/${{ steps.repo.outputs.repo }}/harness-ui:latest
+            ```
+
+            ### 2. Or Load Pre-built Docker Archive directly in Jenkins
+            ```bash
+            curl -fSL https://github.com/${{ github.repository }}/releases/download/harness-ui-latest/harness-ui-docker-latest.tar.gz | gunzip | docker load
+            ```
+          prerelease: false
+          files: |
+            harness-ui-docker-latest.tar.gz
+            harness-ui-dist.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

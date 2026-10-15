@@ -8,9 +8,9 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-15 11:34:54 +0700`
-- **Agent cập nhật gần nhất**: `Paseo/Agent`
-- **Trọng tâm hiện tại**: Nghiên cứu nguyên bản từ source code, backend docs và 11 board artifact
+- **Cập nhật lần cuối**: `2026-10-15 11:35:13 +0700`
+- **Agent cập nhật gần nhất**: `supervisor`
+- **Trọng tâm hiện tại**: Retro-Futurism DESIGN.md & Remote Deploy Integration (100.124.36.46:4321)
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
   > Lead phân rã task trên Harness DB cho Peer Dev triển khai component
 
@@ -57,6 +57,10 @@
 - [x] Đã đọc trực tiếp và tổng hợp 11 board HTML artifact (Main, SourceList, WebSource, WebSource-forms, CreateEvent, Mapping, TestRun, Review, FbSource, FbSource-recent, RawData) và cập nhật đầy đủ vào docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md
 - [x] Chạy profile_research_gen.py và kích hoạt sub-agent research chuyên sâu tổng hợp tài liệu nguyên bản (event-field-catalog.md, projection-pipeline.md, 11 board artifact HTML, API models)
 - [x] Xuất tài liệu docs/spec/research-raw-data-mapping-projection.md đối chiếu 100% Kafka topic, MinIO bucket, Schema discovery SHA-256, Field Catalog xxHash64, DDL safe engine, Hangfire backfill, frontend mfe-cdp và 11 board HTML
+- [x] Created harness-ui/DESIGN.md
+- [x] applied Retro-Futurism CSS & CRT scanlines
+- [x] configured Dockerfile API_UPSTREAM=http://100.92.98.99:8765 and PUBLIC_DEPLOY_URL=http://100.124.36.46:4321
+- [x] verified astro check (0 errors) and npm run build
 
 ---
 
@@ -68,6 +72,16 @@
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #39 — `2026-10-15 11:35:13 +0700` | **supervisor**
+- **Tóm tắt**: Created harness-ui/DESIGN.md with the Retro-Futurism (cyberpunk/vaporwave) design system, applied neon/CRT scanline/glitch/monospace tokens in global.css & DashboardLayout.astro, and wired PUBLIC_DEPLOY_URL=http://100.124.36.46:4321 + Tailscale API_UPSTREAM=http://100.92.98.99:8765.
+- **Đã thực hiện**:
+  - Created harness-ui/DESIGN.md
+  - applied Retro-Futurism CSS & CRT scanlines
+  - configured Dockerfile API_UPSTREAM=http://100.92.98.99:8765 and PUBLIC_DEPLOY_URL=http://100.124.36.46:4321
+  - verified astro check (0 errors) and npm run build
+- **File đã tạo/cập nhật**: `harness-ui/DESIGN.md`, `harness-ui/src/styles/global.css`, `harness-ui/src/layouts/DashboardLayout.astro`, `harness-ui/Dockerfile`, `harness-ui/.env`, `.env`
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB cho Peer Dev triển khai component
 
 ### Phiên #38 — `2026-10-15 11:34:54 +0700` | **Paseo/Agent**
 - **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
