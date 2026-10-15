@@ -93,14 +93,14 @@ const harnessEnv = {
         <div class="topbar-brand">
           <div class="brand-logo">
             <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-              <rect width="30" height="30" x="1" y="1" rx="8" fill="#FFFFA5" stroke="#333333" stroke-width="2"/>
-              <path d="M7 16H11L14 10L18 22L21 16H25" stroke="#0E2A5C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="25" cy="16" r="2.5" fill="#D12828"/>
+              <rect width="30" height="30" x="1" y="1" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+              <path d="M7 16H11L14 10L18 22L21 16H25" stroke="#39d353" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="25" cy="16" r="2.5" fill="#39d353"/>
             </svg>
           </div>
           <div class="brand-text">
-            <span class="brand-title">PASEO CONTROL CENTER</span>
-            <span class="brand-sub">SLPC SKETCH-NOTE HARNESS</span>
+            <span class="brand-title"><span class="green-accent">&gt;</span> PASEO CONTROL CENTER<span class="cursor-blink">_</span></span>
+            <span class="brand-sub">SLPC TERMINAL HARNESS // CLI v2.6</span>
           </div>
         </div>
 
@@ -208,7 +208,7 @@ const harnessEnv = {
         <div class="footer-right">
           <span id="footer-last-sync">Chưa đồng bộ</span>
           <span class="dot-separator">•</span>
-          <span class="badge-tag">Hand-Drawn Sketch-Note • Astro 5 (.env Connected)</span>
+          <span class="badge-tag">Terminal Green • Astro 5 (.env Connected)</span>
         </div>
       </footer>
     </div>
@@ -424,10 +424,9 @@ const harnessEnv = {
         justify-content: space-between;
         gap: 16px;
         padding: 0 24px;
-        height: 62px;
-        background: var(--bg-surface);
-        border-bottom: 2px solid var(--color-neutral);
-        box-shadow: 0 3px 0 rgba(51, 51, 51, 0.14);
+        height: 60px;
+        background: var(--code-bg);
+        border-bottom: 1px solid var(--border-color);
         position: sticky;
         top: 0;
         z-index: var(--z-sticky-nav);
@@ -452,20 +451,20 @@ const harnessEnv = {
       }
 
       .brand-title {
-        font-family: var(--font);
-        font-size: 18px;
+        font-family: var(--font-mono);
+        font-size: 14px;
         font-weight: 700;
-        letter-spacing: 0.03em;
-        color: var(--color-secondary);
-        line-height: 1.1;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        line-height: 1.2;
       }
 
       .brand-sub {
         font-family: var(--font-mono);
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 600;
         letter-spacing: 0.08em;
-        color: var(--color-tertiary);
+        color: var(--text-muted);
       }
 
       /* Navigation Tabs */
@@ -481,32 +480,31 @@ const harnessEnv = {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        height: 40px;
+        height: 38px;
         padding: 0 14px;
         background: transparent;
-        border: 1.5px solid transparent;
+        border: 1px solid transparent;
         border-radius: var(--radius);
-        color: var(--text-secondary);
-        font-family: var(--font);
-        font-size: 1rem;
-        font-weight: 600;
-        box-shadow: none;
-        transition: transform 200ms ease-out, opacity 200ms ease-out, background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        font-weight: 500;
+        transition: all 150ms ease-out;
         white-space: nowrap;
       }
 
       .nav-tab:hover {
-        background: var(--bg-elevated);
-        border-color: var(--color-neutral);
-        color: var(--color-secondary);
+        background: #1c2128;
+        border-color: var(--border-color);
+        color: var(--text-primary);
       }
 
       .nav-tab.active {
-        background: var(--color-surface);
-        border-color: var(--color-neutral);
-        color: var(--color-secondary);
-        font-weight: 700;
-        box-shadow: 2px 2px 0 var(--color-neutral);
+        background: rgba(57, 211, 83, 0.12);
+        border-color: rgba(57, 211, 83, 0.45);
+        color: var(--accent-green);
+        font-weight: 600;
+        box-shadow: inset 0 -2px 0 var(--accent-green);
       }
 
       .tab-pill {
@@ -515,17 +513,17 @@ const harnessEnv = {
         justify-content: center;
         padding: 1px 6px;
         border-radius: 9999px;
-        background: var(--bg-input);
-        border: 1px solid var(--color-neutral);
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
         font-family: var(--font-mono);
         font-size: 11px;
-        color: var(--text-secondary);
+        color: var(--text-muted);
       }
 
       .nav-tab.active .tab-pill {
-        background: var(--color-tertiary);
-        color: #FFFFFF;
-        border-color: var(--color-neutral);
+        background: var(--muted-green);
+        color: var(--text-primary);
+        border-color: var(--accent-green);
       }
 
       /* Topbar Actions */

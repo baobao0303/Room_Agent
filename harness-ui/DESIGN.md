@@ -1,62 +1,72 @@
 ---
 version: "alpha"
-name: "Hand-Drawn Sketch-Note"
-description: "Hand drawn landing page, notebook paper background, sketch style, doodles, handwriting font, casual and fun design. Ideal for landing pages, modern websites. AI-ready template."
+name: "Terminal Green"
+description: "Developer-focused, hacker aesthetic landing page. Ideal for portfolios de desenvolvedores, ferramentas cli, plataformas devops, technical documentation. AI-ready template."
 colors:
-  primary: "#F4F1EA"
-  secondary: "#0E2A5C"
-  tertiary: "#D12828"
-  neutral: "#333333"
-  surface: "#FFFFA5"
-  accent: "#0000FF"
+  primary: "#0d1117"
+  secondary: "#39d353"
+  tertiary: "#e6edf3"
+  neutral: "#30363d"
+  surface: "#238636"
+  accent: "#8b949e"
 typography:
   h1:
-    fontFamily: Patrick Hand
+    fontFamily: JetBrains Mono
     fontSize: 2.5rem
     fontWeight: 700
   body-md:
-    fontFamily: Patrick Hand
+    fontFamily: JetBrains Mono
     fontSize: 1rem
     fontWeight: 400
+rounded:
+  sm: 6px
+  md: 12px
+  lg: 18px
+spacing:
+  sm: 4.0px
+  md: 8.0px
+  lg: 16.0px
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.neutral}"
+    rounded: "{rounded.sm}"
     padding: 12px
 ---
 
 ## Overview
 
-Hand drawn landing page, notebook paper background, sketch style, doodles, handwriting font, casual and fun design. Ideal for landing pages, modern websites. AI-ready template. Mike Rohde didn't invent doodling in meetings — everyone does that. What he did with The Sketchnote Handbook in 2012 was give permission. He said: your notes don't need to be linear. They don't need to be pretty. They need to be yours. That single idea unlocked visual thinking for people who'd never picked up a Micron pen.
+Developer-focused, hacker aesthetic landing page. Ideal for portfolios de desenvolvedores, ferramentas cli, plataformas devops, technical documentation. AI-ready template. Terminal green isn't nostalgia — it's a lineage. The phosphor glow of CRT monitors in the 1970s and 80s wasn't a design choice; it was a constraint of P1 phosphor technology. Green on black persisted because it was cheap, readable, and burned itself into the collective memory of anyone who touched a mainframe. When Hollywood needed shorthand for "computer," they reached for cascading green characters. The Matrix didn't invent the aesthetic — it canonized what every sysadmin already knew viscerally.
 
-The hand-drawn aesthetic carries something typed text never will — vulnerability. A wobbly arrow says "I'm figuring this out with you." A boxed keyword says "this matters, but loosely." There's no pretense of finality. Dan Roam's Back of the Napkin work pushed this further into business contexts, proving that rough visuals communicate faster than polished decks.
+The color carries meaning that no amount of rebranding can strip away. Green text on dark backgrounds signals competence, access, and a certain disregard for polish in favor of function. It's the visual language of people who prefer stderr over modal dialogs. Every hacker movie, every CTF competition, every SSH session reinforces the same semiotic contract: if you're reading green monospace, you're closer to the metal than most people will ever get.
 
-Then Excalidraw arrived and changed the game for digital products. Suddenly every whiteboard tool wanted that sketchy, imperfect look. Miro, FigJam, tldraw — they all lean into hand-drawn strokes because users feel less precious about rough-looking canvases. The aesthetic lowers the barrier to contribution. That's not decoration. That's interaction design.
+Today the aesthetic lives in dev tools, security dashboards, and CLI-first products that wear their technical roots openly. It's not retro — it's a deliberate rejection of the rounded-corner, pastel-gradient mainstream. It says: this tool was built by engineers, for engineers, and it doesn't apologize for that.
 
-- Density: 5/10 — Balanced
-- Variance: 8/10 — Expressive
-- Motion: 4/10 — Subtle
+- Density: 8/10 — Dense
+- Variance: 4/10 — Moderate
+- Motion: 6/10 — Expressive
 
-- **Style:** Authentic, Informal, Creative
-- **Keywords:** sketch, note, hand-drawn, doodle, paper, notebook, pencil, casual, fun
-- **Era:** Modern Casual
-- **Light/Dark:** ✓ Full / ✗ No
+- **Style:** Developer-Focused, Hacker Aesthetic, Monospace
+- **Keywords:** terminal, green, hacker, developer, monospace, JetBrains Mono, scan lines, blinking cursor, code syntax, GitHub dark, CLI
+- **Era:** 2024-2026 Developer Aesthetic
+- **Light/Dark:** ✗ No / ✓ Only
 
 ## Colors
 
-- **Background** (#F4F1EA) — Primary background surface
-- **Text** (#0E2A5C) — Primary text color
-- **Accent** (#D12828) — Primary accent, CTAs and interactive elements
-- **Graphite Grey** (#333333) — Secondary text, borders, muted elements
-- **Highlighter Yellow** (#FFFFA5) — Warning states, attention indicators
-- **Ballpoint Blue** (#0000FF) — Secondary accent
+- **GitHub Dark** (#0d1117) — Dark surface, primary background
+- **Terminal Green** (#39d353) — Secondary surface or text color
+- **White Text** (#e6edf3) — Light surface, card backgrounds
+- **Dark Border** (#30363d) — Deep contrast surface
+- **Muted Green** (#238636) — Secondary text, borders, muted elements
+- **Dim Text** (#8b949e) — Primary text color
+- **Code BG** (#161b22) — Primary background surface
 
 
 ## Typography
 
-- **Display / Hero:** Patrick Hand — Weight 700, tight tracking, used for headline impact
-- **Body:** Patrick Hand — Weight 400, 16px/1.6 line-height, max 72ch per line
-- **UI Labels / Captions:** Patrick Hand — 0.875rem, weight 500, slight letter-spacing
+- **Display / Hero:** JetBrains Mono — Weight 700, tight tracking, used for headline impact
+- **Body:** JetBrains Mono — Weight 400, 16px/1.6 line-height, max 72ch per line
+- **UI Labels / Captions:** JetBrains Mono — 0.875rem, weight 500, slight letter-spacing
 - **Monospace:** JetBrains Mono — Used for code, metadata, and technical values
 
 Scale:
@@ -72,33 +82,33 @@ Scale:
 - **Grid:** CSS Grid primary. Max-width containment: 1280px centered with 1.5rem side padding.
 - **Spacing rhythm:** Balanced. Base unit: 0.5rem (8px).
 - **Section vertical gaps:** clamp(4rem, 8vw, 8rem).
-- **Hero layout:** Asymmetric composition.
-- **Feature sections:** Asymmetric grid with varied card sizes. No 3-equal-columns.
+- **Hero layout:** Split-screen (text left, visual right).
+- **Feature sections:** Zig-zag alternating text+image rows. No 3-equal-columns.
 - **Mobile collapse:** All multi-column layouts collapse below 768px. No horizontal overflow.
 - **z-index contract:** base (0) / sticky-nav (100) / overlay (200) / modal (300) / toast (500).
 
 
 ## Elevation & Depth
 
-Spiral binding, coffee ring stains, arrows, stick figures, speech bubbles, matte paper grain, horizontal rule lines, ink bleed.
+Scan lines overlay via CSS, blinking cursor animation, code syntax styling with colored tokens, terminal-style borders, monospace everything, smooth transitions 150ms
 
-- **Physics:** Ease-out curves, 200-300ms duration. Smooth and predictable.
-- **Entry animations:** Fade + translate-Y (16px → 0) over 420ms ease-out. Staggered cascades for lists: 80ms between items.
-- **Hover states:** Subtle color shift + shadow adjustment over 200ms.
-- **Page transitions:** Fade only (200ms).
+- **Physics:** Spring — stiffness 120, damping 20. Confident, weighted transitions.
+- **Entry animations:** Fade + translate-Y (16px → 0) over 480ms ease-out. Staggered cascades for lists: 100ms between items.
+- **Hover states:** Scale(1.03) + shadow lift over 200ms.
+- **Page transitions:** Fade + slide (300ms).
 - **Performance:** Only transform and opacity animated. No layout-triggering properties.
 
 
 ## Shapes
 
-Base corner radius: 8px. See rounded tokens in front matter for the full scale.
+Base corner radius: 6px. See rounded tokens in front matter for the full scale.
 
 
 ## Components
 
-- **Primary Button:** Subtly rounded (0.5rem) shape. Accent color fill. Hover: 8% darken + subtle lift shadow. Active: -1px translate tactile press. Font weight 600. No outer glows.
+- **Primary Button:** Rounded (6px) shape. Accent color fill. Hover: 8% darken + subtle lift shadow. Active: -1px translate tactile press. Font weight 600. No outer glows.
 - **Secondary / Ghost Button:** Outline variant. 1.5px border in muted color. Text in primary color. Hover: subtle background fill.
-- **Cards:** Subtly rounded (0.5rem) corners. Surface background. Subtle shadow (0 2px 12px rgba(0,0,0,0.06)). 1px border stroke.
+- **Cards:** Rounded (6px) corners. Surface background. Subtle shadow (0 2px 12px rgba(0,0,0,0.06)). 1px border stroke.
 - **Inputs:** Label above input. 1px border stroke. Focus ring: 2px accent color offset 2px. Error text below in semantic red. No floating labels.
 - **Navigation:** Primary surface background. Active item: accent color indicator. Font weight 500 when active.
 - **Skeletons:** Shimmer animation matching component dimensions. No circular spinners.
@@ -108,7 +118,7 @@ Base corner radius: 8px. See rounded tokens in front matter for the full scale.
 ## Do's and Don'ts
 
 - No emojis in UI — use icon system only (Lucide, Heroicons)
-- No pure black (#000000) — use off-black or charcoal variants
+- No pure white (#FFFFFF) backgrounds — use off-white or dark surfaces
 - No oversaturated accent colors (saturation cap: 80%)
 - No 3-column equal-width feature layouts — use zig-zag or asymmetric grid
 - No `h-screen` — use `min-h-[100dvh]`
@@ -116,13 +126,16 @@ Base corner radius: 8px. See rounded tokens in front matter for the full scale.
 - No broken external image links — use picsum.photos or inline SVG
 - No generic lorem ipsum in demos
 
-- Do Notebook paper background (lines/grid)
-- Do Handwriting-style fonts
-- Do Doodle/Sketch illustrations
-- Do Imperfect/Organic shapes
-- Do 'Sticker' or 'Tape' effects
+- Do JetBrains Mono como única fonte
+- Do GitHub dark background #0d1117
+- Do Terminal green #39d353 como accent
+- Do Scan lines overlay
+- Do Blinking cursor animation
+- Do Code syntax styling
+- Do Terminal-style borders
+- Do Responsivo mobile/tablet/desktop
 
 
 ## Use Case
 
-Landing pages, Modern websites
+Developer portfolios, CLI tools, DevOps platforms, Technical documentation

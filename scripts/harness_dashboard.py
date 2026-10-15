@@ -104,6 +104,66 @@ _JOBS_LOCK = threading.Lock()
 _JOBS = []  # List of dicts: id, kind, title, command, cwd, status, exit_code, started_at, elapsed, output
 
 
+def _synthesize_testcase_spec(row: dict) -> dict:
+    title = str(row.get("title") or "").strip()
+    if not title:
+        return row
+    wtype = str(row.get("type") or "Task").strip()
+    item_id = row.get("id") or "--"
+
+    # Extract [Module] prefix if present
+    module_name = "Hệ thống WiCX CRM"
+    rest_title = title
+    if title.startswith("[") and "]" in title:
+        close_idx = title.find("]")
+        module_name = title[1:close_idx].strip() or module_name
+        rest_title = title[close_idx + 1:].strip().lstrip("-:").strip()
+
+    # Split "Kiểm tra <expected> khi <trigger>" if present
+    lower_rest = rest_title.lower()
+    expected_part = rest_title
+    when_part = f"thực hiện thao tác kiểm thử trên phân hệ [{module_name}]"
+    if " khi " in lower_rest:
+        split_pos = lower_rest.rfind(" khi ")
+        expected_part = rest_title[:split_pos].strip()
+        when_part = rest_title[split_pos + 5:].strip()
+        if expected_part.lower().startswith("kiểm tra "):
+            expected_part = expected_part[9:].strip()
+    elif lower_rest.startswith("kiểm tra "):
+        expected_part = rest_title[9:].strip()
+
+    if not str(row.get("description") or "").strip():
+        if wtype.lower() in ("testcase", "test case"):
+            row["description"] = (
+                f"• Mã Test Case: TC-{item_id} | Phân hệ: {module_name}\n"
+                f"• Kỹ thuật thiết kế (ISTQB): Phân vùng tương đương (EP) & Phân tích giá trị biên (BVA)\n"
+                f"• Điều kiện tiên quyết (Preconditions):\n"
+                f"  1. Người dùng đã đăng nhập hợp lệ và có quyền truy cập phân hệ [{module_name}].\n"
+                f"  2. Dữ liệu kiểm thử và kết nối API/Backend ở trạng thái sẵn sàng.\n"
+                f"• Các bước thực hiện (Test Steps):\n"
+                f"  Bước 1: Truy cập màn hình chức năng [{module_name}].\n"
+                f"  Bước 2: Thực hiện thao tác: {when_part}.\n"
+                f"  Bước 3: Kiểm tra phản hồi giao diện (UI/UX), trạng thái dữ liệu và thông báo hệ thống.\n"
+                f"• Kết quả mong đợi (Expected Result):\n"
+                f"  - Đảm bảo hệ thống {expected_part}."
+            )
+        else:
+            row["description"] = (
+                f"• Phân hệ: {module_name} | Loại: {wtype} #{item_id}\n"
+                f"• Mục tiêu thực thi: {rest_title}\n"
+                f"• Phạm vi kiểm soát: Tuân thủ kiến trúc SLPC Harness, đảm bảo xử lý đầy đủ luồng chính và các trường hợp biên."
+            )
+
+    if not str(row.get("acceptance_criteria") or "").strip():
+        row["acceptance_criteria"] = (
+            f"Given: Người dùng đã đăng nhập và đang ở màn hình [{module_name}] với dữ liệu hợp lệ\n"
+            f"When: Người dùng {when_part}\n"
+            f"Then: Hệ thống phải {expected_part}\n"
+            f"And: Giao diện hiển thị đúng chuẩn UI/UX, dữ liệu đồng bộ chính xác và không phát sinh lỗi console/API"
+        )
+    return row
+
+
 def _infer_slpc_profile(row: dict) -> dict:
     if not row.get("assigned_to_profile"):
         wtype = (row.get("type") or "").strip().lower()
@@ -115,7 +175,7 @@ def _infer_slpc_profile(row: dict) -> dict:
             row["assigned_to_profile"] = "qc"
         else:
             row["assigned_to_profile"] = "peer"
-    return row
+    return _synthesize_testcase_spec(row)
 
 
 def _bootstrap_local_cache():
@@ -2004,19 +2064,28 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
         if url_path == "/api/work-items/update":
             try:
+                target_id = int(body["id"])
                 try:
                     mgr = HarnessManager()
                     res = mgr.update_state(
-                        item_id=int(body["id"]),
+                        item_id=target_id,
                         target_state=body["state"],
                         assigned_to=body.get("assigned_to"),
                         assigned_to_profile=body.get("assigned_to_profile"),
                     )
+                    if body.get("description") is not None or body.get("acceptance_criteria") is not None:
+                        if body.get("description") is not None:
+                            res["description"] = body["description"]
+                        if body.get("acceptance_criteria") is not None:
+                            res["acceptance_criteria"] = body["acceptance_criteria"]
+                        try:
+                            FlociHarnessDB().put_work_item(res)
+                        except Exception:
+                            pass
                     get_cached_rows(force=True)
                 except Exception as ddb_err:
                     if isinstance(ddb_err, ValueError):
                         raise
-                    target_id = int(body["id"])
                     rows, _ = get_cached_rows()
                     res = None
                     now_iso = datetime.now().isoformat()
@@ -2027,6 +2096,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                                 r["assigned_to"] = body["assigned_to"]
                             if body.get("assigned_to_profile") is not None:
                                 r["assigned_to_profile"] = body["assigned_to_profile"]
+                            if body.get("description") is not None:
+                                r["description"] = body["description"]
+                            if body.get("acceptance_criteria") is not None:
+                                r["acceptance_criteria"] = body["acceptance_criteria"]
                             r["updated_at"] = now_iso
                             res = r
                             break

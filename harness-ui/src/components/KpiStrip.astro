@@ -236,30 +236,31 @@
   }
 
   .kpi-live-indicator.live {
-    background: #DCFCE7;
-    color: #14532D;
-    border-color: #166534;
+    background: rgba(57, 211, 83, 0.14);
+    color: #39d353;
+    border-color: rgba(57, 211, 83, 0.45);
   }
 
   .kpi-live-indicator.live .pulse-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #15803D;
+    background: #39d353;
+    box-shadow: 0 0 6px #39d353;
     animation: pulse-ring 2s infinite ease-in-out;
   }
 
   .kpi-live-indicator.err {
-    background: #FFE4E6;
-    color: #D12828;
-    border-color: #D12828;
+    background: rgba(248, 81, 73, 0.14);
+    color: #f85149;
+    border-color: rgba(248, 81, 73, 0.45);
   }
 
   .kpi-live-indicator.err .pulse-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #D12828;
+    background: #f85149;
   }
 
   /* 4-Card Grid */
@@ -270,8 +271,8 @@
   }
 
   .kpi-card {
-    background: var(--bg-surface);
-    border: 1.5px solid var(--color-neutral);
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 18px 20px;
     display: flex;
@@ -279,8 +280,8 @@
     justify-content: space-between;
     min-height: 110px;
     cursor: pointer;
-    box-shadow: var(--sketch-shadow-md);
-    transition: transform 0.2s ease-out, border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    transition: transform 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out;
     user-select: none;
     position: relative;
     overflow: hidden;
@@ -288,12 +289,12 @@
 
   .kpi-card:hover {
     transform: translateY(-2px);
-    border-color: var(--color-secondary);
-    box-shadow: 4px 4px 0 rgba(14, 42, 92, 0.22);
+    border-color: var(--accent-green);
+    box-shadow: 0 6px 18px rgba(57, 211, 83, 0.14);
   }
 
   .kpi-card:focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--accent-green);
     outline-offset: 2px;
   }
 
@@ -306,9 +307,9 @@
   }
 
   .kpi-label {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
   }
 
   .kpi-icon {
@@ -318,31 +319,32 @@
     width: 32px;
     height: 32px;
     border-radius: var(--radius-sm);
-    background: var(--bg-input);
-    border: 1.5px solid var(--color-neutral);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
   }
 
   .kpi-icon.total {
-    color: #0E2A5C;
-    background: #EAE5D9;
+    color: #e6edf3;
+    background: rgba(230, 237, 243, 0.08);
+    border-color: #30363d;
   }
 
   .kpi-icon.active {
-    color: #0000FF;
-    background: #DBEAFE;
-    border-color: #0000FF;
+    color: #58a6ff;
+    background: rgba(88, 166, 255, 0.14);
+    border-color: rgba(88, 166, 255, 0.35);
   }
 
   .kpi-icon.resolved {
-    color: #333333;
-    background: #FFFFA5;
-    border-color: #333333;
+    color: #e3b341;
+    background: rgba(210, 153, 34, 0.14);
+    border-color: rgba(210, 153, 34, 0.35);
   }
 
   .kpi-icon.closed {
-    color: #14532D;
-    background: #DCFCE7;
-    border-color: #166534;
+    color: #39d353;
+    background: rgba(57, 211, 83, 0.14);
+    border-color: rgba(57, 211, 83, 0.35);
   }
 
   .kpi-val {

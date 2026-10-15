@@ -86,20 +86,19 @@ import ProgressLedger from '../components/ProgressLedger.astro';
   }
 
   .panel-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    padding: 20px 24px;
   }
 
   .panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color, #30363d);
   }
 
   .panel-title-area {
@@ -109,16 +108,16 @@ import ProgressLedger from '../components/ProgressLedger.astro';
   }
 
   .panel-tag {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: var(--primary);
+    color: var(--accent-green, #39d353);
   }
 
   .panel-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary, #e6edf3);
   }
 
   @media (max-width: 900px) {
