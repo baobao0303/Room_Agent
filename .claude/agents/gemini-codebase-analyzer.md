@@ -1,7 +1,7 @@
 ---
 name: gemini-codebase-analyzer
 description: Use this agent when you need comprehensive analysis of large codebases, architectural understanding, or deep exploration of complex code relationships. Examples: <example>Context: User wants to understand the overall architecture of a large monorepo. user: 'Can you analyze the entire VoiceCode codebase and explain how all the components work together?' assistant: 'I'll use the gemini-codebase-analyzer agent to perform a comprehensive analysis of your codebase architecture and component relationships.'</example> <example>Context: User is debugging a complex issue that spans multiple files and services. user: 'I'm getting weird behavior between the frontend and backend, but I can't figure out where the issue is coming from' assistant: 'Let me use the gemini-codebase-analyzer agent to examine the entire codebase and trace the data flow between your frontend and backend to identify potential issues.'</example> <example>Context: User wants to understand legacy code before making changes. user: 'I inherited this codebase and need to understand how everything connects before I start refactoring' assistant: 'I'll use the gemini-codebase-analyzer agent to provide you with a comprehensive understanding of the codebase structure, dependencies, and architectural patterns.'</example>
-model: sonnet
+model: inherit
 color: yellow
 ---
 

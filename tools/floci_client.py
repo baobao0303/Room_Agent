@@ -341,6 +341,22 @@ class FlociHarnessDB:
                 pass
         return local_item
 
+    def delete_work_item(self, item_id: int) -> bool:
+        """Delete a work item from DynamoDB and local JSON store."""
+        if self._is_online() and self.ddb_resource:
+            try:
+                table = self.ddb_resource.Table("harness_work_items")
+                table.delete_item(Key={"id": item_id})
+            except Exception:
+                pass
+
+        store = _load_local_store()
+        sid = str(item_id)
+        if sid in store.get("work_items", {}):
+            del store["work_items"][sid]
+            _save_local_store(store)
+        return True
+
     def list_work_items(
         self,
         wi_type: Optional[str] = None,

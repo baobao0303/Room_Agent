@@ -1,7 +1,7 @@
 ---
 name: strategic-reasoning-architect
 description: Use this agent when you need advanced reasoning and strategic decision-making for complex technical challenges. Examples: <example>Context: User is designing a new microservices architecture and needs to evaluate trade-offs between different approaches. user: 'I need to decide between event-driven architecture vs REST APIs for my new service mesh. What are the strategic implications?' assistant: 'I'll use the strategic-reasoning-architect agent to analyze this architectural decision with advanced reasoning capabilities.' <commentary>The user needs strategic technical decision-making that requires deep analysis of trade-offs, which is perfect for the strategic reasoning agent.</commentary></example> <example>Context: User is facing a complex technical problem that requires systematic problem-solving approach. user: 'Our distributed system is experiencing cascading failures under load. I need a comprehensive solution strategy.' assistant: 'Let me engage the strategic-reasoning-architect agent to apply advanced reasoning to this complex distributed systems problem.' <commentary>This requires sophisticated problem-solving and strategic thinking about system reliability.</commentary></example>
-model: sonnet
+model: inherit
 color: purple
 ---
 

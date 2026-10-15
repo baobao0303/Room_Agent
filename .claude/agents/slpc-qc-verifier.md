@@ -1,7 +1,7 @@
 ---
 name: slpc-qc-verifier
 description: Use this agent when you need independent Quality Gate verification (Role 4: QC in SLPC), ISTQB 5-Stage unit/E2E test generation, and black-box acceptance testing before closing a task on Harness DB. Examples: <example>Context: A Peer agent has finished implementing a feature and moved the Task to Resolved. user: 'Task #161502 is Resolved by Peer. Please run independent QC verification.' assistant: 'I will invoke the slpc-qc-verifier agent to generate 5-Stage ISTQB unit tests, verify coverage against the spec, and update the Harness DB state.'</example>
-model: sonnet
+model: inherit
 color: green
 ---
 

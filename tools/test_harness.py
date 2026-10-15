@@ -77,6 +77,12 @@ def run_tests():
     for k, v in stats.get("by_type", {}).items():
         print(f"    - {k}: {v}")
 
+    # 5. Clean up test artifacts
+    print("5. Cleaning up Test Artifacts...")
+    mgr.delete_work_item(task_id)
+    mgr.delete_work_item(story_id)
+    print(f"  ✓ Cleaned up test Task #{task_id} and Story #{story_id}")
+
     print("\n=== ALL HARNESS FLOCI TESTS PASSED SUCCESSFULLY! ===")
 
 if __name__ == "__main__":
