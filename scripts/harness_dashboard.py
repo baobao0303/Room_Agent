@@ -2579,32 +2579,32 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     res = None
 
-                if not res:
-                    rows, _ = get_cached_rows()
-                    for r in rows:
-                        if int(r.get("id") or 0) == target_id:
-                            if target_state:
-                                r["state"] = target_state
-                            if body.get("assigned_to") is not None:
-                                r["assigned_to"] = body["assigned_to"]
-                            if body.get("assigned_to_profile") is not None:
-                                r["assigned_to_profile"] = body["assigned_to_profile"]
-                            if body.get("description") is not None:
-                                r["description"] = body["description"]
-                            if body.get("acceptance_criteria") is not None:
-                                r["acceptance_criteria"] = body["acceptance_criteria"]
-                            r["updated_at"] = now_iso
+                # Always update in-memory cache synchronously so the next poll sees it in 0ms
+                rows, _ = get_cached_rows()
+                for r in rows:
+                    if int(r.get("id") or 0) == target_id:
+                        if target_state:
+                            r["state"] = target_state
+                        if body.get("assigned_to") is not None:
+                            r["assigned_to"] = body["assigned_to"]
+                        if body.get("assigned_to_profile") is not None:
+                            r["assigned_to_profile"] = body["assigned_to_profile"]
+                        if body.get("description") is not None:
+                            r["description"] = body["description"]
+                        if body.get("acceptance_criteria") is not None:
+                            r["acceptance_criteria"] = body["acceptance_criteria"]
+                        r["updated_at"] = now_iso
+                        if not res:
                             res = r
                             try:
                                 FlociHarnessDB().put_work_item(dict(r))
                             except Exception:
                                 pass
-                            break
-                    if not res:
-                        raise ValueError(f"Work item #{target_id} not found")
-                    with _LOCK:
-                        save_local_cache(rows)
-                    get_cached_rows(force=True)
+                        break
+                if not res:
+                    raise ValueError(f"Work item #{target_id} not found")
+                with _LOCK:
+                    save_local_cache(rows)
                 self._send_json(res)
             except Exception as e:
                 self._send_json({"error": str(e)}, status=400)
