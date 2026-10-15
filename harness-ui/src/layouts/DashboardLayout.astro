@@ -1,0 +1,512 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  activeTab?: string;
+}
+
+const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Paseo Control Center - SLPC Autonomous Harness UI" />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body>
+    <div class="dashboard-shell">
+      <!-- Header Topbar -->
+      <header class="topbar">
+        <div class="topbar-brand">
+          <div class="brand-logo">
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="#121721" stroke="#3B82F6" stroke-width="1.5" stroke-opacity="0.5"/>
+              <path d="M7 16H11L14 10L18 22L21 16H25" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="25" cy="16" r="2.5" fill="#10B981"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">PASEO CONTROL CENTER</span>
+            <span class="brand-sub">SLPC HARNESS &amp; ORCHESTRATION</span>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs" aria-label="Main Navigation">
+          <button
+            type="button"
+            class={`nav-tab ${activeTab === 'work-items' ? 'active' : ''}`}
+            data-tab-target="work-items"
+            id="nav-tab-work-items"
+            role="tab"
+            aria-selected={activeTab === 'work-items' ? 'true' : 'false'}
+            aria-controls="tab-work-items"
+          >
+            <span>Work Items Board</span>
+            <span class="tab-pill" id="nav-count">--</span>
+          </button>
+
+          <button
+            type="button"
+            class={`nav-tab ${activeTab === 'slpc-agents' ? 'active' : ''}`}
+            data-tab-target="slpc-agents"
+            id="nav-tab-slpc-agents"
+            role="tab"
+            aria-selected={activeTab === 'slpc-agents' ? 'true' : 'false'}
+            aria-controls="tab-slpc-agents"
+          >
+            <span>SLPC Agents</span>
+          </button>
+
+          <button
+            type="button"
+            class={`nav-tab ${activeTab === 'qc-automation' ? 'active' : ''}`}
+            data-tab-target="qc-automation"
+            id="nav-tab-qc-automation"
+            role="tab"
+            aria-selected={activeTab === 'qc-automation' ? 'true' : 'false'}
+            aria-controls="tab-qc-automation"
+          >
+            <span>QC Automation</span>
+          </button>
+
+          <button
+            type="button"
+            class={`nav-tab ${activeTab === 'progress-ledger' ? 'active' : ''}`}
+            data-tab-target="progress-ledger"
+            id="nav-tab-progress-ledger"
+            role="tab"
+            aria-selected={activeTab === 'progress-ledger' ? 'true' : 'false'}
+            aria-controls="tab-progress-ledger"
+          >
+            <span>Progress &amp; Ledger</span>
+          </button>
+
+          <button
+            type="button"
+            class={`nav-tab ${activeTab === 'spec-portal' ? 'active' : ''}`}
+            data-tab-target="spec-portal"
+            id="nav-tab-spec-portal"
+            role="tab"
+            aria-selected={activeTab === 'spec-portal' ? 'true' : 'false'}
+            aria-controls="tab-spec-portal"
+          >
+            <span>Spec Portal</span>
+          </button>
+        </nav>
+
+        <!-- Right System Controls -->
+        <div class="topbar-actions">
+          <div id="backend-status" class="badge live" title="Backend Server connection status (http://127.0.0.1:8765)">
+            <span class="pulse-dot"></span>
+            <span id="st-text">Connecting (:8765)...</span>
+          </div>
+
+          <button type="button" id="btn-global-refresh" class="icon-btn" title="Refresh state from backend" aria-label="Refresh">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Workspace Container -->
+      <main class="dashboard-main" id="dashboard-content">
+        <slot />
+      </main>
+
+      <!-- Footer Status Line -->
+      <footer class="dashboard-footer">
+        <div class="footer-left">
+          <span>PASEO SLPC HARNESS</span>
+          <span class="dot-separator">•</span>
+          <span>TARGET BACKEND: <code class="mono-code">127.0.0.1:8765</code></span>
+          <span class="dot-separator">•</span>
+          <span>DEV PORT: <code class="mono-code">4321</code></span>
+        </div>
+        <div class="footer-right">
+          <span id="footer-last-sync">Chưa đồng bộ</span>
+          <span class="dot-separator">•</span>
+          <span class="badge-tag">Astro 5 Static</span>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Client-side tab management & backend connection polling -->
+    <script>
+      let uiVer: string | null = null;
+      let pollInterval: number | null = null;
+
+      function updateActiveTab(tabName: string) {
+        const tabs = document.querySelectorAll<HTMLButtonElement>('.nav-tab');
+        const panels = document.querySelectorAll<HTMLElement>('[data-tab-content]');
+
+        let found = false;
+        tabs.forEach((tab) => {
+          const target = tab.dataset.tabTarget;
+          const isActive = target === tabName;
+          if (isActive) {
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            found = true;
+          } else {
+            tab.classList.remove('active');
+            tab.setAttribute('aria-selected', 'false');
+          }
+        });
+
+        // Default to work-items if target not found
+        const effectiveTab = found ? tabName : 'work-items';
+
+        panels.forEach((panel) => {
+          const content = panel.dataset.tabContent;
+          if (content === effectiveTab) {
+            panel.removeAttribute('hidden');
+            panel.style.display = 'block';
+          } else {
+            panel.setAttribute('hidden', '');
+            panel.style.display = 'none';
+          }
+        });
+
+        if (window.location.hash !== `#${effectiveTab}`) {
+          history.replaceState(null, '', `#${effectiveTab}`);
+        }
+      }
+
+      function initTabs() {
+        const tabs = document.querySelectorAll<HTMLButtonElement>('.nav-tab');
+        tabs.forEach((tab) => {
+          tab.addEventListener('click', () => {
+            const target = tab.dataset.tabTarget;
+            if (target) {
+              updateActiveTab(target);
+            }
+          });
+        });
+
+        // Listen for custom tab switch requests from child components
+        window.addEventListener('switch-tab', ((e: CustomEvent<{ tab: string }>) => {
+          if (e.detail?.tab) {
+            updateActiveTab(e.detail.tab);
+          }
+        }) as EventListener);
+
+        // Handle URL hash changes
+        window.addEventListener('hashchange', () => {
+          const hash = window.location.hash.replace(/^#/, '');
+          if (hash) {
+            updateActiveTab(hash);
+          }
+        });
+
+        // Initial tab from hash or default
+        const initialHash = window.location.hash.replace(/^#/, '');
+        if (initialHash) {
+          updateActiveTab(initialHash);
+        } else {
+          updateActiveTab('work-items');
+        }
+      }
+
+      async function pollHeartbeat() {
+        const statusEl = document.getElementById('backend-status');
+        const statusText = document.getElementById('st-text');
+        const navCount = document.getElementById('nav-count');
+        const footerSync = document.getElementById('footer-last-sync');
+
+        try {
+          const url = '/api/work-items?t=' + Date.now();
+          const res = await fetch(url);
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+
+          // Check for server-side template/version changes
+          const ver = res.headers.get('X-UI-Version');
+          if (ver) {
+            if (uiVer && uiVer !== ver) {
+              console.log('[Paseo Control Center] UI version updated on backend, reloading page...');
+              window.location.reload();
+              return;
+            }
+            uiVer = ver;
+          }
+
+          const data = await res.json();
+          const items = Array.isArray(data) ? data : (data.items || []);
+
+          if (statusEl && statusText) {
+            statusEl.className = 'badge live';
+            statusText.textContent = 'Live (:8765)';
+          }
+
+          if (navCount) {
+            navCount.textContent = String(items.length);
+          }
+
+          if (footerSync) {
+            const timeStr = new Date().toLocaleTimeString('vi-VN');
+            footerSync.textContent = `Đồng bộ lúc ${timeStr}`;
+          }
+
+          // Broadcast work items to components (e.g. KpiStrip)
+          window.dispatchEvent(new CustomEvent('work-items-updated', { detail: items }));
+        } catch (err) {
+          if (statusEl && statusText) {
+            statusEl.className = 'badge err';
+            statusText.textContent = 'Offline (:8765)';
+          }
+          if (footerSync) {
+            footerSync.textContent = 'Mất kết nối backend (:8765)';
+          }
+          window.dispatchEvent(new CustomEvent('backend-offline'));
+        }
+      }
+
+      function initConnection() {
+        const refreshBtn = document.getElementById('btn-global-refresh');
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', () => {
+            pollHeartbeat();
+          });
+        }
+
+        pollHeartbeat();
+        pollInterval = window.setInterval(pollHeartbeat, 3000);
+      }
+
+      // Initialize on DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          initTabs();
+          initConnection();
+        });
+      } else {
+        initTabs();
+        initConnection();
+      }
+
+      window.addEventListener('beforeunload', () => {
+        if (pollInterval !== null) {
+          clearInterval(pollInterval);
+        }
+      });
+    </script>
+
+    <style>
+      .dashboard-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: var(--bg);
+        color: var(--text);
+      }
+
+      /* Topbar Header */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 24px;
+        height: 60px;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+
+      .topbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .brand-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand-title {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text);
+      }
+
+      .brand-sub {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+      }
+
+      /* Navigation Tabs */
+      .nav-tabs {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        height: 100%;
+        overflow-x: auto;
+      }
+
+      .nav-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 42px;
+        padding: 0 14px;
+        background: transparent;
+        border: none;
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.15s ease-in-out;
+        white-space: nowrap;
+      }
+
+      .nav-tab:hover {
+        background: var(--bg-elevated);
+        color: var(--text);
+      }
+
+      .nav-tab.active {
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--primary);
+        font-weight: 600;
+        box-shadow: inset 0 -2px 0 var(--primary);
+      }
+
+      .tab-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1px 6px;
+        border-radius: 9999px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-secondary);
+      }
+
+      .nav-tab.active .tab-pill {
+        background: rgba(59, 130, 246, 0.2);
+        color: #93C5FD;
+        border-color: rgba(59, 130, 246, 0.4);
+      }
+
+      /* Topbar Actions */
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--bg-input);
+        color: var(--text-secondary);
+      }
+
+      .icon-btn:hover {
+        background: var(--bg-elevated);
+        color: var(--text);
+        border-color: var(--border-hover);
+      }
+
+      /* Main Workspace */
+      .dashboard-main {
+        flex: 1;
+        padding: 24px;
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* Footer */
+      .dashboard-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        background: var(--bg-surface);
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .footer-left,
+      .footer-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot-separator {
+        opacity: 0.4;
+      }
+
+      .mono-code {
+        font-family: var(--font-mono);
+        color: var(--primary);
+      }
+
+      .badge-tag {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        font-size: 11px;
+      }
+
+      @media (max-width: 900px) {
+        .topbar {
+          flex-wrap: wrap;
+          height: auto;
+          padding: 12px;
+          gap: 12px;
+        }
+
+        .nav-tabs {
+          order: 3;
+          width: 100%;
+          padding-bottom: 4px;
+        }
+
+        .dashboard-footer {
+          flex-direction: column;
+          gap: 8px;
+          text-align: center;
+        }
+      }
+    </style>
+  </body>
+</html>

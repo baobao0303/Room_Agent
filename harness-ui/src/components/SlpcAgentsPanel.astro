@@ -1,0 +1,946 @@
+---
+// SlpcAgentsPanel.astro - Interactive SLPC 4-Role Island
+---
+
+<div class="slpc-agents-island">
+  <!-- 4 Core Role Cards Grid -->
+  <div class="agent-cards-grid" id="agent-cards-container">
+    <!-- Supervisor Card (Default Initial Skeleton / Hydration Target) -->
+    <div class="agent-card supervisor" data-role="supervisor">
+      <div class="agent-card-top">
+        <div class="agent-avatar" style="border-color: #8B5CF6; color: #8B5CF6;">S</div>
+        <div class="agent-header-info">
+          <div class="agent-name" style="color: #8B5CF6;">Supervisor</div>
+          <div class="agent-role-sub">Scope &amp; Intent Guard</div>
+        </div>
+      </div>
+      <p class="agent-desc">Bảo vệ phạm vi, kiểm tra conformance, duyệt kiến trúc &amp; intent gốc.</p>
+      <div class="agent-stats-grid">
+        <div class="stat-cell">
+          <span class="stat-num stat-active" id="stat-supervisor-active">--</span>
+          <span class="stat-lbl">Đang làm</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-resolved" id="stat-supervisor-resolved">--</span>
+          <span class="stat-lbl">Chờ QC</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-closed" id="stat-supervisor-closed">--</span>
+          <span class="stat-lbl">Hoàn tất</span>
+        </div>
+      </div>
+      <div class="agent-card-actions">
+        <button type="button" class="btn btn-sm btn-primary btn-dispatch-target" data-role="Supervisor">Giao việc</button>
+        <button type="button" class="btn btn-sm btn-secondary btn-view-target" data-role="supervisor">Xem items (<span id="stat-supervisor-total">--</span>)</button>
+      </div>
+    </div>
+
+    <!-- Lead Card -->
+    <div class="agent-card lead" data-role="lead">
+      <div class="agent-card-top">
+        <div class="agent-avatar" style="border-color: #0EA5E9; color: #0EA5E9;">L</div>
+        <div class="agent-header-info">
+          <div class="agent-name" style="color: #0EA5E9;">Lead</div>
+          <div class="agent-role-sub">Technical Architect &amp; PM</div>
+        </div>
+      </div>
+      <p class="agent-desc">Quyết định cấu trúc kỹ thuật, phân rã Work Items, điều phối lộ trình.</p>
+      <div class="agent-stats-grid">
+        <div class="stat-cell">
+          <span class="stat-num stat-active" id="stat-lead-active">--</span>
+          <span class="stat-lbl">Đang làm</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-resolved" id="stat-lead-resolved">--</span>
+          <span class="stat-lbl">Chờ QC</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-closed" id="stat-lead-closed">--</span>
+          <span class="stat-lbl">Hoàn tất</span>
+        </div>
+      </div>
+      <div class="agent-card-actions">
+        <button type="button" class="btn btn-sm btn-primary btn-dispatch-target" data-role="Lead">Giao việc</button>
+        <button type="button" class="btn btn-sm btn-secondary btn-view-target" data-role="lead">Xem items (<span id="stat-lead-total">--</span>)</button>
+      </div>
+    </div>
+
+    <!-- Peer Card -->
+    <div class="agent-card peer" data-role="peer">
+      <div class="agent-card-top">
+        <div class="agent-avatar" style="border-color: #10B981; color: #10B981;">P</div>
+        <div class="agent-header-info">
+          <div class="agent-name" style="color: #10B981;">Peer</div>
+          <div class="agent-role-sub">Code Executor (FE/BE Dev)</div>
+        </div>
+      </div>
+      <p class="agent-desc">Lập trình viên thực thi code FE/BE, hiện thực hóa các tiêu chuẩn kỹ thuật.</p>
+      <div class="agent-stats-grid">
+        <div class="stat-cell">
+          <span class="stat-num stat-active" id="stat-peer-active">--</span>
+          <span class="stat-lbl">Đang làm</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-resolved" id="stat-peer-resolved">--</span>
+          <span class="stat-lbl">Chờ QC</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-closed" id="stat-peer-closed">--</span>
+          <span class="stat-lbl">Hoàn tất</span>
+        </div>
+      </div>
+      <div class="agent-card-actions">
+        <button type="button" class="btn btn-sm btn-primary btn-dispatch-target" data-role="Peer">Giao việc</button>
+        <button type="button" class="btn btn-sm btn-secondary btn-view-target" data-role="peer">Xem items (<span id="stat-peer-total">--</span>)</button>
+      </div>
+    </div>
+
+    <!-- QC Card -->
+    <div class="agent-card qc" data-role="qc">
+      <div class="agent-card-top">
+        <div class="agent-avatar" style="border-color: #F59E0B; color: #F59E0B;">C</div>
+        <div class="agent-header-info">
+          <div class="agent-name" style="color: #F59E0B;">QC</div>
+          <div class="agent-role-sub">Test Architect &amp; Quality Gate</div>
+        </div>
+      </div>
+      <p class="agent-desc">Xây dựng 5-Stage ISTQB testcases, kiểm thử tự động, nghiệm thu tiêu chí AC.</p>
+      <div class="agent-stats-grid">
+        <div class="stat-cell">
+          <span class="stat-num stat-active" id="stat-qc-active">--</span>
+          <span class="stat-lbl">Đang làm</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-resolved" id="stat-qc-resolved">--</span>
+          <span class="stat-lbl">Chờ QC</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num stat-closed" id="stat-qc-closed">--</span>
+          <span class="stat-lbl">Hoàn tất</span>
+        </div>
+      </div>
+      <div class="agent-card-actions">
+        <button type="button" class="btn btn-sm btn-primary btn-dispatch-target" data-role="QC">Giao việc</button>
+        <button type="button" class="btn btn-sm btn-secondary btn-view-target" data-role="qc">Xem items (<span id="stat-qc-total">--</span>)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Dispatch & Guidance Split Grid -->
+  <div class="dispatch-guidance-grid">
+    <!-- Left: Dispatch Form -->
+    <div class="dispatch-box card-sub">
+      <div class="box-header">
+        <span class="panel-tag">DISPATCH CONSOLE</span>
+        <h4>Giao việc trực tiếp cho Agent (Autonomous Dispatch)</h4>
+      </div>
+
+      <form id="form-agent-dispatch" onsubmit="return false;" class="dispatch-form">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="ag-profile" class="field-label">Vai trò Agent nhận chỉ thị:</label>
+            <select id="ag-profile">
+              <option value="Peer" selected>Peer (Code Executor)</option>
+              <option value="Supervisor">Supervisor (Scope Guard)</option>
+              <option value="Lead">Lead (Technical Architect)</option>
+              <option value="QC">QC (Test Architect)</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="ag-item-id" class="field-label">Work Item ID (Tùy chọn):</label>
+            <input type="number" id="ag-item-id" placeholder="e.g. 161201" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="ag-prompt" class="field-label">Chỉ thị nhiệm vụ / Yêu cầu hành động (Prompt) <span class="req">*</span>:</label>
+          <textarea
+            id="ag-prompt"
+            rows="5"
+            placeholder="Nhập hướng dẫn cụ thể cho Agent (ví dụ: Thực thi Work Item #161201, triển khai chức năng...)"
+            required
+          ></textarea>
+        </div>
+
+        <div class="dispatch-actions">
+          <div id="ag-dispatch-status" class="status-msg"></div>
+          <button type="button" id="btn-dispatch-agent" class="btn btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Khởi chạy Agent (Dispatch)</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right: Active Agent Rules / Notes -->
+    <div class="rules-box card-sub">
+      <div class="box-header">
+        <span class="panel-tag">SYSTEM RULES &amp; PROMPT NOTES</span>
+        <h4>Quy tắc hoạt động của vai trò: <span id="ag-active-role-name" style="color: #10B981;">Peer</span></h4>
+      </div>
+      <div class="terminal-box rules-terminal" id="ag-prompt-preview">
+        Đang tải chỉ dẫn &amp; quy tắc hệ thống cho Agent...
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Dispatch Logs Console -->
+  <div class="dispatch-logs-panel card-sub">
+    <div class="logs-header">
+      <div class="logs-title-area">
+        <div class="live-pulse-badge">
+          <span class="pulse-dot"></span>
+          <span>LIVE AGENT DISPATCH LOGS</span>
+        </div>
+        <h4>Nhật ký thực thi &amp; Đầu ra Console của các lệnh Agent</h4>
+      </div>
+
+      <div class="logs-actions">
+        <div class="job-pills-bar" id="agent-job-pills">
+          <!-- Dynamic job buttons -->
+        </div>
+        <button type="button" id="btn-refresh-agent-jobs" class="btn btn-secondary btn-sm" title="Làm mới log">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Làm mới</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="terminal-box log-terminal" id="agent-dispatch-terminal">
+[READY] Paseo Agent Dispatch Subsystem sẵn sàng tiếp nhận lệnh.
+Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trên để giao việc cho Supervisor, Lead, Peer hoặc QC.
+    </div>
+  </div>
+</div>
+
+<script>
+  interface AgentCounts {
+    total: number;
+    new: number;
+    active: number;
+    resolved: number;
+    closed: number;
+  }
+
+  interface AgentProfile {
+    id: string;
+    name: string;
+    role: string;
+    badge: string;
+    color: string;
+    provider?: string;
+    model?: string;
+    thinking?: string;
+    notes?: string;
+    counts: AgentCounts;
+  }
+
+  interface BackgroundJob {
+    id: string;
+    kind?: string;
+    title: string;
+    status: 'running' | 'passed' | 'failed' | string;
+    elapsed: number | string;
+    exit_code?: number | null;
+    output?: string;
+    item_id?: number | string | null;
+  }
+
+  let cachedAgents: AgentProfile[] = [];
+  let activeAgentJobId: string | null = null;
+  let agentLogPollInterval: number | null = null;
+
+  function escHtml(s: unknown): string {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Update Agent Cards from Profiles Data
+  function updateAgentCards(profiles: AgentProfile[]) {
+    cachedAgents = profiles;
+
+    profiles.forEach((profile) => {
+      const lowerName = profile.name.toLowerCase();
+      const elActive = document.getElementById(`stat-${lowerName}-active`);
+      const elResolved = document.getElementById(`stat-${lowerName}-resolved`);
+      const elClosed = document.getElementById(`stat-${lowerName}-closed`);
+      const elTotal = document.getElementById(`stat-${lowerName}-total`);
+
+      if (elActive) elActive.textContent = String(profile.counts?.active ?? 0);
+      if (elResolved) elResolved.textContent = String(profile.counts?.resolved ?? 0);
+      if (elClosed) elClosed.textContent = String(profile.counts?.closed ?? 0);
+      if (elTotal) elTotal.textContent = String(profile.counts?.total ?? 0);
+    });
+
+    updateSelectedRoleRules();
+  }
+
+  // Update Selected Role Rules in preview terminal
+  function updateSelectedRoleRules() {
+    const selRoleEl = document.getElementById('ag-profile') as HTMLSelectElement | null;
+    const rulesPreviewEl = document.getElementById('ag-prompt-preview');
+    const roleNameEl = document.getElementById('ag-active-role-name');
+
+    if (!selRoleEl || !rulesPreviewEl) return;
+    const selectedName = selRoleEl.value.toLowerCase();
+    const found = cachedAgents.find((a) => a.name.toLowerCase() === selectedName);
+
+    if (roleNameEl) {
+      roleNameEl.textContent = found ? found.name : selRoleEl.value;
+      roleNameEl.style.color = found?.color || '#3B82F6';
+    }
+
+    if (found && found.notes) {
+      rulesPreviewEl.textContent = found.notes;
+    } else {
+      // Default rule presets if notes not provided by API
+      const fallbackRules: Record<string, string> = {
+        supervisor: `Quy tắc Supervisor (Scope & Intent Guard):
+- Tuyệt đối bảo vệ yêu cầu và intent ban đầu từ User.
+- Không để xảy ra scope creep hoặc các thay đổi ngoài hợp đồng.
+- Đánh giá tính toàn vẹn của mã nguồn, kiểm tra báo cáo audit.
+- Kiểm tra các gate trước khi phê duyệt đóng milestone.`,
+        lead: `Quy tắc Lead (Technical Architect & PM):
+- Định hình kiến trúc phân lớp, module hóa và separation of concerns.
+- Phân rã User Stories thành các Work Items chi tiết kèm Acceptance Criteria (BDD).
+- Lập kế hoạch thực thi cho Peer và giao đầu mối cho QC kiểm định.
+- Đảm bảo tuân thủ zero-breaking changes với backend API.`,
+        peer: `Quy tắc Peer (Code Executor - FE/BE Dev):
+- Triển khai mã nguồn sạch, typed TypeScript, tuân thủ design tokens.
+- Minimal change principle: chỉ thay đổi những phần cần thiết để đạt mục tiêu.
+- Chạy 'npx astro check' và 'npm run build' để đảm bảo 0 lỗi biên dịch.
+- Tự giác kiểm tra edge cases trước khi chuyển trạng thái sang Resolved.`,
+        qc: `Quy tắc QC (Test Architect & Quality Gate):
+- Xây dựng bộ testcase 5-Stage ISTQB: Boundary, Equivalence, Syntax, State Transition, Error Handling.
+- Chạy automation harness test suites và xác nhận độ phủ (Coverage).
+- Bắt buộc kiểm tra hồi quy (Regression Guard) và xác nhận mọi tiêu chí nghiệm thu.`,
+      };
+      rulesPreviewEl.textContent = fallbackRules[selectedName] || '(Không có hướng dẫn bổ sung)';
+    }
+  }
+
+  // Fetch Agent Profiles from backend
+  async function loadAgentProfiles() {
+    try {
+      const res = await fetch('/api/agents?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const profiles: AgentProfile[] = data.profiles || [];
+      updateAgentCards(profiles);
+    } catch {
+      // Retain skeleton if offline
+      updateSelectedRoleRules();
+    }
+  }
+
+  // Poll Background Jobs for Live Console
+  async function pollAgentJobs() {
+    try {
+      const res = await fetch('/api/automation/jobs?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const jobs: BackgroundJob[] = await res.json();
+      const pillsContainer = document.getElementById('agent-job-pills');
+      const terminal = document.getElementById('agent-dispatch-terminal');
+
+      // Filter recent agent jobs (or all recent jobs)
+      const agentJobs = jobs.slice(0, 5);
+
+      if (pillsContainer) {
+        if (agentJobs.length === 0) {
+          pillsContainer.innerHTML = '';
+        } else {
+          if (!activeAgentJobId || !agentJobs.some((j) => j.id === activeAgentJobId)) {
+            activeAgentJobId = agentJobs[0].id;
+          }
+
+          pillsContainer.innerHTML = agentJobs
+            .map((j) => {
+              const isActive = j.id === activeAgentJobId;
+              const isRunning = j.status === 'running';
+              const isPassed = j.status === 'passed';
+              const stTag = isRunning ? '[Đang chạy]' : isPassed ? '[OK]' : '[Lỗi]';
+              const stClass = isRunning ? 'running' : isPassed ? 'passed' : 'failed';
+              const activeClass = isActive ? 'active-job' : '';
+
+              return `<button type="button" class="job-pill ${stClass} ${activeClass}" data-job-id="${j.id}">
+                ${stTag} ${escHtml(j.title.slice(0, 24))} (${j.elapsed}s)
+              </button>`;
+            })
+            .join('');
+
+          // Attach click handlers to job pills
+          pillsContainer.querySelectorAll<HTMLButtonElement>('.job-pill').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const jobId = btn.dataset.jobId;
+              if (jobId) {
+                activeAgentJobId = jobId;
+                pollAgentJobs();
+              }
+            });
+          });
+        }
+      }
+
+      if (terminal && agentJobs.length > 0) {
+        const curJob = agentJobs.find((j) => j.id === activeAgentJobId) || agentJobs[0];
+        if (curJob) {
+          const headerLine = `[JOB: ${curJob.id}] STATUS: ${curJob.status.toUpperCase()} | ELAPSED: ${curJob.elapsed}s | ${curJob.title}\n`;
+          const sep = '--------------------------------------------------------------------------------\n';
+          const body = curJob.output || '(Chưa có đầu ra)';
+          terminal.textContent = headerLine + sep + body;
+          terminal.scrollTop = terminal.scrollHeight;
+        }
+      }
+    } catch {
+      // Keep console display
+    }
+  }
+
+  // Setup Event Handlers
+  function setupAgentEvents() {
+    // Dropdown change updates active rule preview
+    const roleSelect = document.getElementById('ag-profile') as HTMLSelectElement | null;
+    roleSelect?.addEventListener('change', updateSelectedRoleRules);
+
+    // Card buttons: "Giao việc"
+    document.querySelectorAll<HTMLButtonElement>('.btn-dispatch-target').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const role = btn.dataset.role;
+        if (role && roleSelect) {
+          roleSelect.value = role;
+          updateSelectedRoleRules();
+          const promptInput = document.getElementById('ag-prompt') as HTMLTextAreaElement | null;
+          promptInput?.focus();
+        }
+      });
+    });
+
+    // Card buttons: "Xem items"
+    document.querySelectorAll<HTMLButtonElement>('.btn-view-target').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const role = btn.dataset.role;
+        if (role) {
+          window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'work-items' } }));
+          window.dispatchEvent(new CustomEvent('filter-work-items', { detail: { role: role } }));
+        }
+      });
+    });
+
+    // Dispatch Agent Submit Button
+    const btnDispatch = document.getElementById('btn-dispatch-agent') as HTMLButtonElement | null;
+    btnDispatch?.addEventListener('click', async () => {
+      const profile = roleSelect?.value || 'Peer';
+      const itemIdInput = document.getElementById('ag-item-id') as HTMLInputElement | null;
+      const promptInput = document.getElementById('ag-prompt') as HTMLTextAreaElement | null;
+      const statusMsg = document.getElementById('ag-dispatch-status');
+
+      const prompt = promptInput?.value.trim() || '';
+      if (!prompt) {
+        alert('Vui lòng nhập nội dung chỉ thị cho Agent!');
+        promptInput?.focus();
+        return;
+      }
+
+      if (btnDispatch) {
+        btnDispatch.disabled = true;
+        btnDispatch.textContent = 'Đang khởi chạy...';
+      }
+
+      try {
+        const payload = {
+          profile: profile,
+          item_id: itemIdInput?.value ? Number(itemIdInput.value) : null,
+          prompt: prompt,
+        };
+
+        const res = await fetch('/api/agents/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const jobId = data.job_id;
+
+        if (statusMsg) {
+          statusMsg.textContent = `Đã giao việc thành công! Job ID: ${jobId || 'OK'}`;
+          statusMsg.className = 'status-msg success';
+        }
+
+        if (jobId) {
+          activeAgentJobId = jobId;
+        }
+
+        // Poll logs immediately
+        await pollAgentJobs();
+
+        // Clear prompt
+        if (promptInput) promptInput.value = '';
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (statusMsg) {
+          statusMsg.textContent = 'Lỗi: ' + message;
+          statusMsg.className = 'status-msg error';
+        }
+        alert('Lỗi khởi chạy Agent: ' + message);
+      } finally {
+        if (btnDispatch) {
+          btnDispatch.disabled = false;
+          btnDispatch.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Khởi chạy Agent (Dispatch)</span>`;
+        }
+      }
+    });
+
+    // Refresh Jobs Button
+    document.getElementById('btn-refresh-agent-jobs')?.addEventListener('click', pollAgentJobs);
+
+    // Listen for prefill event from WorkItemsBoard
+    window.addEventListener('prefill-agent-dispatch', ((e: CustomEvent<{ profile: string; itemId?: string; prompt?: string }>) => {
+      if (roleSelect && e.detail.profile) {
+        const prof = e.detail.profile.toLowerCase();
+        if (prof === 'supervisor') roleSelect.value = 'Supervisor';
+        else if (prof === 'lead') roleSelect.value = 'Lead';
+        else if (prof === 'peer') roleSelect.value = 'Peer';
+        else if (prof === 'qc') roleSelect.value = 'QC';
+        updateSelectedRoleRules();
+      }
+
+      const itemIdInput = document.getElementById('ag-item-id') as HTMLInputElement | null;
+      if (itemIdInput && e.detail.itemId) {
+        itemIdInput.value = e.detail.itemId;
+      }
+
+      const promptInput = document.getElementById('ag-prompt') as HTMLTextAreaElement | null;
+      if (promptInput && e.detail.prompt) {
+        promptInput.value = e.detail.prompt;
+        promptInput.focus();
+      }
+    }) as EventListener);
+  }
+
+  function initSlpcPanel() {
+    setupAgentEvents();
+    loadAgentProfiles();
+    pollAgentJobs();
+
+    // Start background job polling every 3.5s
+    agentLogPollInterval = window.setInterval(pollAgentJobs, 3500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSlpcPanel);
+  } else {
+    initSlpcPanel();
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (agentLogPollInterval !== null) {
+      clearInterval(agentLogPollInterval);
+    }
+  });
+</script>
+
+<style>
+  .slpc-agents-island {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 4 Core Role Cards Grid */
+  .agent-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .agent-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .agent-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .agent-card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .agent-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-input);
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  .agent-header-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .agent-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .agent-role-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .agent-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+    min-height: 34px;
+  }
+
+  .agent-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .stat-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .stat-active { color: #60A5FA; }
+  .stat-resolved { color: #FBBF24; }
+  .stat-closed { color: #34D399; }
+
+  .stat-lbl {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .agent-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .agent-card-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Sub Panels */
+  .card-sub {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .box-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .box-header h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Dispatch Guidance Grid */
+  .dispatch-guidance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .dispatch-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .field-label .req {
+    color: var(--danger);
+  }
+
+  .dispatch-form select,
+  .dispatch-form input,
+  .dispatch-form textarea {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: var(--font);
+    transition: border-color 0.15s ease;
+  }
+
+  .dispatch-form textarea {
+    resize: vertical;
+    line-height: 1.4;
+  }
+
+  .dispatch-form select:focus,
+  .dispatch-form input:focus,
+  .dispatch-form textarea:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 1px var(--border-focus);
+  }
+
+  .dispatch-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .status-msg {
+    font-size: 12px;
+  }
+  .status-msg.success { color: #34D399; }
+  .status-msg.error { color: #FB7185; }
+
+  /* Rules Terminal */
+  .rules-terminal {
+    max-height: 240px;
+    min-height: 190px;
+    overflow-y: auto;
+    line-height: 1.6;
+    font-size: 12px;
+    color: #CBD5E1;
+  }
+
+  /* Logs Panel */
+  .dispatch-logs-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .logs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logs-title-area {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .live-pulse-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #34D399;
+    letter-spacing: 0.08em;
+  }
+
+  .logs-title-area h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .logs-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .job-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .job-pill {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+
+  .job-pill:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+  }
+
+  .job-pill.running { border-color: rgba(59, 130, 246, 0.4); color: #93C5FD; }
+  .job-pill.passed { border-color: rgba(16, 185, 129, 0.4); color: #6EE7B7; }
+  .job-pill.failed { border-color: rgba(244, 63, 94, 0.4); color: #FDA4AF; }
+
+  .job-pill.active-job {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--primary);
+    font-weight: 600;
+  }
+
+  .log-terminal {
+    background: var(--bg-terminal);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #A7F3D0;
+    white-space: pre-wrap;
+    min-height: 180px;
+    max-height: 320px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border-hover);
+  }
+
+  @media (max-width: 1100px) {
+    .agent-cards-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dispatch-guidance-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .agent-cards-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-row {
+      flex-direction: column;
+    }
+  }
+</style>

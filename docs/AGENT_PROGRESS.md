@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-15 09:35:54 +0700`
-- **Agent cập nhật gần nhất**: `Antigravity (Supervisor/Architect)`
-- **Trọng tâm hiện tại**: Hoàn tất 100% Setup thực tế codex-room-setup + Paseo v0.8.0 + Hybrid SLPC trên máy trạm
+- **Cập nhật lần cuối**: `2026-10-15 10:58:19 +0700`
+- **Agent cập nhật gần nhất**: `Grandmaster / DevOps`
+- **Trọng tâm hiện tại**: [Supervisor] Paseo m\u1edf ch\u01b0a l\u00ean host linux
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Commit và push thay đổi tools/floci_client.py
+  > Theo dõi tiến trình GitHub Actions trên repo Room_Agent và chạy pipeline trên Jenkins
 
 ---
 
@@ -30,16 +30,128 @@
 - [x] kiểm thử pass test_harness.py ở cả chế độ SQLite và không có boto3
 - [x] Chạy thành công `./install --apply` (`CODEX_ROOM_APPLY_OK`) và `./install --verify --live` (`VERIFY_OK` 100%), đồng thời giữ nguyên toàn bộ 10 `agentProfiles` (SLPC + BA/Design/Dev) trong `~/.paseo/config.json`.
 - [x] Bổ sung Mục 8.3 (Bản đồ vị trí Context Window `*.jsonl` / `*.sqlite` của từng nền tảng Agent) vào `docs/spec/codex-room-setup-spec.md` và lệnh `python3 tools/agent_progress.py sessions`.
+- [x] Đồng bộ bộ skill `031_claude_code_sub_agents` (`gemini-codebase-analyzer.md`, `strategic-reasoning-architect.md`) từ `https://github.com/hoangnb24/storage/tree/main/031_claude_code_sub_agents` và tạo thêm sub-agent thứ 3 `slpc-qc-verifier.md` chuyên trách cho Role thứ 4 (`QC` - 5-Stage ISTQB Pipeline).
+- [x] Cài đặt cả 3 Sub-Agents và `SKILL.md` đồng bộ vào `.claude/agents/`, `~/.paseo/claude-config/agents/`, `~/.claude/agents/`, `.agents/skills/claude-code-sub-agents/`, `~/.codex/skills/claude-code-sub-agents/` và `~/.hermes/skills/031_claude_code_sub_agents`.
+- [x] Mở rộng `codex-room-setup` từ 3 role lên 4 role (`supervisor | lead | peer | qc`): tạo `overlays/qc.config.toml`, sinh runtime cô lập `~/.codex-runtime/qc`, thêm provider `codex-qc` vào `~/.paseo/config.json`, reload Paseo Daemon và đạt `VERIFY_OK` (`--live`).
+- [x] Cập nhật cả 4 profile `profiles/{supervisor,lead,peer,qc}.md`, `AGENTS.md`, `CLAUDE.md`, `setup_home.sh`, `patch_paseo.py` và bổ sung Mục 9 vào `docs/spec/codex-room-setup-spec.md`.
+- [x] Đọc toàn bộ bộ skill `knowlegde` (`SKILL.md`, `reference/doc-mapping.md`, `reference/extraction-prompts.md`) từ `hoangnb24/storage` và đồng bộ sang `.agents/skills/knowledge`, `.claude/skills/knowledge`, `~/.codex/skills/knowledge`, `~/.paseo/claude-config/skills/knowledge` và `~/.hermes/skills/knowledge`.
+- [x] Bổ sung 2 lệnh `find-thread` và `read-thread` vào `tools/agent_progress.py` để hiện thực hóa trực tiếp Phase 1 & Phase 2 của skill `knowledge` trên các file `.jsonl` Context Window của Paseo & Codex Room.
+- [x] Xây dựng `tools/profile_research_gen.py` kết nối toàn bộ chuỗi Research (`research_agent.py` qua Hermes/Router9/BM25, `query_reader.py`, `crm_doc_reader.py`, `agent_progress.py find-thread`) và Gen (`qc_test_generator.py`, `distill_ba_beats.py`, Execution Brief & Progress Ledger).
+- [x] Nâng cấp `tools/call_agent.py` và `tools/harness_manager.py` (`add --dispatch` & `update --dispatch`) để tự động kích hoạt `profile_research_gen.py` trước khi spawn bất kỳ Paseo Profile nào.
+- [x] Cập nhật `patch_paseo.py`, `profiles/{supervisor,lead,peer,qc}.md`, `~/.config/codex-room/model-instructions.md`, và bơm chỉ thị `MANDATORY RESEARCH & GENERATION GATE` vào cả `daemon.appendSystemPrompt` lẫn toàn bộ 10 `agentProfiles` trong `~/.paseo/config.json`, sau đó reload Paseo Daemon (`VERIFY_OK`).
+- [x] Phân tích kiến trúc chuyển đổi Harness UI từ chuỗi HTML nhúng trong `scripts/harness_dashboard.py` sang Astro (`https://astro.build/`) kết hợp đường ống triển khai Jenkins CI/CD (`Jenkinsfile`) và lưu đặc tả chi tiết tại `docs/spec/astro-jenkins-harness-ui-spec.md`.
+- [x] Cập nhật docs/spec/astro-jenkins-harness-ui-spec.md đặt harness-ui/ ngoài /projects/ để Git track 100%, bổ sung thiết kế job astro-ui trong .github/workflows/ci.yml và Jenkinsfile tại root
+- [x] thêm .astro/ vào .gitignore
+- [x] Tạo harness-ui/Dockerfile (multi-stage Node 20 -> Nginx 1.27 Alpine), harness-ui/nginx.conf.template (hỗ trợ PORT, API_UPSTREAM và /healthz), harness-ui/.dockerignore, và .github/workflows/docker-harness-ui.yml (push lên GHCR ghcr.io/baobao0303/room_agent/harness-ui:latest, hỗ trợ Docker Hub, xuất artifact tar.gz). Đã test docker build và docker run thực tế thành công
+- [x] Worktree ready on branch main
+- [x] Tạo tools/paseo_hooks.py, plugins/slpc-lifecycle-hooks/ (đăng ký đủ 11 hook server.before & server.on, cài đặt running trên Paseo daemon :6767), scripts/worktree_hook.sh + paseo.json (pre-create, post-create, pre-destroy), bật pluginsEnabled=true & enableTerminalAgentHooks=true trong ~/.paseo/config.json và patch_paseo.py
+- [x] Turn N/A ended with outcome=unknown (agentId=None)
+- [x] Cập nhật .github/workflows/docker-harness-ui.yml tự động build Docker image lên GHCR (ghcr.io/baobao0303/room_agent/harness-ui:latest) và phát hành Release tag harness-ui-latest kèm file harness-ui-docker-latest.tar.gz + harness-ui-dist.tar.gz
+- [x] tạo Jenkinsfile tự động kéo bản build từ GitHub về chạy container
 
 ---
 
 ## 3. Những Mục Còn Thiếu / Đang Chờ Thực Hiện (Missing & Pending Items)
 
-- [ ] **[M1]** Commit và push bản vá lên nhánh main trên GitHub nếu cần kích hoạt lại CI
+- [ ] **[M1]** Push code lên GitHub để kích hoạt workflow
+- [ ] **[M2]** Không còn
 
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #16 — `2026-10-15 10:58:19 +0700` | **Grandmaster / DevOps**
+- **Tóm tắt**: Đẩy workflow build Docker & Release Astro harness-ui lên GitHub Actions và tạo Jenkinsfile kéo bản build từ GitHub
+- **Đã thực hiện**:
+  - Cập nhật .github/workflows/docker-harness-ui.yml tự động build Docker image lên GHCR (ghcr.io/baobao0303/room_agent/harness-ui:latest) và phát hành Release tag harness-ui-latest kèm file harness-ui-docker-latest.tar.gz + harness-ui-dist.tar.gz
+  - tạo Jenkinsfile tự động kéo bản build từ GitHub về chạy container
+- **File đã tạo/cập nhật**: `.github/workflows/docker-harness-ui.yml`, `.github/workflows/ci.yml`, `Jenkinsfile`, `harness-ui/Dockerfile`, `harness-ui/nginx.conf.template`, `harness-ui/.dockerignore`
+- **Bàn giao bước tiếp theo**: Theo dõi tiến trình GitHub Actions trên repo Room_Agent và chạy pipeline trên Jenkins
+
+### Phiên #15 — `2026-10-15 10:56:18 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Đợi đội agent teamwork_preview hoàn tất Astro Harness UI (harness-ui/)
+
+### Phiên #14 — `2026-10-15 10:55:58 +0700` | **Lead/Architect (Antigravity)**
+- **Tóm tắt**: Xây dựng và cài đặt trọn bộ Paseo Hooks (Plugin Lifecycle Hooks @getpaseo/plugin/server, Worktree Lifecycle Hooks paseo.json, và CLI Agent Hooks paseo hooks <agent> <event>)
+- **Đã thực hiện**:
+  - Tạo tools/paseo_hooks.py, plugins/slpc-lifecycle-hooks/ (đăng ký đủ 11 hook server.before & server.on, cài đặt running trên Paseo daemon :6767), scripts/worktree_hook.sh + paseo.json (pre-create, post-create, pre-destroy), bật pluginsEnabled=true & enableTerminalAgentHooks=true trong ~/.paseo/config.json và patch_paseo.py
+- **File đã tạo/cập nhật**: `tools/paseo_hooks.py`, `plugins/slpc-lifecycle-hooks/index.server.ts`, `plugins/slpc-lifecycle-hooks/server/hook-bridge.ts`, `plugins/slpc-lifecycle-hooks/paseo-plugin.json`, `scripts/worktree_hook.sh`, `paseo.json`, `patch_paseo.py`
+- **Bàn giao bước tiếp theo**: Đợi đội agent teamwork_preview hoàn tất Astro Harness UI (harness-ui/)
+
+### Phiên #13 — `2026-10-15 10:55:03 +0700` | **Paseo Worktree Hook**
+- **Tóm tắt**: Worktree lifecycle hook: post-create (main)
+- **Đã thực hiện**:
+  - Worktree ready on branch main
+- **Bàn giao bước tiếp theo**: Commit và push lên nhánh main để Jenkins có thể kéo image từ GHCR hoặc artifact
+
+### Phiên #12 — `2026-10-15 10:54:53 +0700` | **Grandmaster / DevOps**
+- **Tóm tắt**: Tạo Dockerfile, cấu hình Nginx reverse proxy và GitHub Actions đóng gói Astro harness-ui cho Jenkins
+- **Đã thực hiện**:
+  - Tạo harness-ui/Dockerfile (multi-stage Node 20 -> Nginx 1.27 Alpine), harness-ui/nginx.conf.template (hỗ trợ PORT, API_UPSTREAM và /healthz), harness-ui/.dockerignore, và .github/workflows/docker-harness-ui.yml (push lên GHCR ghcr.io/baobao0303/room_agent/harness-ui:latest, hỗ trợ Docker Hub, xuất artifact tar.gz). Đã test docker build và docker run thực tế thành công
+- **File đã tạo/cập nhật**: `harness-ui/Dockerfile`, `harness-ui/nginx.conf.template`, `harness-ui/.dockerignore`, `.github/workflows/docker-harness-ui.yml`
+- **Bàn giao bước tiếp theo**: Commit và push lên nhánh main để Jenkins có thể kéo image từ GHCR hoặc artifact
+
+### Phiên #11 — `2026-10-15 10:40:41 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Paseo m\u1edf ch\u01b0a l\u00ean host linux
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_paseo_m_u1edf_ch_u01b0a_l.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_paseo_m_u1edf_ch_u01b0a_l.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_paseo_m_u1edf_ch_u01b0a_l.md`, `tools/research/gen_brief_supervisor_paseo_m_u1edf_ch_u01b0a_l.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_paseo_m_u1edf_ch_u01b0a_l.md và tools/research/gen_brief_supervisor_paseo_m_u1edf_ch_u01b0a_l.md.
+
+### Phiên #10 — `2026-10-15 10:32:11 +0700` | **Lead/Architect (Antigravity)**
+- **Tóm tắt**: Cập nhật kiến trúc Astro Harness UI ra ngoài /projects/ (tại root harness-ui/) kèm GitHub Actions (.github/workflows/ci.yml) + Jenkinsfile
+- **Đã thực hiện**:
+  - Cập nhật docs/spec/astro-jenkins-harness-ui-spec.md đặt harness-ui/ ngoài /projects/ để Git track 100%, bổ sung thiết kế job astro-ui trong .github/workflows/ci.yml và Jenkinsfile tại root
+  - thêm .astro/ vào .gitignore
+- **File đã tạo/cập nhật**: `docs/spec/astro-jenkins-harness-ui-spec.md`, `.gitignore`
+- **Bàn giao bước tiếp theo**: Khởi tạo thư mục root harness-ui/ (Astro 5), cập nhật .github/workflows/ci.yml và tạo Jenkinsfile
+
+### Phiên #9 — `2026-10-15 10:28:05 +0700` | **Antigravity (Architect & Integrator)**
+- **Tóm tắt**: Phân tích & thiết kế kiến trúc Astro + Jenkins CI/CD cho bộ Harness UI (`docs/spec/astro-jenkins-harness-ui-spec.md`)
+- **Đã thực hiện**:
+  - Phân tích kiến trúc chuyển đổi Harness UI từ chuỗi HTML nhúng trong `scripts/harness_dashboard.py` sang Astro (`https://astro.build/`) kết hợp đường ống triển khai Jenkins CI/CD (`Jenkinsfile`) và lưu đặc tả chi tiết tại `docs/spec/astro-jenkins-harness-ui-spec.md`.
+- **File đã tạo/cập nhật**: `docs/spec/astro-jenkins-harness-ui-spec.md`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Khi User yêu cầu thực thi, khởi tạo dự án `projects/harness-ui` bằng Astro 5 + tạo `Jenkinsfile` + cấu hình `scripts/harness_dashboard.py` phục vụ `projects/harness-ui/dist` theo đúng đặc tả tại `docs/spec/astro-jenkins-harness-ui-spec.md`.
+
+### Phiên #8 — `2026-10-15 10:24:13 +0700` | **Antigravity (Architect & Integrator)**
+- **Tóm tắt**: Ép buộc toàn bộ Paseo Profiles sử dụng bộ công cụ Research & Gen (`tools/profile_research_gen.py` + `call_agent.py` + `patch_paseo.py`)
+- **Đã thực hiện**:
+  - Xây dựng `tools/profile_research_gen.py` kết nối toàn bộ chuỗi Research (`research_agent.py` qua Hermes/Router9/BM25, `query_reader.py`, `crm_doc_reader.py`, `agent_progress.py find-thread`) và Gen (`qc_test_generator.py`, `distill_ba_beats.py`, Execution Brief & Progress Ledger).
+  - Nâng cấp `tools/call_agent.py` và `tools/harness_manager.py` (`add --dispatch` & `update --dispatch`) để tự động kích hoạt `profile_research_gen.py` trước khi spawn bất kỳ Paseo Profile nào.
+  - Cập nhật `patch_paseo.py`, `profiles/{supervisor,lead,peer,qc}.md`, `~/.config/codex-room/model-instructions.md`, và bơm chỉ thị `MANDATORY RESEARCH & GENERATION GATE` vào cả `daemon.appendSystemPrompt` lẫn toàn bộ 10 `agentProfiles` trong `~/.paseo/config.json`, sau đó reload Paseo Daemon (`VERIFY_OK`).
+- **File đã tạo/cập nhật**: `tools/profile_research_gen.py`, `tools/research/research_agent.py`, `tools/call_agent.py`, `tools/harness_manager.py`, `tools/AGENTS.md`, `patch_paseo.py`, `profiles/supervisor.md`, `profiles/lead.md`, `profiles/peer.md`, `profiles/qc.md`, `codex-room-setup/home/.config/codex-room/model-instructions.md`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Mọi Profile khi được gọi qua Paseo UI, `call_agent.py`, hoặc `harness_manager.py --dispatch` đều tự động chạy Research + Gen trước tiên và đính kèm kết quả vào prompt.
+
+### Phiên #7 — `2026-10-15 10:22:57 +0700` | **Lead (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead: Verify UC1.01 IAM & Tenant Management
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_verify_uc1_01_iam_tenant_manage.md
+  - CRM Doc Reader researched (UC1.01)
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_verify_uc1_01_iam_tenant_manage.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_verify_uc1_01_iam_tenant_manage.md`, `tools/research/gen_brief_lead_verify_uc1_01_iam_tenant_manage.md`
+- **Bàn giao bước tiếp theo**: Profile Lead tiếp tục hoàn thiện task dựa trên tools/research/research_lead_verify_uc1_01_iam_tenant_manage.md và tools/research/gen_brief_lead_verify_uc1_01_iam_tenant_manage.md.
+
+### Phiên #6 — `2026-10-15 10:03:50 +0700` | **Antigravity (Architect & Integrator)**
+- **Tóm tắt**: Đọc và tích hợp skill `knowlegde` (Knowledge Extraction & Doc Sync) + bổ sung `find-thread` / `read-thread` vào `tools/agent_progress.py`
+- **Đã thực hiện**:
+  - Đọc toàn bộ bộ skill `knowlegde` (`SKILL.md`, `reference/doc-mapping.md`, `reference/extraction-prompts.md`) từ `hoangnb24/storage` và đồng bộ sang `.agents/skills/knowledge`, `.claude/skills/knowledge`, `~/.codex/skills/knowledge`, `~/.paseo/claude-config/skills/knowledge` và `~/.hermes/skills/knowledge`.
+  - Bổ sung 2 lệnh `find-thread` và `read-thread` vào `tools/agent_progress.py` để hiện thực hóa trực tiếp Phase 1 & Phase 2 của skill `knowledge` trên các file `.jsonl` Context Window của Paseo & Codex Room.
+- **File đã tạo/cập nhật**: `.agents/skills/knowledge/SKILL.md`, `.agents/skills/knowledge/reference/doc-mapping.md`, `.agents/skills/knowledge/reference/extraction-prompts.md`, `tools/agent_progress.py`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Tất cả 4 Role (Supervisor, Lead, Peer, QC) và 3 Sub-Agents (gemini-codebase-analyzer, strategic-reasoning-architect, slpc-qc-verifier) đã sẵn sàng. Có thể chạy thử nghiệm thực tế trên dự án hoặc yêu cầu 'làm tiếp' bất kỳ tính năng nào.
+
+### Phiên #5 — `2026-10-15 09:59:51 +0700` | **Antigravity (Architect & Integrator)**
+- **Tóm tắt**: Tích hợp 031_claude_code_sub_agents + slpc-qc-verifier và mở rộng Codex Room + Paseo lên đủ 4 Role SLPC (Supervisor, Lead, Peer, QC)
+- **Đã thực hiện**:
+  - Đồng bộ bộ skill `031_claude_code_sub_agents` (`gemini-codebase-analyzer.md`, `strategic-reasoning-architect.md`) từ `https://github.com/hoangnb24/storage/tree/main/031_claude_code_sub_agents` và tạo thêm sub-agent thứ 3 `slpc-qc-verifier.md` chuyên trách cho Role thứ 4 (`QC` - 5-Stage ISTQB Pipeline).
+  - Cài đặt cả 3 Sub-Agents và `SKILL.md` đồng bộ vào `.claude/agents/`, `~/.paseo/claude-config/agents/`, `~/.claude/agents/`, `.agents/skills/claude-code-sub-agents/`, `~/.codex/skills/claude-code-sub-agents/` và `~/.hermes/skills/031_claude_code_sub_agents`.
+  - Mở rộng `codex-room-setup` từ 3 role lên 4 role (`supervisor | lead | peer | qc`): tạo `overlays/qc.config.toml`, sinh runtime cô lập `~/.codex-runtime/qc`, thêm provider `codex-qc` vào `~/.paseo/config.json`, reload Paseo Daemon và đạt `VERIFY_OK` (`--live`).
+  - Cập nhật cả 4 profile `profiles/{supervisor,lead,peer,qc}.md`, `AGENTS.md`, `CLAUDE.md`, `setup_home.sh`, `patch_paseo.py` và bổ sung Mục 9 vào `docs/spec/codex-room-setup-spec.md`.
+- **File đã tạo/cập nhật**: `.claude/agents/gemini-codebase-analyzer.md`, `.claude/agents/strategic-reasoning-architect.md`, `.claude/agents/slpc-qc-verifier.md`, `.agents/skills/claude-code-sub-agents/SKILL.md`, `profiles/supervisor.md`, `profiles/lead.md`, `profiles/peer.md`, `profiles/qc.md`, `AGENTS.md`, `CLAUDE.md`, `setup_home.sh`, `patch_paseo.py`, `tools/agent_progress.py`, `docs/spec/codex-room-setup-spec.md`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Tất cả 4 Role (Supervisor, Lead, Peer, QC) và 3 Sub-Agents (gemini-codebase-analyzer, strategic-reasoning-architect, slpc-qc-verifier) đã sẵn sàng. Có thể chạy thử nghiệm thực tế trên dự án hoặc yêu cầu 'làm tiếp' bất kỳ tính năng nào.
 
 ### Phiên #4 — `2026-10-15 09:35:30 +0700` | **Antigravity (Supervisor/Architect)**
 - **Tóm tắt**: Thực thi ./install --apply, ./install --verify --live đạt VERIFY_OK 100% và bổ sung lệnh tra cứu Context Window

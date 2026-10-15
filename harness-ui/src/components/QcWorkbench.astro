@@ -1,0 +1,1009 @@
+---
+// QcWorkbench.astro - Interactive 5-Stage QC & Test Runner Island
+---
+
+<div class="qc-workbench-island">
+  <!-- Top Split Grid: Generator & Test Suite Runner -->
+  <div class="qc-top-grid">
+    <!-- Panel 1: 5-Stage ISTQB Test Generator -->
+    <div class="qc-card-panel generator-panel">
+      <div class="panel-card-header">
+        <div class="header-title-wrap">
+          <span class="panel-tag">5-STAGE ISTQB GENERATOR</span>
+          <h3>Trình sinh Unit Test tự động (ISTQB Pipeline)</h3>
+        </div>
+        <div class="stage-pills-bar">
+          <span class="stage-step" title="Stage 1: Phân tích cú pháp & Symbol">S1: AST</span>
+          <span class="stage-step" title="Stage 2: Phân vùng tương đương & Biên BVA">S2: BVA</span>
+          <span class="stage-step" title="Stage 3: Chuyển đổi trạng thái State">S3: State</span>
+          <span class="stage-step" title="Stage 4: Bắt lỗi ngoại lệ Error Guessing">S4: Error</span>
+          <span class="stage-step" title="Stage 5: Tổng hợp Assertions">S5: Synth</span>
+        </div>
+      </div>
+
+      <form id="form-qc-gen" onsubmit="return false;" class="qc-form">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="qc-source" class="field-label">File nguồn cần test (Source file) <span class="req">*</span>:</label>
+            <input
+              type="text"
+              id="qc-source"
+              list="dl-sources"
+              placeholder="e.g. projects/wicx-crm-fe/libs/wicx-core/src/utils/helps/validator.helper.ts"
+              required
+            />
+            <datalist id="dl-sources"></datalist>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="qc-spec" class="field-label">File đặc tả / Tiêu chí AC (Spec file):</label>
+            <input
+              type="text"
+              id="qc-spec"
+              list="dl-specs"
+              placeholder="e.g. docs/spec/astro-jenkins-harness-ui-spec.md"
+            />
+            <datalist id="dl-specs"></datalist>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="qc-task-id" class="field-label">Work Item ID liên quan (Tùy chọn):</label>
+            <input type="number" id="qc-task-id" placeholder="e.g. 161201" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="qc-out-spec" class="field-label">Đường dẫn file test đầu ra (Output spec):</label>
+            <input type="text" id="qc-out-spec" value="/tmp/generated.spec.ts" />
+          </div>
+        </div>
+
+        <div class="form-checkboxes">
+          <label class="checkbox-label">
+            <input type="checkbox" id="qc-sync-harness" checked />
+            <span>Tự động đồng bộ Testcase lên Harness DB</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="qc-run-after" checked />
+            <span>Chạy test suite ngay sau khi sinh file</span>
+          </label>
+        </div>
+
+        <div class="form-actions-row">
+          <div id="qc-gen-status" class="status-msg"></div>
+          <div class="buttons-wrap">
+            <button type="button" id="btn-qc-dispatch-agent" class="btn btn-secondary btn-sm" title="Ủy quyền cho Agent QC xử lý sinh test và tinh chỉnh">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Giao Agent QC</span>
+            </button>
+            <button type="button" id="btn-qc-generate" class="btn btn-primary btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Sinh Unit Test (5-Stage)</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Coverage Metrics & Spec Preview Box -->
+      <div id="qc-result-box" class="qc-result-container" style="display: none;">
+        <div class="result-header">
+          <span class="box-label">KẾT QUẢ ĐỘ PHỦ (COVERAGE METRICS &amp; SPEC PREVIEW):</span>
+          <button type="button" id="btn-copy-spec" class="btn-copy" title="Sao chép mã nguồn test">Sao chép code</button>
+        </div>
+        <div class="coverage-badges" id="qc-cov-badges">
+          <!-- Dynamic coverage badges -->
+        </div>
+        <pre class="terminal-box spec-preview-box" id="qc-spec-preview"></pre>
+      </div>
+    </div>
+
+    <!-- Panel 2: Test Suite Runner & Presets -->
+    <div class="qc-card-panel runner-panel">
+      <div class="panel-card-header">
+        <div class="header-title-wrap">
+          <span class="panel-tag">TEST SUITE RUNNER</span>
+          <h3>Thực thi Test Suites &amp; Lệnh CLI kiểm thử</h3>
+        </div>
+      </div>
+
+      <div class="presets-section">
+        <label class="field-label">Presets Kiểm thử &amp; Build (Quick Run):</label>
+        <div class="presets-grid" id="preset-container">
+          <button type="button" class="btn-preset" data-cmd="python3 tools/test_harness.py" data-cwd="" data-title="Harness Self-Test">
+            <span class="preset-name">Harness Self-Test</span>
+            <span class="preset-cmd">python3 tools/test_harness.py</span>
+          </button>
+          <button type="button" class="btn-preset" data-cmd="python3 tools/test_qc_generator.py" data-cwd="" data-title="QC Generator Test">
+            <span class="preset-name">QC Generator Test</span>
+            <span class="preset-cmd">python3 tools/test_qc_generator.py</span>
+          </button>
+          <button type="button" class="btn-preset" data-cmd="npx vitest run" data-cwd="game" data-title="Game Vitest Suite">
+            <span class="preset-name">Game Vitest Suite</span>
+            <span class="preset-cmd">npx vitest run (game)</span>
+          </button>
+          <button type="button" class="btn-preset" data-cmd="npm run build" data-cwd="harness-ui" data-title="Astro Harness UI Build">
+            <span class="preset-name">Astro UI Build</span>
+            <span class="preset-cmd">npm run build (harness-ui)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="custom-cmd-section">
+        <label class="field-label">Lệnh CLI kiểm thử tùy chỉnh (Custom Test Command):</label>
+        <div class="cmd-input-row">
+          <div class="form-group flex-3">
+            <input
+              type="text"
+              id="custom-cmd-input"
+              placeholder="e.g. npx vitest run or python3 tools/test_harness.py"
+              class="mono-input"
+            />
+          </div>
+          <div class="form-group flex-1">
+            <input
+              type="text"
+              id="custom-cwd-input"
+              placeholder="CWD (e.g. game)"
+              class="mono-input"
+            />
+          </div>
+          <button type="button" id="btn-run-custom" class="btn btn-primary btn-sm">
+            <span>Chạy</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Streaming Background Jobs Console -->
+  <div class="qc-card-panel terminal-panel">
+    <div class="panel-card-header">
+      <div class="header-title-wrap">
+        <div class="live-pulse-badge">
+          <span class="pulse-dot"></span>
+          <span>LIVE AUTOMATION JOBS STREAM</span>
+        </div>
+        <h4>Đầu ra Console &amp; Tiến trình Thực thi nền (Job Stream)</h4>
+      </div>
+
+      <div class="job-stream-actions">
+        <div class="job-pills-bar" id="job-list">
+          <!-- Dynamic job tabs -->
+        </div>
+        <button type="button" id="btn-refresh-jobs" class="btn btn-secondary btn-sm" title="Làm mới log">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Làm mới</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="terminal-box terminal-stream" id="job-terminal">
+[READY] QC Automation Console đã sẵn sàng.
+Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc ấn "Sinh Unit Test" phía trên để khởi động.
+    </div>
+  </div>
+</div>
+
+<script>
+  interface PresetItem {
+    title: string;
+    command: string;
+    cwd?: string;
+  }
+
+  interface AutomationJob {
+    id: string;
+    kind?: string;
+    title: string;
+    status: 'running' | 'passed' | 'failed' | string;
+    elapsed: number | string;
+    exit_code?: number | null;
+    output?: string;
+  }
+
+  interface CoverageReport {
+    total_cases?: number;
+    requirement_coverage_pct?: number;
+    coverage_item_pct?: number;
+    symbol_coverage_pct?: number;
+  }
+
+  interface QcGenerateResponse {
+    coverage_report?: CoverageReport;
+    spec_code?: string;
+    out_spec?: string;
+    synced_count?: number;
+    job_id?: string;
+    error?: string;
+  }
+
+  let activeJobId: string | null = null;
+  let qcJobPollInterval: number | null = null;
+
+  function escHtml(s: unknown): string {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Load Source Files, Specs, and Presets
+  async function loadSourceFilesAndPresets() {
+    try {
+      const res = await fetch('/api/source-files?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      // Datalists
+      const dlSources = document.getElementById('dl-sources');
+      const dlSpecs = document.getElementById('dl-specs');
+      if (dlSources && Array.isArray(data.sources)) {
+        dlSources.innerHTML = data.sources.map((s: string) => `<option value="${escHtml(s)}">`).join('');
+      }
+      if (dlSpecs && Array.isArray(data.specs)) {
+        dlSpecs.innerHTML = data.specs.map((s: string) => `<option value="${escHtml(s)}">`).join('');
+      }
+
+      // Presets
+      const presetContainer = document.getElementById('preset-container');
+      if (presetContainer && Array.isArray(data.presets) && data.presets.length > 0) {
+        presetContainer.innerHTML = data.presets
+          .map((p: PresetItem) => {
+            return `<button type="button" class="btn-preset" data-cmd="${escHtml(p.command)}" data-cwd="${escHtml(p.cwd || '')}" data-title="${escHtml(p.title)}">
+              <span class="preset-name">${escHtml(p.title)}</span>
+              <span class="preset-cmd">${escHtml(p.command)}</span>
+            </button>`;
+          })
+          .join('');
+
+        // Attach click handlers to newly created preset buttons
+        presetContainer.querySelectorAll<HTMLButtonElement>('.btn-preset').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const title = btn.dataset.title || 'Command';
+            const cmd = btn.dataset.cmd || '';
+            const cwd = btn.dataset.cwd || '';
+            runAutomationJob(title, cmd, cwd);
+          });
+        });
+      }
+    } catch {
+      // Fallback presets retained
+    }
+  }
+
+  // Run Automation Job via API
+  async function runAutomationJob(title: string, command: string, cwd = '') {
+    if (!command.trim()) {
+      alert('Vui lòng chỉ định lệnh cần thực thi!');
+      return;
+    }
+
+    try {
+      const payload = {
+        kind: 'automation',
+        title: title,
+        command: command.trim(),
+        cwd: cwd.trim(),
+      };
+
+      const res = await fetch('/api/automation/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const job: AutomationJob = await res.json();
+      activeJobId = job.id;
+      await pollJobs();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert('Không thể khởi chạy job: ' + message);
+    }
+  }
+
+  // Poll Jobs for Console Terminal
+  async function pollJobs() {
+    try {
+      const res = await fetch('/api/automation/jobs?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const jobs: AutomationJob[] = await res.json();
+      const listEl = document.getElementById('job-list');
+      const term = document.getElementById('job-terminal');
+
+      if (!jobs || jobs.length === 0) {
+        if (listEl) listEl.innerHTML = '';
+        return;
+      }
+
+      if (!activeJobId || !jobs.some((j) => j.id === activeJobId)) {
+        activeJobId = jobs[0].id;
+      }
+
+      if (listEl) {
+        listEl.innerHTML = jobs
+          .slice(0, 6)
+          .map((j) => {
+            const isRun = j.status === 'running';
+            const isPass = j.status === 'passed';
+            const stTxt = isRun ? '[Đang chạy]' : isPass ? '[OK]' : '[Lỗi]';
+            const stClass = isRun ? 'running' : isPass ? 'passed' : 'failed';
+            const activeClass = j.id === activeJobId ? 'active-job' : '';
+
+            return `<button type="button" class="job-pill ${stClass} ${activeClass}" data-job-id="${j.id}">
+              ${stTxt} ${escHtml(j.title.slice(0, 24))} (${j.elapsed}s)
+            </button>`;
+          })
+          .join('');
+
+        listEl.querySelectorAll<HTMLButtonElement>('.job-pill').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.dataset.jobId;
+            if (id) {
+              activeJobId = id;
+              pollJobs();
+            }
+          });
+        });
+      }
+
+      if (term) {
+        const cur = jobs.find((j) => j.id === activeJobId) || jobs[0];
+        if (cur) {
+          const header = `[JOB: ${cur.id}] STATUS: ${cur.status.toUpperCase()} | ELAPSED: ${cur.elapsed}s | ${cur.title}\n`;
+          const sep = '================================================================================\n';
+          term.textContent = header + sep + (cur.output || '(Chưa có dữ liệu đầu ra console)');
+          term.scrollTop = term.scrollHeight;
+        }
+      }
+    } catch {
+      // Keep console display
+    }
+  }
+
+  // Setup Event Listeners
+  function setupQcEvents() {
+    // Presets click handlers (initial buttons in HTML)
+    document.querySelectorAll<HTMLButtonElement>('.btn-preset').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const title = btn.dataset.title || 'Command';
+        const cmd = btn.dataset.cmd || '';
+        const cwd = btn.dataset.cwd || '';
+        runAutomationJob(title, cmd, cwd);
+      });
+    });
+
+    // Custom Command Runner
+    document.getElementById('btn-run-custom')?.addEventListener('click', () => {
+      const cmdInput = document.getElementById('custom-cmd-input') as HTMLInputElement | null;
+      const cwdInput = document.getElementById('custom-cwd-input') as HTMLInputElement | null;
+      const cmd = cmdInput?.value.trim() || '';
+      const cwd = cwdInput?.value.trim() || '';
+      if (!cmd) {
+        alert('Vui lòng nhập lệnh CLI cần chạy!');
+        cmdInput?.focus();
+        return;
+      }
+      runAutomationJob(`Custom: ${cmd.slice(0, 28)}`, cmd, cwd);
+    });
+
+    // 5-Stage ISTQB Generate Button
+    const btnGen = document.getElementById('btn-qc-generate') as HTMLButtonElement | null;
+    btnGen?.addEventListener('click', async () => {
+      const srcInput = document.getElementById('qc-source') as HTMLInputElement | null;
+      const specInput = document.getElementById('qc-spec') as HTMLInputElement | null;
+      const taskIdInput = document.getElementById('qc-task-id') as HTMLInputElement | null;
+      const outPathInput = document.getElementById('qc-out-spec') as HTMLInputElement | null;
+      const syncHarness = document.getElementById('qc-sync-harness') as HTMLInputElement | null;
+      const runAfter = document.getElementById('qc-run-after') as HTMLInputElement | null;
+      const statusMsg = document.getElementById('qc-gen-status');
+
+      const source = srcInput?.value.trim() || '';
+      if (!source) {
+        alert('Vui lòng chọn hoặc nhập đường dẫn file nguồn cần test (Source file)!');
+        srcInput?.focus();
+        return;
+      }
+
+      if (btnGen) {
+        btnGen.disabled = true;
+        btnGen.textContent = 'Đang chạy 5-Stage...';
+      }
+
+      try {
+        const payload = {
+          source: source,
+          spec: specInput?.value.trim() || '',
+          task_id: taskIdInput?.value ? Number(taskIdInput.value) : null,
+          out_spec: outPathInput?.value.trim() || '/tmp/generated.spec.ts',
+          sync_harness: Boolean(syncHarness?.checked),
+          run_test: Boolean(runAfter?.checked),
+        };
+
+        const res = await fetch('/api/automation/qc-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const data: QcGenerateResponse = await res.json();
+        const cov = data.coverage_report || {};
+
+        // Display results
+        const resBox = document.getElementById('qc-result-box');
+        const badges = document.getElementById('qc-cov-badges');
+        const preview = document.getElementById('qc-spec-preview');
+
+        if (resBox) resBox.style.display = 'flex';
+        if (badges) {
+          badges.innerHTML = `
+            <span class="cov-badge">Total Cases: <strong>${cov.total_cases ?? 0}</strong></span>
+            <span class="cov-badge">REQ Coverage: <strong>${cov.requirement_coverage_pct ?? 0}%</strong></span>
+            <span class="cov-badge">CI Coverage: <strong>${cov.coverage_item_pct ?? 0}%</strong></span>
+            <span class="cov-badge">Symbol Coverage: <strong>${cov.symbol_coverage_pct ?? 0}%</strong></span>
+            <span class="cov-badge success">5-Stage ISTQB Verified</span>
+          `;
+        }
+        if (preview) {
+          preview.textContent = data.spec_code || JSON.stringify(cov, null, 2);
+        }
+
+        if (statusMsg) {
+          statusMsg.textContent = `Đã sinh thành công ${cov.total_cases ?? 0} testcases!`;
+          statusMsg.className = 'status-msg success';
+        }
+
+        if (data.job_id) {
+          activeJobId = data.job_id;
+          await pollJobs();
+        }
+
+        // Trigger work items refresh if testcases synced to DB
+        if (payload.sync_harness) {
+          window.dispatchEvent(new CustomEvent('work-items-updated'));
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (statusMsg) {
+          statusMsg.textContent = 'Lỗi: ' + message;
+          statusMsg.className = 'status-msg error';
+        }
+        alert('Lỗi sinh Unit Test: ' + message);
+      } finally {
+        if (btnGen) {
+          btnGen.disabled = false;
+          btnGen.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Sinh Unit Test (5-Stage)</span>`;
+        }
+      }
+    });
+
+    // Dispatch QC Agent Button
+    document.getElementById('btn-qc-dispatch-agent')?.addEventListener('click', async () => {
+      const srcInput = document.getElementById('qc-source') as HTMLInputElement | null;
+      const specInput = document.getElementById('qc-spec') as HTMLInputElement | null;
+      const tidInput = document.getElementById('qc-task-id') as HTMLInputElement | null;
+
+      const src = srcInput?.value.trim() || 'projects/wicx-crm-fe/libs/wicx-core/src/utils/helps/validator.helper.ts';
+      const spc = specInput?.value.trim() || 'projects/wicx-crm-fe/libs/wicx-core/spec.md';
+      const tid = tidInput?.value ? tidInput.value : '';
+
+      const prompt = `Chạy tools/qc_test_generator.py cho source '${src}' và spec '${spc}'${tid ? ' (Work Item #' + tid + ')' : ''}, hoàn thiện assertions cho unit test và kiểm tra regression suite.`;
+
+      try {
+        const res = await fetch('/api/agents/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile: 'QC', item_id: tid ? Number(tid) : null, prompt }),
+        });
+        const out = await res.json();
+        if (out.job_id) {
+          activeJobId = out.job_id;
+          await pollJobs();
+        }
+        alert('Đã giao nhiệm vụ kiểm thử cho Agent QC! Đang theo dõi log...');
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert('Lỗi giao Agent QC: ' + msg);
+      }
+    });
+
+    // Copy Generated Spec Button
+    document.getElementById('btn-copy-spec')?.addEventListener('click', () => {
+      const preview = document.getElementById('qc-spec-preview');
+      if (preview && preview.textContent) {
+        navigator.clipboard.writeText(preview.textContent).then(() => {
+          const btn = document.getElementById('btn-copy-spec');
+          if (btn) {
+            btn.textContent = 'Đã sao chép!';
+            setTimeout(() => {
+              btn.textContent = 'Sao chép code';
+            }, 1500);
+          }
+        });
+      }
+    });
+
+    // Refresh Jobs Button
+    document.getElementById('btn-refresh-jobs')?.addEventListener('click', pollJobs);
+
+    // Prefill Task ID from WorkItemsBoard
+    window.addEventListener('prefill-qc-task', ((e: CustomEvent<{ taskId: string }>) => {
+      const tidInput = document.getElementById('qc-task-id') as HTMLInputElement | null;
+      if (tidInput && e.detail.taskId) {
+        tidInput.value = e.detail.taskId;
+      }
+    }) as EventListener);
+  }
+
+  function initQcWorkbench() {
+    setupQcEvents();
+    loadSourceFilesAndPresets();
+    pollJobs();
+
+    // Auto poll jobs every 2500ms
+    qcJobPollInterval = window.setInterval(pollJobs, 2500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initQcWorkbench);
+  } else {
+    initQcWorkbench();
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (qcJobPollInterval !== null) {
+      clearInterval(qcJobPollInterval);
+    }
+  });
+</script>
+
+<style>
+  .qc-workbench-island {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Top Split Grid */
+  .qc-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .qc-card-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .header-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .panel-card-header h3,
+  .panel-card-header h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 5-Stage Step Indicators */
+  .stage-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stage-step {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  /* Form Elements */
+  .qc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .flex-1 { flex: 1; }
+  .flex-2 { flex: 2; }
+  .flex-3 { flex: 3; }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .field-label .req {
+    color: var(--danger);
+  }
+
+  .qc-form input,
+  .custom-cmd-section input {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: var(--font);
+    transition: border-color 0.15s ease;
+  }
+
+  .mono-input {
+    font-family: var(--font-mono) !important;
+    font-size: 12px !important;
+  }
+
+  .qc-form input:focus,
+  .custom-cmd-section input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 1px var(--border-focus);
+  }
+
+  .form-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding: 4px 0;
+  }
+
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .form-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .buttons-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-msg {
+    font-size: 12px;
+  }
+  .status-msg.success { color: #34D399; }
+  .status-msg.error { color: #FB7185; }
+
+  /* Coverage & Spec Preview */
+  .qc-result-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .box-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .btn-copy {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+
+  .btn-copy:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+  }
+
+  .coverage-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .cov-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.14);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+
+  .cov-badge.success {
+    background: rgba(16, 185, 129, 0.14);
+    color: #6EE7B7;
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .spec-preview-box {
+    max-height: 160px;
+    margin: 0;
+  }
+
+  /* Presets Section */
+  .presets-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .presets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .btn-preset {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .btn-preset:hover {
+    background: var(--bg-elevated);
+    border-color: var(--primary);
+  }
+
+  .preset-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .preset-cmd {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Custom CLI Runner */
+  .custom-cmd-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .cmd-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* Terminal Panel */
+  .terminal-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .live-pulse-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #34D399;
+    letter-spacing: 0.08em;
+  }
+
+  .job-stream-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .job-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .job-pill {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+
+  .job-pill:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+  }
+
+  .job-pill.running { border-color: rgba(59, 130, 246, 0.4); color: #93C5FD; }
+  .job-pill.passed { border-color: rgba(16, 185, 129, 0.4); color: #6EE7B7; }
+  .job-pill.failed { border-color: rgba(244, 63, 94, 0.4); color: #FDA4AF; }
+
+  .job-pill.active-job {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--primary);
+    font-weight: 600;
+  }
+
+  .terminal-stream {
+    background: var(--bg-terminal);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #A7F3D0;
+    white-space: pre-wrap;
+    min-height: 220px;
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+
+  .terminal-box {
+    background: var(--bg-terminal);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #CBD5E1;
+    overflow-y: auto;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border-hover);
+  }
+
+  @media (max-width: 1024px) {
+    .qc-top-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .form-row {
+      flex-direction: column;
+    }
+    .presets-grid {
+      grid-template-columns: 1fr;
+    }
+    .cmd-input-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>

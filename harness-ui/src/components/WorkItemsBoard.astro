@@ -1,0 +1,1722 @@
+---
+// WorkItemsBoard.astro - Interactive Work Items Island
+---
+
+<div class="work-items-island">
+  <!-- Action & Filter Bar -->
+  <div class="board-header">
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="search"
+        id="wi-search"
+        placeholder="Tìm theo ID, tiêu đề, người phụ trách, vai trò, nguồn..."
+        autocomplete="off"
+        aria-label="Tìm kiếm công việc"
+      />
+    </div>
+
+    <div class="filter-controls" id="wi-filter-controls">
+      <!-- Status Filter -->
+      <select id="wi-filter-status" aria-label="Lọc theo trạng thái">
+        <option value="">Tất cả trạng thái</option>
+        <option value="New">New (Mới tạo)</option>
+        <option value="Accepted">Accepted (Đã tiếp nhận)</option>
+        <option value="Active">Active (Đang làm)</option>
+        <option value="Resolved">Resolved (Chờ QC)</option>
+        <option value="Closed">Closed (Đã đóng)</option>
+        <option value="Blocked">Blocked (Bị nghẽn)</option>
+        <option value="Design">Design (Đang thiết kế)</option>
+      </select>
+
+      <!-- Role Filter -->
+      <select id="wi-filter-role" aria-label="Lọc theo vai trò SLPC">
+        <option value="">Tất cả vai trò SLPC</option>
+        <option value="supervisor">Supervisor (Scope Guard)</option>
+        <option value="lead">Lead (Architect & PM)</option>
+        <option value="peer">Peer (Dev Executor)</option>
+        <option value="qc">QC (Test Architect)</option>
+      </select>
+
+      <!-- Priority Filter -->
+      <select id="wi-filter-prio" aria-label="Lọc theo độ ưu tiên">
+        <option value="">Tất cả độ ưu tiên</option>
+        <option value="1-Urgent">1-Urgent (P0 Critical)</option>
+        <option value="2-High">2-High (P1 High)</option>
+        <option value="3-Medium">3-Medium (P2 Medium)</option>
+        <option value="4-Low">4-Low (P3 Low)</option>
+      </select>
+
+      <!-- Source Filter -->
+      <select id="wi-filter-source" aria-label="Lọc theo nguồn">
+        <option value="">Tất cả nguồn</option>
+        <option value="local">Local Harness</option>
+        <option value="tfs">TFS Enterprise</option>
+      </select>
+
+      <!-- Sprint Filter -->
+      <select id="wi-filter-sprint" aria-label="Lọc theo Sprint">
+        <option value="">Tất cả Sprint</option>
+      </select>
+
+      <!-- Reset Filter Button -->
+      <button type="button" id="btn-wi-reset" class="btn btn-secondary btn-sm" title="Đặt lại bộ lọc">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+        <span>Đặt lại</span>
+      </button>
+
+      <!-- Create New Item Button -->
+      <button type="button" id="btn-open-create-modal" class="btn btn-primary btn-sm" title="Tạo mới công việc">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Tạo mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Board Meta & Counter -->
+  <div class="board-meta-strip">
+    <div class="count-indicator">
+      Hiển thị: <strong id="wi-count-display">0 / 0 mục</strong>
+      <span id="wi-filter-active-tag" class="filter-active-pill" style="display: none;">Đang lọc</span>
+    </div>
+    <div class="quick-status-legend">
+      <span class="legend-item"><span class="legend-dot st-New"></span>New</span>
+      <span class="legend-item"><span class="legend-dot st-Accepted"></span>Accepted</span>
+      <span class="legend-item"><span class="legend-dot st-Active"></span>Active</span>
+      <span class="legend-item"><span class="legend-dot st-Resolved"></span>Resolved</span>
+      <span class="legend-item"><span class="legend-dot st-Closed"></span>Closed</span>
+    </div>
+  </div>
+
+  <!-- Interactive Work Items Table -->
+  <div class="table-container" tabindex="0" aria-label="Danh sách công việc">
+    <table class="wi-table" id="wi-main-table">
+      <thead>
+        <tr>
+          <th data-sort="id" class="sortable col-id" title="Sắp xếp theo ID">ID <span class="sort-icon">⇅</span></th>
+          <th data-sort="source" class="sortable col-source" title="Sắp xếp theo Nguồn">Nguồn <span class="sort-icon">⇅</span></th>
+          <th data-sort="type" class="sortable col-type" title="Sắp xếp theo Loại">Loại <span class="sort-icon">⇅</span></th>
+          <th data-sort="priority" class="sortable col-prio" title="Sắp xếp theo Độ ưu tiên">Ưu tiên <span class="sort-icon">⇅</span></th>
+          <th data-sort="title" class="sortable col-title" title="Sắp xếp theo Tiêu đề">Tiêu đề công việc <span class="sort-icon">⇅</span></th>
+          <th data-sort="state" class="sortable col-state" title="Sắp xếp theo Trạng thái">Trạng thái <span class="sort-icon">⇅</span></th>
+          <th data-sort="assigned_to_profile" class="sortable col-assignee" title="Sắp xếp theo Phụ trách">Phụ trách <span class="sort-icon">⇅</span></th>
+          <th data-sort="iteration_path" class="sortable col-sprint" title="Sắp xếp theo Sprint">Sprint <span class="sort-icon">⇅</span></th>
+          <th class="col-actions">Thao tác &amp; Chuyển trạng thái</th>
+        </tr>
+      </thead>
+      <tbody id="wi-table-body">
+        <tr class="loading-row">
+          <td colspan="9">
+            <div class="table-loading-state">
+              <div class="spinner"></div>
+              <span>Đang tải danh sách công việc từ backend (:8765)...</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal 1: Work Item Detail & Quick State Transitions -->
+  <dialog id="dlg-wi-detail" class="dashboard-dialog" aria-labelledby="dlg-detail-title">
+    <div class="dialog-card">
+      <div class="dialog-header">
+        <div class="dialog-title-area">
+          <div class="dialog-tags">
+            <span id="detail-tag-id" class="mono-badge">#--</span>
+            <span id="detail-tag-source" class="src-tag src-local">local</span>
+            <span id="detail-tag-type" class="type-tag type-Task">Task</span>
+            <span id="detail-tag-prio" class="prio-tag prio-P2">P2</span>
+            <span id="detail-tag-state" class="pill st-New">New</span>
+          </div>
+          <h3 id="dlg-detail-title">Chi tiết công việc</h3>
+        </div>
+        <button type="button" class="btn-close-dialog" id="btn-close-detail" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div class="dialog-body">
+        <!-- Quick Status Progression Stepper -->
+        <div class="quick-progression-box">
+          <span class="box-label">QUICK TRANSITION (CHUYỂN TRẠNG THÁI NHANH):</span>
+          <div class="stepper-buttons" id="detail-stepper">
+            <button type="button" class="step-btn" data-target-state="New">
+              <span class="step-num">1</span>
+              <span>New</span>
+            </button>
+            <span class="step-arrow">→</span>
+            <button type="button" class="step-btn" data-target-state="Accepted">
+              <span class="step-num">2</span>
+              <span>Accepted</span>
+            </button>
+            <span class="step-arrow">→</span>
+            <button type="button" class="step-btn" data-target-state="Active">
+              <span class="step-num">3</span>
+              <span>Active</span>
+            </button>
+            <span class="step-arrow">→</span>
+            <button type="button" class="step-btn" data-target-state="Resolved">
+              <span class="step-num">4</span>
+              <span>Resolved</span>
+            </button>
+            <span class="step-arrow">→</span>
+            <button type="button" class="step-btn" data-target-state="Closed">
+              <span class="step-num">5</span>
+              <span>Closed</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Description Box -->
+        <div class="form-group">
+          <label class="field-label">Mô tả công việc (Description):</label>
+          <div class="terminal-box desc-box" id="detail-desc">(Không có mô tả)</div>
+        </div>
+
+        <!-- Acceptance Criteria (BDD format) Box -->
+        <div class="form-group">
+          <label class="field-label">Tiêu chí nghiệm thu (Acceptance Criteria - BDD format):</label>
+          <div class="terminal-box ac-box" id="detail-ac">(Chưa có Acceptance Criteria)</div>
+        </div>
+
+        <!-- Inline Edit Details Form -->
+        <div class="edit-fields-grid">
+          <div class="field-col">
+            <label for="detail-ed-state" class="field-label">Trạng thái:</label>
+            <select id="detail-ed-state">
+              <option value="New">New</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Active">Active</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
+              <option value="Blocked">Blocked</option>
+              <option value="Design">Design</option>
+            </select>
+          </div>
+
+          <div class="field-col">
+            <label for="detail-ed-profile" class="field-label">Vai trò SLPC:</label>
+            <select id="detail-ed-profile">
+              <option value="supervisor">Supervisor (Scope Guard)</option>
+              <option value="lead">Lead (Architect & PM)</option>
+              <option value="peer">Peer (Dev Executor)</option>
+              <option value="qc">QC (Test Architect)</option>
+            </select>
+          </div>
+
+          <div class="field-col">
+            <label for="detail-ed-assignee" class="field-label">Người nhận (Tên):</label>
+            <input type="text" id="detail-ed-assignee" placeholder="e.g. dev_01" />
+          </div>
+
+          <div class="field-col">
+            <label for="detail-ed-prio" class="field-label">Độ ưu tiên:</label>
+            <select id="detail-ed-prio">
+              <option value="P0">P0 (1-Urgent)</option>
+              <option value="P1">P1 (2-High)</option>
+              <option value="P2">P2 (3-Medium)</option>
+              <option value="P3">P3 (4-Low)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <div class="footer-left-actions">
+          <button type="button" id="btn-detail-wake-agent" class="btn btn-purple btn-sm" title="Chuyển sang tab SLPC Agent và gửi chỉ thị">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Giao Agent xử lý</span>
+          </button>
+          <button type="button" id="btn-detail-qc-test" class="btn btn-warning btn-sm" title="Chuyển sang QC Automation để sinh test">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span>QC Sinh Test</span>
+          </button>
+        </div>
+        <div class="footer-right-actions">
+          <button type="button" id="btn-detail-cancel" class="btn btn-secondary btn-sm">Đóng</button>
+          <button type="button" id="btn-detail-save" class="btn btn-primary btn-sm">Lưu thay đổi</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 2: Create Work Item -->
+  <dialog id="dlg-wi-create" class="dashboard-dialog" aria-labelledby="dlg-create-title">
+    <div class="dialog-card">
+      <div class="dialog-header">
+        <div class="dialog-title-area">
+          <span class="dialog-tag-badge">NEW ITEM</span>
+          <h3 id="dlg-create-title">Tạo mới Work Item</h3>
+        </div>
+        <button type="button" class="btn-close-dialog" id="btn-close-create" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div class="dialog-body">
+        <form id="form-create-wi" onsubmit="return false;">
+          <div class="form-row-grid">
+            <div class="form-group">
+              <label for="create-type" class="field-label">Loại công việc:</label>
+              <select id="create-type" required>
+                <option value="Task" selected>Task</option>
+                <option value="Bug">Bug</option>
+                <option value="User Story">User Story</option>
+                <option value="Feature">Feature</option>
+                <option value="Epic">Epic</option>
+                <option value="Testcase">Testcase</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="create-prio" class="field-label">Độ ưu tiên:</label>
+              <select id="create-prio">
+                <option value="P0">P0 (1-Urgent Critical)</option>
+                <option value="P1">P1 (2-High)</option>
+                <option value="P2" selected>P2 (3-Medium)</option>
+                <option value="P3">P3 (4-Low)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="create-role" class="field-label">Vai trò SLPC phụ trách:</label>
+              <select id="create-role">
+                <option value="peer" selected>Peer (Code Executor)</option>
+                <option value="lead">Lead (Technical Architect)</option>
+                <option value="qc">QC (Test Architect)</option>
+                <option value="supervisor">Supervisor (Scope Guard)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="create-parent" class="field-label">Parent ID (Tùy chọn):</label>
+              <input type="number" id="create-parent" placeholder="e.g. 161095" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="create-title" class="field-label">Tiêu đề công việc <span class="req">*</span>:</label>
+            <input type="text" id="create-title" placeholder="e.g. [Module] - Mô tả tóm tắt tính năng..." required />
+          </div>
+
+          <div class="form-group">
+            <label for="create-desc" class="field-label">Mô tả chi tiết (Description):</label>
+            <textarea id="create-desc" rows="4" placeholder="Mục tiêu, bối cảnh, và hướng dẫn chi tiết thực hiện..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="create-ac" class="field-label">Tiêu chí nghiệm thu (Acceptance Criteria - BDD format):</label>
+            <textarea
+              id="create-ac"
+              rows="4"
+              placeholder="Given: điều kiện đầu vào...&#10;When: khi người dùng hoặc hệ thống kích hoạt...&#10;Then: kết quả mong đợi đạt chuẩn..."
+            ></textarea>
+          </div>
+
+          <div class="form-checkbox-wrap">
+            <label class="checkbox-label">
+              <input type="checkbox" id="create-dispatch" checked />
+              <span>Tự động gọi Agent nhận việc ngay (Auto-dispatch background task)</span>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="dialog-footer">
+        <div id="create-status-msg" class="status-msg"></div>
+        <div class="footer-right-actions">
+          <button type="button" id="btn-cancel-create" class="btn btn-secondary btn-sm">Hủy</button>
+          <button type="button" id="btn-submit-create" class="btn btn-primary btn-sm">Tạo công việc</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</div>
+
+<script>
+  interface WorkItem {
+    id: number | string;
+    title: string;
+    type?: string;
+    description?: string;
+    acceptance_criteria?: string;
+    state?: string;
+    priority?: string;
+    assigned_to?: string | null;
+    assigned_to_profile?: string | null;
+    created_by_profile?: string | null;
+    parent_item_id?: number | string | null;
+    iteration_path?: string | null;
+    source?: string;
+    created_at?: string;
+    updated_at?: string;
+  }
+
+  // Module state
+  let allWorkItems: WorkItem[] = [];
+  let currentActiveItem: WorkItem | null = null;
+  let sortKey: keyof WorkItem = 'id';
+  let sortDir = -1; // -1 for descending (newest ID first)
+  let isUpdatingState = false;
+
+  function escHtml(s: unknown): string {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function normalizePriority(p?: string): { code: string; label: string } {
+    const raw = String(p || '').trim().toUpperCase();
+    if (raw === 'P0' || raw.includes('URGENT') || raw === '1') return { code: 'P0', label: '1-Urgent' };
+    if (raw === 'P1' || raw.includes('HIGH') || raw === '2') return { code: 'P1', label: '2-High' };
+    if (raw === 'P2' || raw.includes('MEDIUM') || raw === '3') return { code: 'P2', label: '3-Medium' };
+    if (raw === 'P3' || raw.includes('LOW') || raw === '4') return { code: 'P3', label: '4-Low' };
+    return { code: 'P2', label: '3-Medium' };
+  }
+
+  function getNextActionLabel(currentState?: string): { label: string; icon: string; nextState: string } {
+    switch (currentState) {
+      case 'New':
+        return { label: 'Nhận việc', icon: '→', nextState: 'Accepted' };
+      case 'Accepted':
+        return { label: 'Bắt đầu', icon: '▶', nextState: 'Active' };
+      case 'Active':
+        return { label: 'Chờ QC', icon: '✓', nextState: 'Resolved' };
+      case 'Resolved':
+        return { label: 'Đóng', icon: '✔', nextState: 'Closed' };
+      case 'Closed':
+        return { label: 'Mở lại', icon: '↺', nextState: 'Active' };
+      default:
+        return { label: 'Bắt đầu', icon: '▶', nextState: 'Active' };
+    }
+  }
+
+  // Populate Sprint Filter with unique iteration paths
+  function populateSprintFilter(items: WorkItem[]) {
+    const select = document.getElementById('wi-filter-sprint') as HTMLSelectElement | null;
+    if (!select) return;
+    const currentVal = select.value;
+    const sprints = Array.from(new Set(items.map((x) => x.iteration_path || '').filter(Boolean))).sort();
+
+    select.innerHTML = '<option value="">Tất cả Sprint</option>' +
+      sprints
+        .map((s) => {
+          const leaf = s.split('\\').pop() || s;
+          const isSel = s === currentVal ? 'selected' : '';
+          return `<option value="${escHtml(s)}" ${isSel}>${escHtml(leaf)}</option>`;
+        })
+        .join('');
+  }
+
+  // Render Table
+  function renderTable() {
+    const tbody = document.getElementById('wi-table-body');
+    const countDisplay = document.getElementById('wi-count-display');
+    const filterActiveTag = document.getElementById('wi-filter-active-tag');
+    if (!tbody) return;
+
+    const searchInput = document.getElementById('wi-search') as HTMLInputElement | null;
+    const filterStatus = document.getElementById('wi-filter-status') as HTMLSelectElement | null;
+    const filterRole = document.getElementById('wi-filter-role') as HTMLSelectElement | null;
+    const filterPrio = document.getElementById('wi-filter-prio') as HTMLSelectElement | null;
+    const filterSource = document.getElementById('wi-filter-source') as HTMLSelectElement | null;
+    const filterSprint = document.getElementById('wi-filter-sprint') as HTMLSelectElement | null;
+
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    const stVal = filterStatus?.value || '';
+    const roleVal = (filterRole?.value || '').toLowerCase();
+    const prioVal = filterPrio?.value || '';
+    const srcVal = (filterSource?.value || '').toLowerCase();
+    const sprintVal = filterSprint?.value || '';
+
+    const isFiltered = Boolean(q || stVal || roleVal || prioVal || srcVal || sprintVal);
+    if (filterActiveTag) {
+      filterActiveTag.style.display = isFiltered ? 'inline-block' : 'none';
+    }
+
+    // Filter items
+    let filtered = allWorkItems.filter((item) => {
+      // Search text across ID, title, description, assignee, role, source
+      if (q) {
+        const hay = `${item.id} ${item.title || ''} ${item.description || ''} ${item.assigned_to || ''} ${item.assigned_to_profile || ''} ${item.source || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+
+      // Status
+      if (stVal && (item.state || 'New') !== stVal) return false;
+
+      // Role
+      if (roleVal && (item.assigned_to_profile || '').toLowerCase() !== roleVal) return false;
+
+      // Priority
+      if (prioVal) {
+        const norm = normalizePriority(item.priority);
+        if (prioVal === '1-Urgent' && norm.code !== 'P0') return false;
+        if (prioVal === '2-High' && norm.code !== 'P1') return false;
+        if (prioVal === '3-Medium' && norm.code !== 'P2') return false;
+        if (prioVal === '4-Low' && norm.code !== 'P3') return false;
+      }
+
+      // Source
+      if (srcVal) {
+        const itemSrc = (item.source || 'local').toLowerCase();
+        if (itemSrc !== srcVal) return false;
+      }
+
+      // Sprint
+      if (sprintVal && (item.iteration_path || '') !== sprintVal) return false;
+
+      return true;
+    });
+
+    // Sort items
+    filtered.sort((a, b) => {
+      let va = a[sortKey];
+      let vb = b[sortKey];
+
+      if (sortKey === 'id') {
+        const na = Number(va) || 0;
+        const nb = Number(vb) || 0;
+        return (na > nb ? 1 : na < nb ? -1 : 0) * sortDir;
+      }
+
+      va = String(va ?? '').toLowerCase();
+      vb = String(vb ?? '').toLowerCase();
+      return (va > vb ? 1 : va < vb ? -1 : 0) * sortDir;
+    });
+
+    if (countDisplay) {
+      countDisplay.textContent = `${filtered.length} / ${allWorkItems.length} mục`;
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="9">
+            <div class="table-empty-state">
+              <span class="empty-icon">🔍</span>
+              <h4>Không tìm thấy công việc nào thỏa mãn</h4>
+              <p>Thử điều chỉnh lại từ khóa tìm kiếm hoặc các tiêu chí bộ lọc.</p>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+
+    // Render top 500 rows for high performance
+    const renderLimit = 500;
+    const rows = filtered.slice(0, renderLimit).map((item) => {
+      const src = (item.source || 'local').toLowerCase();
+      const state = item.state || 'New';
+      const prio = normalizePriority(item.priority);
+      const role = (item.assigned_to_profile || 'peer').toUpperCase();
+      const assigneeText = item.assigned_to ? `${escHtml(item.assigned_to)} (${role})` : role;
+      const sprintLeaf = (item.iteration_path || '').split('\\').pop() || 'Paseo';
+      const action = getNextActionLabel(state);
+
+      return `
+        <tr class="wi-row" data-id="${item.id}">
+          <td class="col-id"><span class="wi-id-badge">#${item.id}</span></td>
+          <td class="col-source"><span class="src-tag src-${escHtml(src)}">${escHtml(src)}</span></td>
+          <td class="col-type"><span class="type-tag type-${escHtml(item.type || 'Task')}">${escHtml(item.type || 'Task')}</span></td>
+          <td class="col-prio"><span class="prio-tag prio-${prio.code}">${prio.label}</span></td>
+          <td class="col-title" title="${escHtml(item.title)}">
+            <div class="title-cell-text">${escHtml(item.title)}</div>
+          </td>
+          <td class="col-state"><span class="pill st-${escHtml(state)}">${escHtml(state)}</span></td>
+          <td class="col-assignee">
+            <span class="role-badge role-${escHtml(role.toLowerCase())}">${role}</span>
+            <span class="assignee-name">${assigneeText}</span>
+          </td>
+          <td class="col-sprint"><span class="sprint-pill">${escHtml(sprintLeaf)}</span></td>
+          <td class="col-actions" onclick="event.stopPropagation()">
+            <div class="row-actions">
+              <button
+                type="button"
+                class="btn-quick-transition btn-next-${escHtml(action.nextState.toLowerCase())}"
+                data-id="${item.id}"
+                data-next-state="${action.nextState}"
+                title="Chuyển sang ${action.nextState}"
+              >
+                <span>${action.icon} ${action.label}</span>
+              </button>
+              <button
+                type="button"
+                class="btn-row-action btn-detail"
+                data-id="${item.id}"
+                title="Xem &amp; sửa chi tiết"
+              >
+                Chi tiết
+              </button>
+              <button
+                type="button"
+                class="btn-row-action btn-qc"
+                data-id="${item.id}"
+                title="Sinh Unit Test cho item này"
+              >
+                QC
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = rows.join('');
+
+    // Attach row events
+    tbody.querySelectorAll<HTMLTableRowElement>('.wi-row').forEach((tr) => {
+      tr.addEventListener('click', () => {
+        const id = tr.dataset.id;
+        if (id) openDetailModal(id);
+      });
+    });
+
+    // Attach quick transition buttons
+    tbody.querySelectorAll<HTMLButtonElement>('.btn-quick-transition').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const nextState = btn.dataset.nextState;
+        if (id && nextState) {
+          await executeStateUpdate(id, nextState);
+        }
+      });
+    });
+
+    // Attach detail buttons
+    tbody.querySelectorAll<HTMLButtonElement>('.btn-detail').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if (id) openDetailModal(id);
+      });
+    });
+
+    // Attach QC buttons
+    tbody.querySelectorAll<HTMLButtonElement>('.btn-qc').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if (id) jumpToQCWorkbench(id);
+      });
+    });
+  }
+
+  // Quick State Update via API
+  async function executeStateUpdate(id: string | number, targetState: string, additionalData?: { assigned_to?: string; assigned_to_profile?: string }) {
+    if (isUpdatingState) return;
+    isUpdatingState = true;
+
+    try {
+      const payload = {
+        id: Number(id),
+        state: targetState,
+        assigned_to: additionalData?.assigned_to ?? undefined,
+        assigned_to_profile: additionalData?.assigned_to_profile ?? undefined,
+      };
+
+      const res = await fetch('/api/work-items/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const updated = await res.json();
+
+      // Update in local cache
+      const idx = allWorkItems.findIndex((x) => String(x.id) === String(id));
+      if (idx !== -1) {
+        allWorkItems[idx] = { ...allWorkItems[idx], ...updated, state: targetState };
+      }
+
+      renderTable();
+
+      // Broadcast update to layout and KPI strip
+      window.dispatchEvent(new CustomEvent('work-items-updated', { detail: allWorkItems }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert('Không thể cập nhật trạng thái: ' + message);
+    } finally {
+      isUpdatingState = false;
+    }
+  }
+
+  // Open Detail Modal
+  function openDetailModal(id: string | number) {
+    const item = allWorkItems.find((x) => String(x.id) === String(id));
+    if (!item) return;
+
+    currentActiveItem = item;
+    const dlg = document.getElementById('dlg-wi-detail') as HTMLDialogElement | null;
+    if (!dlg) return;
+
+    // Tags
+    const tagId = document.getElementById('detail-tag-id');
+    const tagSrc = document.getElementById('detail-tag-source');
+    const tagType = document.getElementById('detail-tag-type');
+    const tagPrio = document.getElementById('detail-tag-prio');
+    const tagState = document.getElementById('detail-tag-state');
+    const titleEl = document.getElementById('dlg-detail-title');
+    const descEl = document.getElementById('detail-desc');
+    const acEl = document.getElementById('detail-ac');
+
+    const normPrio = normalizePriority(item.priority);
+    const src = (item.source || 'local').toLowerCase();
+    const st = item.state || 'New';
+
+    if (tagId) tagId.textContent = `#${item.id}`;
+    if (tagSrc) {
+      tagSrc.textContent = src;
+      tagSrc.className = `src-tag src-${src}`;
+    }
+    if (tagType) {
+      tagType.textContent = item.type || 'Task';
+      tagType.className = `type-tag type-${item.type || 'Task'}`;
+    }
+    if (tagPrio) {
+      tagPrio.textContent = normPrio.label;
+      tagPrio.className = `prio-tag prio-${normPrio.code}`;
+    }
+    if (tagState) {
+      tagState.textContent = st;
+      tagState.className = `pill st-${st}`;
+    }
+    if (titleEl) titleEl.textContent = item.title;
+    if (descEl) descEl.textContent = item.description || '(Không có mô tả chi tiết)';
+    if (acEl) acEl.textContent = item.acceptance_criteria || '(Chưa có Acceptance Criteria)';
+
+    // Edit form fields
+    const edState = document.getElementById('detail-ed-state') as HTMLSelectElement | null;
+    const edProfile = document.getElementById('detail-ed-profile') as HTMLSelectElement | null;
+    const edAssignee = document.getElementById('detail-ed-assignee') as HTMLInputElement | null;
+    const edPrio = document.getElementById('detail-ed-prio') as HTMLSelectElement | null;
+
+    if (edState) edState.value = st;
+    if (edProfile) edProfile.value = (item.assigned_to_profile || 'peer').toLowerCase();
+    if (edAssignee) edAssignee.value = item.assigned_to || '';
+    if (edPrio) edPrio.value = normPrio.code;
+
+    // Highlight current state in stepper
+    updateStepperHighlight(st);
+
+    dlg.showModal();
+  }
+
+  function updateStepperHighlight(activeState: string) {
+    const stepper = document.getElementById('detail-stepper');
+    if (!stepper) return;
+    stepper.querySelectorAll<HTMLButtonElement>('.step-btn').forEach((btn) => {
+      const state = btn.dataset.targetState;
+      if (state === activeState) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // Jump to QC Workbench
+  function jumpToQCWorkbench(id: string | number) {
+    const dlg = document.getElementById('dlg-wi-detail') as HTMLDialogElement | null;
+    if (dlg?.open) dlg.close();
+
+    window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'qc-workbench' } }));
+    window.dispatchEvent(new CustomEvent('prefill-qc-task', { detail: { taskId: String(id) } }));
+  }
+
+  // Jump to Agent Dispatch
+  function jumpToAgentDispatch(item: WorkItem) {
+    const dlg = document.getElementById('dlg-wi-detail') as HTMLDialogElement | null;
+    if (dlg?.open) dlg.close();
+
+    const prof = item.assigned_to_profile || 'peer';
+    const prompt = `Xử lý Work Item #${item.id} [${item.type || 'Task'}]: ${item.title}\nAC: ${item.acceptance_criteria || item.description || ''}`;
+
+    window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'slpc-agents' } }));
+    window.dispatchEvent(
+      new CustomEvent('prefill-agent-dispatch', {
+        detail: {
+          profile: prof,
+          itemId: String(item.id),
+          prompt: prompt,
+        },
+      })
+    );
+  }
+
+  // Setup Event Listeners
+  function setupEvents() {
+    // Search input
+    const searchInput = document.getElementById('wi-search') as HTMLInputElement | null;
+    searchInput?.addEventListener('input', renderTable);
+
+    // Dropdown filters
+    ['wi-filter-status', 'wi-filter-role', 'wi-filter-prio', 'wi-filter-source', 'wi-filter-sprint'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('change', renderTable);
+    });
+
+    // Reset button
+    document.getElementById('btn-wi-reset')?.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      ['wi-filter-status', 'wi-filter-role', 'wi-filter-prio', 'wi-filter-source', 'wi-filter-sprint'].forEach((id) => {
+        const el = document.getElementById(id) as HTMLSelectElement | null;
+        if (el) el.value = '';
+      });
+      renderTable();
+    });
+
+    // Table Header Sorting
+    document.querySelectorAll<HTMLTableCellElement>('.wi-table th.sortable').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort as keyof WorkItem | undefined;
+        if (!key) return;
+
+        if (sortKey === key) {
+          sortDir = -sortDir;
+        } else {
+          sortKey = key;
+          sortDir = 1;
+        }
+
+        // Update sort indicators
+        document.querySelectorAll<HTMLTableCellElement>('.wi-table th.sortable').forEach((h) => {
+          const icon = h.querySelector('.sort-icon');
+          if (h === th) {
+            h.classList.add('active-sort');
+            if (icon) icon.textContent = sortDir === 1 ? '▲' : '▼';
+          } else {
+            h.classList.remove('active-sort');
+            if (icon) icon.textContent = '⇅';
+          }
+        });
+
+        renderTable();
+      });
+    });
+
+    // Detail Dialog Stepper Buttons
+    document.querySelectorAll<HTMLButtonElement>('#detail-stepper .step-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!currentActiveItem) return;
+        const targetState = btn.dataset.targetState;
+        if (!targetState) return;
+
+        await executeStateUpdate(currentActiveItem.id, targetState);
+        currentActiveItem.state = targetState;
+        updateStepperHighlight(targetState);
+
+        const tagState = document.getElementById('detail-tag-state');
+        if (tagState) {
+          tagState.textContent = targetState;
+          tagState.className = `pill st-${targetState}`;
+        }
+        const edState = document.getElementById('detail-ed-state') as HTMLSelectElement | null;
+        if (edState) edState.value = targetState;
+      });
+    });
+
+    // Detail Dialog Save
+    document.getElementById('btn-detail-save')?.addEventListener('click', async () => {
+      if (!currentActiveItem) return;
+      const edState = document.getElementById('detail-ed-state') as HTMLSelectElement | null;
+      const edProfile = document.getElementById('detail-ed-profile') as HTMLSelectElement | null;
+      const edAssignee = document.getElementById('detail-ed-assignee') as HTMLInputElement | null;
+
+      const targetState = edState?.value || currentActiveItem.state || 'New';
+      const prof = edProfile?.value || currentActiveItem.assigned_to_profile || 'peer';
+      const assignee = edAssignee?.value || '';
+
+      await executeStateUpdate(currentActiveItem.id, targetState, {
+        assigned_to: assignee,
+        assigned_to_profile: prof,
+      });
+
+      const dlg = document.getElementById('dlg-wi-detail') as HTMLDialogElement | null;
+      dlg?.close();
+    });
+
+    // Detail Dialog Cancel/Close
+    const dlgDetail = document.getElementById('dlg-wi-detail') as HTMLDialogElement | null;
+    document.getElementById('btn-close-detail')?.addEventListener('click', () => dlgDetail?.close());
+    document.getElementById('btn-detail-cancel')?.addEventListener('click', () => dlgDetail?.close());
+
+    // Detail Dialog Actions
+    document.getElementById('btn-detail-wake-agent')?.addEventListener('click', () => {
+      if (currentActiveItem) jumpToAgentDispatch(currentActiveItem);
+    });
+    document.getElementById('btn-detail-qc-test')?.addEventListener('click', () => {
+      if (currentActiveItem) jumpToQCWorkbench(currentActiveItem.id);
+    });
+
+    // Create Work Item Modal Triggers
+    const dlgCreate = document.getElementById('dlg-wi-create') as HTMLDialogElement | null;
+    const btnOpenCreate = document.getElementById('btn-open-create-modal');
+    const btnHeaderCreate = document.getElementById('btn-open-create'); // from page header if present
+
+    btnOpenCreate?.addEventListener('click', () => dlgCreate?.showModal());
+    btnHeaderCreate?.addEventListener('click', () => dlgCreate?.showModal());
+    document.getElementById('btn-close-create')?.addEventListener('click', () => dlgCreate?.close());
+    document.getElementById('btn-cancel-create')?.addEventListener('click', () => dlgCreate?.close());
+
+    // Create Work Item Submit
+    document.getElementById('btn-submit-create')?.addEventListener('click', async () => {
+      const typeEl = document.getElementById('create-type') as HTMLSelectElement | null;
+      const prioEl = document.getElementById('create-prio') as HTMLSelectElement | null;
+      const roleEl = document.getElementById('create-role') as HTMLSelectElement | null;
+      const parentEl = document.getElementById('create-parent') as HTMLInputElement | null;
+      const titleEl = document.getElementById('create-title') as HTMLInputElement | null;
+      const descEl = document.getElementById('create-desc') as HTMLTextAreaElement | null;
+      const acEl = document.getElementById('create-ac') as HTMLTextAreaElement | null;
+      const dispatchEl = document.getElementById('create-dispatch') as HTMLInputElement | null;
+      const statusMsg = document.getElementById('create-status-msg');
+
+      const title = titleEl?.value.trim() || '';
+      if (!title) {
+        alert('Vui lòng nhập tiêu đề công việc!');
+        titleEl?.focus();
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-submit-create') as HTMLButtonElement | null;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang tạo...';
+      }
+
+      try {
+        const payload = {
+          type: typeEl?.value || 'Task',
+          priority: prioEl?.value || 'P2',
+          assigned_to_profile: roleEl?.value || 'peer',
+          role: roleEl?.value || 'peer',
+          title: title,
+          description: descEl?.value.trim() || '',
+          acceptance_criteria: acEl?.value.trim() || '',
+          parent_id: parentEl?.value ? Number(parentEl.value) : null,
+          dispatch: Boolean(dispatchEl?.checked),
+          auto_dispatch: Boolean(dispatchEl?.checked),
+        };
+
+        const res = await fetch('/api/work-items/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const createdItem: WorkItem = await res.json();
+        allWorkItems = [createdItem, ...allWorkItems];
+
+        populateSprintFilter(allWorkItems);
+        renderTable();
+
+        // Broadcast to KPI strip
+        window.dispatchEvent(new CustomEvent('work-items-updated', { detail: allWorkItems }));
+
+        // Clear form
+        if (titleEl) titleEl.value = '';
+        if (descEl) descEl.value = '';
+        if (acEl) acEl.value = '';
+        if (parentEl) parentEl.value = '';
+
+        if (statusMsg) {
+          statusMsg.textContent = `Tạo thành công #${createdItem.id}!`;
+          statusMsg.className = 'status-msg success';
+        }
+
+        setTimeout(() => {
+          dlgCreate?.close();
+          if (statusMsg) statusMsg.textContent = '';
+        }, 600);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (statusMsg) {
+          statusMsg.textContent = 'Lỗi: ' + message;
+          statusMsg.className = 'status-msg error';
+        }
+        alert('Lỗi tạo Work Item: ' + message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Tạo công việc';
+        }
+      }
+    });
+
+    // Listen to external filter requests (e.g. from KpiStrip cards)
+    window.addEventListener('filter-work-items', ((e: CustomEvent<{ state?: string | null; role?: string | null }>) => {
+      const filterStatus = document.getElementById('wi-filter-status') as HTMLSelectElement | null;
+      const filterRole = document.getElementById('wi-filter-role') as HTMLSelectElement | null;
+
+      if (e.detail?.state !== undefined && filterStatus) {
+        filterStatus.value = e.detail.state || '';
+      }
+      if (e.detail?.role !== undefined && filterRole) {
+        filterRole.value = e.detail.role || '';
+      }
+      renderTable();
+    }) as EventListener);
+
+    // Listen to work items feed from layout poll
+    window.addEventListener('work-items-updated', ((e: CustomEvent<WorkItem[]>) => {
+      if (Array.isArray(e.detail) && e.detail.length > 0) {
+        allWorkItems = e.detail;
+        populateSprintFilter(allWorkItems);
+        renderTable();
+      }
+    }) as EventListener);
+  }
+
+  // Fetch initial items if not yet loaded
+  async function fetchInitialWorkItems() {
+    try {
+      const res = await fetch('/api/work-items?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allWorkItems = Array.isArray(data) ? data : data.items || [];
+      populateSprintFilter(allWorkItems);
+      renderTable();
+    } catch {
+      const tbody = document.getElementById('wi-table-body');
+      if (tbody && allWorkItems.length === 0) {
+        tbody.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="9">
+              <div class="table-empty-state">
+                <span class="empty-icon">⚠️</span>
+                <h4>Chưa kết nối được với backend (:8765)</h4>
+                <p>Khởi động backend server: <code>python3 scripts/harness_dashboard.py --serve --port 8765</code></p>
+              </div>
+            </td>
+          </tr>`;
+      }
+    }
+  }
+
+  function initWorkItemsBoard() {
+    setupEvents();
+    fetchInitialWorkItems();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWorkItemsBoard);
+  } else {
+    initWorkItemsBoard();
+  }
+</script>
+
+<style>
+  .work-items-island {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Header Controls */
+  .board-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    min-width: 320px;
+    flex: 1;
+    color: var(--text-muted);
+    transition: border-color 0.15s ease;
+  }
+
+  .search-wrap:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 1px var(--border-focus);
+  }
+
+  .search-wrap input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 13px;
+    padding: 8px 0;
+    width: 100%;
+  }
+
+  .filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-controls select {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+
+  .filter-controls select:hover,
+  .filter-controls select:focus {
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+
+  /* Meta Strip */
+  .board-meta-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 4px 2px;
+  }
+
+  .filter-active-pill {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-size: 10px;
+    margin-left: 6px;
+  }
+
+  .quick-status-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-dot.st-New { background: #94A3B8; }
+  .legend-dot.st-Accepted { background: #06B6D4; }
+  .legend-dot.st-Active { background: #3B82F6; }
+  .legend-dot.st-Resolved { background: #F59E0B; }
+  .legend-dot.st-Closed { background: #10B981; }
+
+  /* Table Container */
+  .table-container {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    max-height: 70vh;
+    overflow: auto;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .wi-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .wi-table thead {
+    background: var(--bg-elevated);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .wi-table th {
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .wi-table th.sortable {
+    cursor: pointer;
+  }
+
+  .wi-table th.sortable:hover {
+    color: var(--text);
+  }
+
+  .wi-table th.sortable.active-sort {
+    color: var(--primary);
+  }
+
+  .sort-icon {
+    font-size: 10px;
+    opacity: 0.6;
+    margin-left: 2px;
+  }
+
+  .wi-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+
+  .wi-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .wi-table td {
+    padding: 10px 12px;
+    vertical-align: middle;
+  }
+
+  /* Columns */
+  .col-id { width: 80px; }
+  .col-source { width: 70px; }
+  .col-type { width: 90px; }
+  .col-prio { width: 90px; }
+  .col-title { min-width: 260px; max-width: 500px; }
+  .col-state { width: 110px; }
+  .col-assignee { width: 150px; }
+  .col-sprint { width: 110px; }
+  .col-actions { width: 220px; text-align: right; }
+
+  .wi-id-badge {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: #60A5FA;
+    white-space: nowrap;
+  }
+
+  .title-cell-text {
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 480px;
+  }
+
+  .assignee-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-left: 4px;
+    white-space: nowrap;
+  }
+
+  .sprint-pill {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-input);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  /* Priority Badges */
+  .prio-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+
+  .prio-P0 { background: rgba(244, 63, 94, 0.2); color: #FDA4AF; border: 1px solid rgba(244, 63, 94, 0.4); }
+  .prio-P1 { background: rgba(245, 158, 11, 0.2); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.4); }
+  .prio-P2 { background: rgba(59, 130, 246, 0.15); color: #93C5FD; border: 1px solid rgba(59, 130, 246, 0.3); }
+  .prio-P3 { background: rgba(148, 163, 184, 0.12); color: #CBD5E1; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+  /* Role Badges */
+  .role-badge {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    font-family: var(--font-mono);
+  }
+
+  .role-supervisor { background: rgba(139, 92, 246, 0.2); color: #C4B5FD; }
+  .role-lead { background: rgba(14, 165, 233, 0.2); color: #7DD3FC; }
+  .role-peer { background: rgba(16, 185, 129, 0.2); color: #6EE7B7; }
+  .role-qc { background: rgba(245, 158, 11, 0.2); color: #FCD34D; }
+
+  /* Row Actions */
+  .row-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .btn-quick-transition {
+    background: rgba(59, 130, 246, 0.14);
+    color: #60A5FA;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+
+  .btn-quick-transition:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-next-accepted { color: #22D3EE; border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.12); }
+  .btn-next-active { color: #60A5FA; border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.12); }
+  .btn-next-resolved { color: #FBBF24; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.12); }
+  .btn-next-closed { color: #34D399; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.12); }
+
+  .btn-row-action {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .btn-row-action:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border-hover);
+  }
+
+  .btn-row-action.btn-qc:hover {
+    color: #FBBF24;
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
+  /* Empty / Loading States */
+  .table-loading-state,
+  .table-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 8px;
+  }
+
+  .table-empty-state .empty-icon {
+    font-size: 32px;
+  }
+
+  .table-empty-state h4 {
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  /* Dialogs */
+  .dashboard-dialog {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 680px;
+    width: 90vw;
+    border-radius: var(--radius);
+  }
+
+  .dashboard-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+  }
+
+  .dialog-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dialog-title-area {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dialog-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dialog-tag-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+  }
+
+  .mono-badge {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: #60A5FA;
+    font-size: 12px;
+  }
+
+  .dialog-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .btn-close-dialog {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+  }
+
+  .btn-close-dialog:hover {
+    color: var(--text);
+  }
+
+  .dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Quick Progression Stepper in Modal */
+  .quick-progression-box {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .box-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .stepper-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0;
+  }
+
+  .step-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+  }
+
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-input);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .step-btn:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border-hover);
+  }
+
+  .step-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--primary);
+    color: #93C5FD;
+    font-weight: 600;
+  }
+
+  .step-arrow {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* Terminal boxes in dialog */
+  .terminal-box {
+    background: var(--bg-terminal);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #CBD5E1;
+    white-space: pre-wrap;
+    max-height: 160px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+
+  .desc-box {
+    font-family: var(--font);
+    font-size: 13px;
+  }
+
+  /* Form Elements */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .field-label .req {
+    color: var(--danger);
+  }
+
+  .edit-fields-grid,
+  .form-row-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .dashboard-dialog input[type="text"],
+  .dashboard-dialog input[type="number"],
+  .dashboard-dialog select,
+  .dashboard-dialog textarea {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    font-family: var(--font);
+  }
+
+  .dashboard-dialog textarea {
+    resize: vertical;
+    line-height: 1.4;
+  }
+
+  .dashboard-dialog input:focus,
+  .dashboard-dialog select:focus,
+  .dashboard-dialog textarea:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 1px var(--border-focus);
+  }
+
+  .form-checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .footer-left-actions,
+  .footer-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-msg {
+    font-size: 12px;
+  }
+  .status-msg.success { color: #34D399; }
+  .status-msg.error { color: #FB7185; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border-hover);
+  }
+
+  .btn-purple {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #C4B5FD;
+  }
+
+  .btn-purple:hover {
+    background: #8B5CF6;
+    color: #fff;
+  }
+
+  .btn-warning {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #FCD34D;
+  }
+
+  .btn-warning:hover {
+    background: #F59E0B;
+    color: #000;
+  }
+
+  @media (max-width: 900px) {
+    .board-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search-wrap {
+      min-width: 100%;
+    }
+    .edit-fields-grid,
+    .form-row-grid {
+      grid-template-columns: 1fr;
+    }
+    .dialog-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .footer-left-actions,
+    .footer-right-actions {
+      justify-content: flex-end;
+    }
+  }
+</style>

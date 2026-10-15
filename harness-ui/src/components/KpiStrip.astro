@@ -1,0 +1,373 @@
+---
+// KpiStrip.astro - 4-card metric strip with live backend sync
+---
+
+<section class="kpi-section" aria-label="KPI Metrics Overview">
+  <div class="kpi-header">
+    <div class="kpi-header-title">
+      <span class="kpi-section-tag">OVERVIEW</span>
+      <h2>System Work Items Metric Strip</h2>
+    </div>
+    <div class="kpi-live-indicator" id="kpi-status-badge">
+      <span class="pulse-dot"></span>
+      <span id="kpi-status-text">Đang đồng bộ...</span>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpi-container">
+    <!-- Card 1: Total Backlog -->
+    <div class="kpi-card" data-kpi="total" role="button" tabindex="0" title="Xem tất cả công việc">
+      <div class="kpi-card-header">
+        <span class="kpi-label">Tổng công việc</span>
+        <span class="kpi-icon total">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </span>
+      </div>
+      <div class="kpi-val" id="kpi-total-val" style="color: #F1F5F9;">--</div>
+      <div class="kpi-sub" id="kpi-total-sub">TFS: -- · Local: --</div>
+    </div>
+
+    <!-- Card 2: Active -->
+    <div class="kpi-card" data-kpi="active" role="button" tabindex="0" title="Lọc công việc Đang thực hiện">
+      <div class="kpi-card-header">
+        <span class="kpi-label">Đang thực hiện (Active)</span>
+        <span class="kpi-icon active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </span>
+      </div>
+      <div class="kpi-val" id="kpi-active-val" style="color: #60A5FA;">--</div>
+      <div class="kpi-sub">Công việc đang xử lý</div>
+    </div>
+
+    <!-- Card 3: Resolved / Pending QC -->
+    <div class="kpi-card" data-kpi="resolved" role="button" tabindex="0" title="Lọc công việc Chờ QC kiểm định">
+      <div class="kpi-card-header">
+        <span class="kpi-label">Chờ QC kiểm định (Resolved)</span>
+        <span class="kpi-icon resolved">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
+      </div>
+      <div class="kpi-val" id="kpi-resolved-val" style="color: #FBBF24;">--</div>
+      <div class="kpi-sub">Chờ kiểm thử &amp; nghiệm thu</div>
+    </div>
+
+    <!-- Card 4: Closed -->
+    <div class="kpi-card" data-kpi="closed" role="button" tabindex="0" title="Lọc công việc Đã hoàn tất">
+      <div class="kpi-card-header">
+        <span class="kpi-label">Đã hoàn tất (Closed)</span>
+        <span class="kpi-icon closed">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </span>
+      </div>
+      <div class="kpi-val" id="kpi-closed-val" style="color: #34D399;">--</div>
+      <div class="kpi-sub">Đã đóng &amp; triển khai</div>
+    </div>
+  </div>
+</section>
+
+<script>
+  interface WorkItemRecord {
+    id: number | string;
+    state?: string;
+    source?: string;
+    title?: string;
+  }
+
+  function updateKpiCounts(items: WorkItemRecord[]) {
+    const total = items.length;
+    const localCount = items.filter((x) => (x.source || 'local') !== 'tfs').length;
+    const tfsCount = total - localCount;
+    const active = items.filter((x) => x.state === 'Active').length;
+    const resolved = items.filter((x) => x.state === 'Resolved').length;
+    const closed = items.filter((x) => x.state === 'Closed').length;
+
+    const elTotalVal = document.getElementById('kpi-total-val');
+    const elTotalSub = document.getElementById('kpi-total-sub');
+    const elActiveVal = document.getElementById('kpi-active-val');
+    const elResolvedVal = document.getElementById('kpi-resolved-val');
+    const elClosedVal = document.getElementById('kpi-closed-val');
+
+    const badge = document.getElementById('kpi-status-badge');
+    const badgeText = document.getElementById('kpi-status-text');
+
+    if (elTotalVal) elTotalVal.textContent = String(total);
+    if (elTotalSub) elTotalSub.textContent = `TFS: ${tfsCount} · Local: ${localCount}`;
+    if (elActiveVal) elActiveVal.textContent = String(active);
+    if (elResolvedVal) elResolvedVal.textContent = String(resolved);
+    if (elClosedVal) elClosedVal.textContent = String(closed);
+
+    if (badge && badgeText) {
+      badge.className = 'kpi-live-indicator live';
+      badgeText.textContent = `Live Feed (${total} items)`;
+    }
+  }
+
+  function markKpiOffline() {
+    const badge = document.getElementById('kpi-status-badge');
+    const badgeText = document.getElementById('kpi-status-text');
+    if (badge && badgeText) {
+      badge.className = 'kpi-live-indicator err';
+      badgeText.textContent = 'Mất kết nối backend';
+    }
+  }
+
+  async function fetchDirectKpis() {
+    try {
+      const res = await fetch('/api/work-items?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : (data.items || []);
+      updateKpiCounts(items);
+    } catch {
+      markKpiOffline();
+    }
+  }
+
+  function setupKpiClickHandlers() {
+    const cards = document.querySelectorAll<HTMLElement>('.kpi-card');
+    cards.forEach((card) => {
+      card.addEventListener('click', () => {
+        const kpi = card.dataset.kpi;
+        let filterState: string | null = null;
+        if (kpi === 'active') filterState = 'Active';
+        else if (kpi === 'resolved') filterState = 'Resolved';
+        else if (kpi === 'closed') filterState = 'Closed';
+
+        // Switch to Work Items Board
+        window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'work-items' } }));
+
+        // Notify filter listeners
+        window.dispatchEvent(
+          new CustomEvent('filter-work-items', {
+            detail: { state: filterState },
+          })
+        );
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+  }
+
+  function initKpiStrip() {
+    setupKpiClickHandlers();
+
+    // Listen to updates from layout poll
+    window.addEventListener('work-items-updated', ((e: CustomEvent<WorkItemRecord[]>) => {
+      if (e.detail) {
+        updateKpiCounts(e.detail);
+      }
+    }) as EventListener);
+
+    window.addEventListener('backend-offline', () => {
+      markKpiOffline();
+    });
+
+    // Initial fetch in case layout poll hasn't run yet
+    fetchDirectKpis();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initKpiStrip);
+  } else {
+    initKpiStrip();
+  }
+</script>
+
+<style>
+  .kpi-section {
+    margin-bottom: 24px;
+  }
+
+  .kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .kpi-header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .kpi-section-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+  }
+
+  .kpi-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .kpi-live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .kpi-live-indicator.live {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34D399;
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+
+  .kpi-live-indicator.live .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 6px #10B981;
+    animation: pulse-ring 2s infinite ease-in-out;
+  }
+
+  .kpi-live-indicator.err {
+    background: rgba(244, 63, 94, 0.12);
+    color: #FB7185;
+    border-color: rgba(244, 63, 94, 0.25);
+  }
+
+  .kpi-live-indicator.err .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #F43F5E;
+    box-shadow: 0 0 6px #F43F5E;
+  }
+
+  /* 4-Card Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .kpi-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 110px;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .kpi-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .kpi-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .kpi-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+  }
+
+  .kpi-icon.total {
+    color: #F1F5F9;
+  }
+
+  .kpi-icon.active {
+    color: #60A5FA;
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.25);
+  }
+
+  .kpi-icon.resolved {
+    color: #FBBF24;
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.25);
+  }
+
+  .kpi-icon.closed {
+    color: #34D399;
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+
+  .kpi-val {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    line-height: 1.1;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 1024px) {
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .kpi-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

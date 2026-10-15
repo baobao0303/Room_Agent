@@ -1,0 +1,390 @@
+---
+// index.astro - Paseo Control Center Single Page Cockpit
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import KpiStrip from '../components/KpiStrip.astro';
+---
+
+<DashboardLayout title="Paseo Control Center - SLPC Cockpit">
+  <!-- Top KPI Metric Strip -->
+  <KpiStrip />
+
+  <!-- Tab 1: Work Items Board -->
+  <section id="tab-work-items" data-tab-content="work-items" class="tab-panel active">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title-area">
+          <span class="panel-tag">WORK ITEMS</span>
+          <h3>Bảng điều phối công việc (Backlog &amp; Sprints)</h3>
+        </div>
+        <div class="panel-actions">
+          <button type="button" id="btn-open-create" class="primary" title="Tạo mới công việc">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Tạo mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Controls Placeholder -->
+      <div class="panel-filters-placeholder" id="work-items-filter-bar">
+        <div class="search-input-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="q" placeholder="Tìm ID, tiêu đề, người phụ trách..." readonly />
+        </div>
+        <div class="filter-dropdowns">
+          <select id="filter-source" disabled><option>Tất cả nguồn</option></select>
+          <select id="filter-type" disabled><option>Tất cả loại</option></select>
+          <select id="filter-state" disabled><option>Tất cả trạng thái</option></select>
+          <select id="filter-profile" disabled><option>Tất cả vai trò SLPC</option></select>
+          <select id="filter-sprint" disabled><option>Tất cả Sprint</option></select>
+        </div>
+      </div>
+
+      <!-- Island Mounting Placeholder for M3 -->
+      <div id="work-items-mount-target" class="island-mount-container">
+        <div class="placeholder-state">
+          <div class="placeholder-spinner"></div>
+          <h4>Work Items Board Island</h4>
+          <p class="placeholder-text">Sẵn sàng tải dữ liệu backlog từ backend (:8765)...</p>
+          <span class="ready-badge">Scaffold Ready for M3 Island Mounting</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 2: SLPC Agents Control Panel -->
+  <section id="tab-slpc-agents" data-tab-content="slpc-agents" class="tab-panel" hidden style="display: none;">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title-area">
+          <span class="panel-tag">SLPC MULTI-AGENT</span>
+          <h3>Quản lý 4 Vai Trò Điều Phối (Supervisor, Lead, Peer, QC)</h3>
+        </div>
+      </div>
+
+      <!-- Island Mounting Placeholder for M3 -->
+      <div id="slpc-agents-mount-target" class="island-mount-container">
+        <div class="agents-grid-placeholder">
+          <div class="agent-card-skeleton supervisor">
+            <div class="agent-avatar-badge" style="color: #8b5cf6;">S</div>
+            <div class="agent-info">
+              <h4>Supervisor</h4>
+              <p>Scope &amp; Intent Guard</p>
+            </div>
+          </div>
+          <div class="agent-card-skeleton lead">
+            <div class="agent-avatar-badge" style="color: #0ea5e9;">L</div>
+            <div class="agent-info">
+              <h4>Lead</h4>
+              <p>Technical Architect &amp; PM</p>
+            </div>
+          </div>
+          <div class="agent-card-skeleton peer">
+            <div class="agent-avatar-badge" style="color: #10b981;">P</div>
+            <div class="agent-info">
+              <h4>Peer</h4>
+              <p>Code Executor (FE/BE Dev)</p>
+            </div>
+          </div>
+          <div class="agent-card-skeleton qc">
+            <div class="agent-avatar-badge" style="color: #f59e0b;">C</div>
+            <div class="agent-info">
+              <h4>QC</h4>
+              <p>Test Architect &amp; Quality Gate</p>
+            </div>
+          </div>
+        </div>
+        <div class="placeholder-state">
+          <span class="ready-badge">Scaffold Ready for M3 Island Mounting</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 3: QC Automation Workbench -->
+  <section id="tab-qc-automation" data-tab-content="qc-automation" class="tab-panel" hidden style="display: none;">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title-area">
+          <span class="panel-tag">QC AUTOMATION</span>
+          <h3>5-Stage ISTQB Test Generator &amp; Background Job Runner</h3>
+        </div>
+      </div>
+
+      <!-- Island Mounting Placeholder for M3 -->
+      <div id="qc-workbench-mount-target" class="island-mount-container">
+        <div class="placeholder-state">
+          <div class="placeholder-spinner"></div>
+          <h4>QC Automation Workbench</h4>
+          <p class="placeholder-text">Sẵn sàng tải bộ công cụ 5-Stage ISTQB Generator và Test Runner...</p>
+          <span class="ready-badge">Scaffold Ready for M3 Island Mounting</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 4: Progress & Ledger -->
+  <section id="tab-progress-ledger" data-tab-content="progress-ledger" class="tab-panel" hidden style="display: none;">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title-area">
+          <span class="panel-tag">LEDGER &amp; CONTEXT</span>
+          <h3>Tiến độ &amp; Nhật ký Phiên Làm Việc (Context Window Explorer)</h3>
+        </div>
+      </div>
+
+      <!-- Island Mounting Placeholder for M3 -->
+      <div id="progress-ledger-mount-target" class="island-mount-container">
+        <div class="placeholder-state">
+          <div class="placeholder-spinner"></div>
+          <h4>Agent Progress Ledger &amp; Context Explorer</h4>
+          <p class="placeholder-text">Sẵn sàng tải snapshot tiến độ và 200+ luồng ngữ cảnh JSONL...</p>
+          <span class="ready-badge">Scaffold Ready for M3 Island Mounting</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 5: Spec Portal -->
+  <section id="tab-spec-portal" data-tab-content="spec-portal" class="tab-panel" hidden style="display: none;">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title-area">
+          <span class="panel-tag">SPECIFICATIONS</span>
+          <h3>Cổng Tài Liệu Đặc Tả Dự Án (Spec Portal)</h3>
+        </div>
+      </div>
+
+      <!-- Island Mounting Placeholder for M3 -->
+      <div id="spec-portal-mount-target" class="island-mount-container">
+        <div class="placeholder-state">
+          <div class="placeholder-spinner"></div>
+          <h4>Project Specification Portal</h4>
+          <p class="placeholder-text">Sẵn sàng tải danh mục đặc tả từ docs/spec/*.md...</p>
+          <span class="ready-badge">Scaffold Ready for M3 Island Mounting</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</DashboardLayout>
+
+<style>
+  .tab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title-area {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .panel-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+  }
+
+  .panel-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Filter bar placeholder */
+  .panel-filters-placeholder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    min-width: 280px;
+    flex: 1;
+    color: var(--text-muted);
+  }
+
+  .search-input-wrap input {
+    background: transparent;
+    border: none;
+    padding: 8px 0;
+    width: 100%;
+    color: var(--text);
+  }
+
+  .filter-dropdowns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filter-dropdowns select {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Mount target & placeholder state */
+  .island-mount-container {
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-input);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+  }
+
+  .placeholder-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .placeholder-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .placeholder-state h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .placeholder-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 400px;
+  }
+
+  .ready-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* Agents grid skeleton */
+  .agents-grid-placeholder {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .agent-card-skeleton {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .agent-avatar-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .agent-info h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .agent-info p {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 1024px) {
+    .agents-grid-placeholder {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .agents-grid-placeholder {
+      grid-template-columns: 1fr;
+    }
+    .panel-filters-placeholder {
+      flex-direction: column;
+    }
+    .search-input-wrap {
+      min-width: 100%;
+    }
+  }
+</style>

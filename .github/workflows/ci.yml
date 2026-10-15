@@ -19,7 +19,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  test:
+  backend-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,3 +32,24 @@ jobs:
         env:
           HARNESS_BACKEND: sqlite
           HARNESS_DB: ${{ runner.temp }}/harness_test.db
+      - run: python tools/test_qc_generator.py
+
+  astro-ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: harness-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: harness-ui/package-lock.json
+      - run: npm ci
+      - run: npx astro check
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: harness-ui-dist
+          path: harness-ui/dist/
