@@ -98,7 +98,8 @@ ALLOWED_PROFILES = [
     "Peer Dev",
     "Supervisor",
     "Lead",
-    "Peer"
+    "Peer",
+    "QC"
 ]
 
 class HarnessManager:

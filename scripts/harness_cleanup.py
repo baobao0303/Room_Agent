@@ -12,8 +12,8 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/.."))
 from tools.floci_client import FlociHarnessDB
 
-# ponytail: map cố định; peer-qa / peer-eng chưa có profile chuẩn -> chỉ báo, không tự đoán.
-PROFILE_MAP = {"lead": "Lead", "peer": "Peer", "peer-dev": "Peer Dev"}
+# ponytail: map cố định sang 4 profile chuẩn SLPC (Supervisor, Lead, Peer, QC).
+PROFILE_MAP = {"supervisor": "Supervisor", "lead": "Lead", "peer": "Peer", "qc": "QC"}
 
 
 def parse_ids(s):

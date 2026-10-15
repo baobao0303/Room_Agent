@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-tools/remote_sync.py - Synchronize full backlog and work items across all sprints from REMOTE ACME to Floci DynamoDB.
+tools/remote_sync.py - Synchronize full backlog and work items across all sprints from Remote Azure DevOps to Floci DynamoDB.
 Strips all raw HTML tags and converts REMOTE rich text to clean Markdown / plain text.
 """
 
@@ -19,20 +19,22 @@ sys.path.insert(0, BASE_DIR)
 
 from tools.floci_client import FlociHarnessDB
 
-REMOTE_ORG_URL = os.getenv("AZURE_DEVOPS_ORG_URL", "https://remote.example.com/MainCollection").rstrip("/")
-REMOTE_PROJECT = os.getenv("AZURE_DEVOPS_DEFAULT_PROJECT", "ACME")
-REMOTE_PAT = os.getenv("AZURE_DEVOPS_PAT", "")
-
-if not REMOTE_PAT:
-    # Try reading from global mcp_config.json if available
-    mcp_cfg_path = os.path.expanduser("~/.gemini/config/mcp_config.json")
-    if os.path.exists(mcp_cfg_path):
-        try:
-            with open(mcp_cfg_path, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-                REMOTE_PAT = cfg.get("mcpServers", {}).get("remote-crm", {}).get("env", {}).get("AZURE_DEVOPS_PAT", "")
-        except Exception:
-            pass
+def validate_remote_config() -> tuple[str, str, str]:
+    """Validate and return (org_url, project, pat) from environment variables.
+    Fails with a clear ValueError if any required variable is unset."""
+    org_url = os.getenv("AZURE_DEVOPS_ORG_URL", "").rstrip("/")
+    project = os.getenv("AZURE_DEVOPS_DEFAULT_PROJECT") or os.getenv("AZURE_DEVOPS_PROJECT", "")
+    pat = os.getenv("AZURE_DEVOPS_PAT", "")
+    missing = []
+    if not org_url:
+        missing.append("AZURE_DEVOPS_ORG_URL")
+    if not project:
+        missing.append("AZURE_DEVOPS_DEFAULT_PROJECT (or AZURE_DEVOPS_PROJECT)")
+    if not pat:
+        missing.append("AZURE_DEVOPS_PAT")
+    if missing:
+        raise ValueError(f"Missing required environment variables for Remote sync: {', '.join(missing)}")
+    return org_url, project, pat
 
 def clean_html(raw_html: Optional[str]) -> str:
     """Strip raw HTML tags and convert entities to clean readable plain text / markdown."""
@@ -51,16 +53,19 @@ def clean_html(raw_html: Optional[str]) -> str:
     return "\n".join(l for l in lines if l).strip()
 
 def get_auth_headers() -> Dict[str, str]:
-    token_b64 = base64.b64encode(f":{REMOTE_PAT}".encode("utf-8")).decode("ascii")
+    _, _, pat = validate_remote_config()
+    token_b64 = base64.b64encode(f":{pat}".encode("utf-8")).decode("ascii")
     return {
         "Authorization": f"Basic {token_b64}",
         "Content-Type": "application/json"
     }
 
 def fetch_all_remote_work_item_ids() -> List[int]:
-    wiql_url = f"{REMOTE_ORG_URL}/{REMOTE_PROJECT}/_apis/wit/wiql?api-version=5.0"
+    org_url, project, _ = validate_remote_config()
+    safe_project = project.replace("'", "''")
+    wiql_url = f"{org_url}/{project}/_apis/wit/wiql?api-version=5.0"
     payload = {
-        "query": f"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{REMOTE_PROJECT}' ORDER BY [System.IterationPath] ASC, [System.Id] ASC"
+        "query": f"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{safe_project}' ORDER BY [System.IterationPath] ASC, [System.Id] ASC"
     }
     req = urllib.request.Request(
         wiql_url,
@@ -75,17 +80,19 @@ def fetch_all_remote_work_item_ids() -> List[int]:
 def fetch_work_items_batch(ids: List[int]) -> List[Dict[str, Any]]:
     if not ids:
         return []
+    org_url, _, _ = validate_remote_config()
     ids_str = ",".join(str(i) for i in ids)
-    url = f"{REMOTE_ORG_URL}/_apis/wit/workitems?ids={ids_str}&api-version=5.0"
+    url = f"{org_url}/_apis/wit/workitems?ids={ids_str}&api-version=5.0"
     req = urllib.request.Request(url, headers=get_auth_headers())
     with urllib.request.urlopen(req, timeout=45) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         return data.get("value", [])
 
 def sync_full_backlog() -> Dict[str, Any]:
-    print(f"--> Connecting to REMOTE ({REMOTE_ORG_URL}) project '{REMOTE_PROJECT}'...")
+    org_url, project, _ = validate_remote_config()
+    print(f"--> Connecting to REMOTE ({org_url}) project '{project}'...")
     all_ids = fetch_all_remote_work_item_ids()
-    print(f"--> Found {len(all_ids)} work items in REMOTE ACME across all sprints.")
+    print(f"--> Found {len(all_ids)} work items in REMOTE {project} across all sprints.")
 
     db = FlociHarnessDB()
     db.init_schema()
@@ -178,4 +185,8 @@ def sync_full_backlog() -> Dict[str, Any]:
     return {"status": "success", "total_synced": synced_count, "stories_synced": stories_synced}
 
 if __name__ == "__main__":
+    try:
+        validate_remote_config()
+    except ValueError as err:
+        sys.exit(f"Error: {err}")
     sync_full_backlog()

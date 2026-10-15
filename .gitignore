@@ -48,6 +48,7 @@ env/
 *.db-journal
 *.db-wal
 *.db-shm
+.harness_local_db.json
 
 # 4. Node.js, Frontend & Build Artifacts
 node_modules/

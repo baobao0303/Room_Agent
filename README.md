@@ -26,7 +26,7 @@ Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 │           ├── ba/          # User Stories, Acceptance Criteria (BA)
 │           ├── design/      # Figma Component & Token Mapping (Design)
 │           └── dev/         # API Contracts, Architecture, DTOs (Dev)
-├── profiles/                # Profile agent: supervisor, lead, peer
+├── profiles/                # Profile agent: supervisor, lead, peer, qc
 ├── scripts/                 # Harness CLI, dashboard UI, init/seed DB
 │   ├── harness              # CLI chính (./scripts/harness)
 │   └── harness_dashboard.py # Dashboard realtime (UI web)
@@ -37,6 +37,7 @@ Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 │   ├── floci_client.py      # Client DynamoDB & S3 kết nối Floci emulator
 │   ├── harness_manager.py   # Tool quản lý Work Items & State Machine (SQLite + Floci)
 │   ├── query_reader.py      # Tool đọc file/thư mục thông minh theo query (BM25 + Semantic Chunking)
+│   ├── qc_test_generator.py # Tool sinh Testcase & Unit Test 5-Stage ISTQB Pipeline
 │   └── research/            # Tool nghiên cứu (Hermes 3-Tier Prompt & Gateway)
 │       ├── codex_room_setup_research.md
 │       ├── harness_framework_research.md
@@ -112,7 +113,25 @@ Giải quyết triệt để lỗi `EISDIR` khi đọc folder và tìm kiếm n�
   python3 tools/query_reader.py <path> "<query>" -j
   ```
 
-### B. Tool Research (`tools/research/`)
+### C. QC Agent & Test Generator (`profiles/qc.md`, `tools/qc_test_generator.py`)
+QC là vai trò thứ 4 trong kiến trúc SLPC (`Supervisor - Lead - Peer - QC`), đóng vai trò Test Architect & Independent Quality Gate:
+- **Profile QC**: Cấu hình tại `profiles/qc.md`, phụ trách sinh test case truy vết, thẩm định khi Peer chuyển `Resolved`, và nghiệm thu đóng task sang `Closed`.
+- **5-Stage ISTQB Pipeline (`tools/qc_test_generator.py`)**:
+  - Stage 1: Phân tích Spec & AST Codebase (`RequirementAnalysis`).
+  - Stage 2: Xác định Test Points trên 9 dimensions (`TestPointSet`).
+  - Stage 3: Lập Test Design Plan theo 7 kỹ thuật ISTQB (`CoverageItem`).
+  - Stage 4: Sinh Test Cases & mã kiểm thử tự động (`*.spec.ts` / `test_*.py`) và đồng bộ lên Harness DB.
+  - Stage 5: Báo cáo độ phủ và cổng kiểm định tự động (Zero LLM self-grading).
+
+```bash
+# Sinh test case và unit test từ Spec + Source:
+python3 tools/qc_test_generator.py --source <path/to/file.ts> --spec <path/to/spec.md> --task-id <id> --out-spec <path/to/file.spec.ts> --sync-harness
+
+# Chạy test runner & kiểm định độ phủ:
+python3 tools/qc_test_generator.py --source <path/to/file.ts> --task-id <id> --run --verify-cmd "npm test"
+```
+
+### D. Tool Research (`tools/research/`)
 
 #### 1. Chuẩn bị (Tùy chọn)
 Chạy Hermes Gateway nếu muốn gửi qua HTTP API:

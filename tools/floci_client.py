@@ -68,6 +68,57 @@ class DecimalEncoder:
             return float(obj)
         return obj
 
+import json
+import socket
+import time
+from urllib.parse import urlparse
+
+LOCAL_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.harness_local_db.json"))
+_REACHABLE_CACHE = {"ok": None, "checked_at": 0.0}
+
+
+def _check_endpoint_reachable(endpoint_url: str) -> bool:
+    now = time.time()
+    if _REACHABLE_CACHE["ok"] is not None and (now - _REACHABLE_CACHE["checked_at"] < 20.0):
+        return bool(_REACHABLE_CACHE["ok"])
+    try:
+        parsed = urlparse(endpoint_url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        with socket.create_connection((host, port), timeout=0.4):
+            _REACHABLE_CACHE["ok"] = True
+            _REACHABLE_CACHE["checked_at"] = now
+            return True
+    except Exception:
+        _REACHABLE_CACHE["ok"] = False
+        _REACHABLE_CACHE["checked_at"] = now
+        return False
+
+
+def _load_local_store() -> Dict[str, Any]:
+    if os.path.exists(LOCAL_DB_PATH):
+        try:
+            with open(LOCAL_DB_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    data.setdefault("metadata", {})
+                    data.setdefault("work_items", {})
+                    data.setdefault("stories", {})
+                    data.setdefault("tools", {})
+                    return data
+        except Exception:
+            pass
+    return {"metadata": {}, "work_items": {}, "stories": {}, "tools": {}}
+
+
+def _save_local_store(store: Dict[str, Any]) -> None:
+    try:
+        with open(LOCAL_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(store, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
 class FlociHarnessDB:
     def __init__(
         self,
@@ -83,30 +134,54 @@ class FlociHarnessDB:
         self.aws_secret_access_key = aws_secret_access_key
         self.s3_bucket = s3_bucket
 
+        from botocore.config import Config
+        boto_cfg = Config(
+            connect_timeout=1.5,
+            read_timeout=10,
+            retries={"max_attempts": 1, "mode": "standard"}
+        )
+
         self.ddb_resource = boto3.resource(
             "dynamodb",
             endpoint_url=self.endpoint_url,
             region_name=self.region_name,
             aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key
+            aws_secret_access_key=self.aws_secret_access_key,
+            config=boto_cfg
         )
         self.ddb_client = boto3.client(
             "dynamodb",
             endpoint_url=self.endpoint_url,
             region_name=self.region_name,
             aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key
+            aws_secret_access_key=self.aws_secret_access_key,
+            config=boto_cfg
         )
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=self.endpoint_url,
             region_name=self.region_name,
             aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key
+            aws_secret_access_key=self.aws_secret_access_key,
+            config=boto_cfg
         )
+
+    def _is_online(self) -> bool:
+        return _check_endpoint_reachable(self.endpoint_url)
 
     def init_schema(self) -> Dict[str, Any]:
         """Create tables in DynamoDB and bucket in S3 on Floci if they do not exist."""
+        if not self._is_online():
+            store = _load_local_store()
+            _save_local_store(store)
+            return {
+                "status": "local_fallback",
+                "endpoint": LOCAL_DB_PATH,
+                "created_tables": [],
+                "existing_tables": ["harness_metadata", "harness_work_items", "harness_stories", "harness_tools"],
+                "s3_bucket": self.s3_bucket
+            }
+
         existing_tables = self.ddb_client.list_tables().get("TableNames", [])
         created_tables = []
 
@@ -139,12 +214,11 @@ class FlociHarnessDB:
                 )
                 created_tables.append(table_name)
 
-        # Initialize S3 bucket for backups/snapshots
         try:
             existing_buckets = [b["Name"] for b in self.s3_client.list_buckets().get("Buckets", [])]
             if self.s3_bucket not in existing_buckets:
                 self.s3_client.create_bucket(Bucket=self.s3_bucket)
-        except Exception as e:
+        except Exception:
             pass
 
         return {
@@ -157,34 +231,62 @@ class FlociHarnessDB:
 
     def get_next_id(self, counter_key: str = "work_item_id") -> int:
         """Atomically generate the next sequential numeric ID."""
-        table = self.ddb_resource.Table("harness_metadata")
-        res = table.update_item(
-            Key={"key": counter_key},
-            UpdateExpression="ADD #val :incr",
-            ExpressionAttributeNames={"#val": "value"},
-            ExpressionAttributeValues={":incr": 1},
-            ReturnValues="UPDATED_NEW"
-        )
-        return int(res["Attributes"]["value"])
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_metadata")
+                res = table.update_item(
+                    Key={"key": counter_key},
+                    UpdateExpression="ADD #val :incr",
+                    ExpressionAttributeNames={"#val": "value"},
+                    ExpressionAttributeValues={":incr": 1},
+                    ReturnValues="UPDATED_NEW"
+                )
+                return int(res["Attributes"]["value"])
+            except Exception:
+                pass
+        store = _load_local_store()
+        cur = int(store["metadata"].get(counter_key, 0))
+        if cur == 0 and counter_key == "work_item_id" and store["work_items"]:
+            cur = max(int(k) for k in store["work_items"].keys())
+        nxt = cur + 1
+        store["metadata"][counter_key] = nxt
+        _save_local_store(store)
+        return nxt
 
     # --- Work Items CRUD ---
     def put_work_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        table = self.ddb_resource.Table("harness_work_items")
         if "id" not in item or item["id"] is None:
             item["id"] = self.get_next_id("work_item_id")
         if "source" not in item or not item["source"]:
             item["source"] = "local"
-        
-        # Clean null values
+
         cleaned = {k: v for k, v in item.items() if v is not None}
-        table.put_item(Item=cleaned)
-        return DecimalEncoder.decode(cleaned)
+        decoded = DecimalEncoder.decode(cleaned)
+
+        store = _load_local_store()
+        store["work_items"][str(decoded["id"])] = decoded
+        _save_local_store(store)
+
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_work_items")
+                table.put_item(Item=cleaned)
+            except Exception:
+                pass
+        return decoded
 
     def get_work_item(self, item_id: int) -> Optional[Dict[str, Any]]:
-        table = self.ddb_resource.Table("harness_work_items")
-        res = table.get_item(Key={"id": item_id})
-        item = res.get("Item")
-        return DecimalEncoder.decode(item) if item else None
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_work_items")
+                res = table.get_item(Key={"id": item_id})
+                item = res.get("Item")
+                if item:
+                    return DecimalEncoder.decode(item)
+            except Exception:
+                pass
+        store = _load_local_store()
+        return store["work_items"].get(str(item_id))
 
     def update_work_item_state(
         self,
@@ -193,29 +295,41 @@ class FlociHarnessDB:
         assigned_to: Optional[str] = None,
         assigned_to_profile: Optional[str] = None
     ) -> Dict[str, Any]:
-        table = self.ddb_resource.Table("harness_work_items")
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        expr = "SET #st = :state, updated_at = :updated"
-        names = {"#st": "state"}
-        values: Dict[str, Any] = {":state": target_state, ":updated": now_str}
-
+        store = _load_local_store()
+        local_item = store["work_items"].get(str(item_id), {"id": item_id})
+        local_item["state"] = target_state
+        local_item["updated_at"] = now_str
         if assigned_to:
-            expr += ", assigned_to = :assigned"
-            values[":assigned"] = assigned_to
-
+            local_item["assigned_to"] = assigned_to
         if assigned_to_profile:
-            expr += ", assigned_to_profile = :assigned_prof"
-            values[":assigned_prof"] = assigned_to_profile
+            local_item["assigned_to_profile"] = assigned_to_profile
+        store["work_items"][str(item_id)] = local_item
+        _save_local_store(store)
 
-        res = table.update_item(
-            Key={"id": item_id},
-            UpdateExpression=expr,
-            ExpressionAttributeNames=names,
-            ExpressionAttributeValues=values,
-            ReturnValues="ALL_NEW"
-        )
-        return DecimalEncoder.decode(res.get("Attributes", {}))
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_work_items")
+                expr = "SET #st = :state, updated_at = :updated"
+                names = {"#st": "state"}
+                values: Dict[str, Any] = {":state": target_state, ":updated": now_str}
+                if assigned_to:
+                    expr += ", assigned_to = :assigned"
+                    values[":assigned"] = assigned_to
+                if assigned_to_profile:
+                    expr += ", assigned_to_profile = :assigned_prof"
+                    values[":assigned_prof"] = assigned_to_profile
+                res = table.update_item(
+                    Key={"id": item_id},
+                    UpdateExpression=expr,
+                    ExpressionAttributeNames=names,
+                    ExpressionAttributeValues=values,
+                    ReturnValues="ALL_NEW"
+                )
+                return DecimalEncoder.decode(res.get("Attributes", {}))
+            except Exception:
+                pass
+        return local_item
 
     def list_work_items(
         self,
@@ -226,79 +340,144 @@ class FlociHarnessDB:
         assigned_to_profile: Optional[str] = None,
         parent_item_id: Optional[int] = None
     ) -> List[Dict[str, Any]]:
-        table = self.ddb_resource.Table("harness_work_items")
-        scan_kwargs: Dict[str, Any] = {}
-        filters = []
+        decoded: List[Dict[str, Any]] = []
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_work_items")
+                scan_kwargs: Dict[str, Any] = {}
+                filters = []
+                if wi_type:
+                    filters.append(Attr("type").eq(wi_type))
+                if state:
+                    filters.append(Attr("state").eq(state))
+                if source:
+                    filters.append(Attr("source").eq(source.lower()))
+                if iteration:
+                    filters.append(Attr("iteration_path").contains(iteration))
+                if assigned_to_profile:
+                    filters.append(Attr("assigned_to_profile").eq(assigned_to_profile))
+                if parent_item_id is not None:
+                    filters.append(Attr("parent_item_id").eq(parent_item_id))
+                if filters:
+                    combined = filters[0]
+                    for f in filters[1:]:
+                        combined = combined & f
+                    scan_kwargs["FilterExpression"] = combined
 
-        if wi_type:
-            filters.append(Attr("type").eq(wi_type))
-        if state:
-            filters.append(Attr("state").eq(state))
-        if source:
-            filters.append(Attr("source").eq(source.lower()))
-        if iteration:
-            filters.append(Attr("iteration_path").contains(iteration))
-        if assigned_to_profile:
-            filters.append(Attr("assigned_to_profile").eq(assigned_to_profile))
-        if parent_item_id is not None:
-            filters.append(Attr("parent_item_id").eq(parent_item_id))
+                items: List[Dict[str, Any]] = []
+                done = False
+                start_key = None
+                while not done:
+                    if start_key:
+                        scan_kwargs["ExclusiveStartKey"] = start_key
+                    response = table.scan(**scan_kwargs)
+                    items.extend(response.get("Items", []))
+                    start_key = response.get("LastEvaluatedKey")
+                    if not start_key:
+                        done = True
+                decoded = [DecimalEncoder.decode(i) for i in items]
+                if not any([wi_type, state, source, iteration, assigned_to_profile, parent_item_id is not None]) and decoded:
+                    store = _load_local_store()
+                    for d in decoded:
+                        store["work_items"][str(d["id"])] = d
+                    _save_local_store(store)
+                decoded.sort(key=lambda x: x.get("id", 0), reverse=True)
+                return decoded
+            except Exception:
+                pass
 
-        if filters:
-            combined = filters[0]
-            for f in filters[1:]:
-                combined = combined & f
-            scan_kwargs["FilterExpression"] = combined
-
-        items: List[Dict[str, Any]] = []
-        done = False
-        start_key = None
-        while not done:
-            if start_key:
-                scan_kwargs["ExclusiveStartKey"] = start_key
-            response = table.scan(**scan_kwargs)
-            items.extend(response.get("Items", []))
-            start_key = response.get("LastEvaluatedKey")
-            if not start_key:
-                done = True
-
-        decoded = [DecimalEncoder.decode(i) for i in items]
-        decoded.sort(key=lambda x: x.get("id", 0), reverse=True)
-        return decoded
+        store = _load_local_store()
+        all_items = list(store["work_items"].values())
+        res_list = []
+        for it in all_items:
+            if wi_type and it.get("type") != wi_type:
+                continue
+            if state and it.get("state") != state:
+                continue
+            if source and (it.get("source") or "").lower() != source.lower():
+                continue
+            if iteration and iteration not in (it.get("iteration_path") or ""):
+                continue
+            if assigned_to_profile and (it.get("assigned_to_profile") or "") != assigned_to_profile:
+                continue
+            if parent_item_id is not None and it.get("parent_item_id") != parent_item_id:
+                continue
+            res_list.append(it)
+        res_list.sort(key=lambda x: int(x.get("id") or 0), reverse=True)
+        return res_list
 
     # --- Stories CRUD ---
     def put_story(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        table = self.ddb_resource.Table("harness_stories")
         if "id" not in item or item["id"] is None:
             item["id"] = self.get_next_id("story_id")
         if "source" not in item or not item["source"]:
             item["source"] = "local"
         cleaned = {k: v for k, v in item.items() if v is not None}
-        table.put_item(Item=cleaned)
-        return DecimalEncoder.decode(cleaned)
+        decoded = DecimalEncoder.decode(cleaned)
+
+        store = _load_local_store()
+        store["stories"][str(decoded["id"])] = decoded
+        _save_local_store(store)
+
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_stories")
+                table.put_item(Item=cleaned)
+            except Exception:
+                pass
+        return decoded
 
     def list_stories(self, source: Optional[str] = None) -> List[Dict[str, Any]]:
-        table = self.ddb_resource.Table("harness_stories")
-        scan_kwargs = {}
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_stories")
+                scan_kwargs = {}
+                if source:
+                    scan_kwargs["FilterExpression"] = Attr("source").eq(source.lower())
+                response = table.scan(**scan_kwargs)
+                items = [DecimalEncoder.decode(i) for i in response.get("Items", [])]
+                items.sort(key=lambda x: x.get("id", 0))
+                return items
+            except Exception:
+                pass
+        store = _load_local_store()
+        items = list(store["stories"].values())
         if source:
-            scan_kwargs["FilterExpression"] = Attr("source").eq(source.lower())
-        response = table.scan(**scan_kwargs)
-        items = [DecimalEncoder.decode(i) for i in response.get("Items", [])]
-        items.sort(key=lambda x: x.get("id", 0))
+            items = [i for i in items if (i.get("source") or "").lower() == source.lower()]
+        items.sort(key=lambda x: int(x.get("id") or 0))
         return items
 
     # --- Tools CRUD ---
     def put_tool(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        table = self.ddb_resource.Table("harness_tools")
-        table.put_item(Item=item)
-        return DecimalEncoder.decode(item)
+        decoded = DecimalEncoder.decode(item)
+        store = _load_local_store()
+        store["tools"][str(decoded.get("name", ""))] = decoded
+        _save_local_store(store)
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_tools")
+                table.put_item(Item=item)
+            except Exception:
+                pass
+        return decoded
 
     def list_tools(self, responsibility: Optional[str] = None) -> List[Dict[str, Any]]:
-        table = self.ddb_resource.Table("harness_tools")
-        scan_kwargs = {}
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_tools")
+                scan_kwargs = {}
+                if responsibility:
+                    scan_kwargs["FilterExpression"] = Attr("responsibility").eq(responsibility)
+                response = table.scan(**scan_kwargs)
+                items = [DecimalEncoder.decode(i) for i in response.get("Items", [])]
+                items.sort(key=lambda x: x.get("name", ""))
+                return items
+            except Exception:
+                pass
+        store = _load_local_store()
+        items = list(store["tools"].values())
         if responsibility:
-            scan_kwargs["FilterExpression"] = Attr("responsibility").eq(responsibility)
-        response = table.scan(**scan_kwargs)
-        items = [DecimalEncoder.decode(i) for i in response.get("Items", [])]
+            items = [i for i in items if i.get("responsibility") == responsibility]
         items.sort(key=lambda x: x.get("name", ""))
         return items
 
@@ -332,3 +511,4 @@ class FlociHarnessDB:
             "by_type": type_counts,
             "by_iteration": iteration_counts
         }
+

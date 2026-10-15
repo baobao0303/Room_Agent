@@ -3,18 +3,19 @@
     <name>paseo</name>
     <description>Quản lý agent, workspace, schedule, heartbeat.</description>
     <instructions>
-      Kích hoạt quy trình quản lý agent. Hiển thị trạng thái các bot SLP, check lịch cron heartbeat, và trạng thái bàn cờ Harness. 
-      Sử dụng tools/harness_manager.py để lấy danh sách agent đang Active.
+      Kích hoạt quy trình quản lý agent. Hiển thị trạng thái các bot SLPC (Supervisor, Lead, Peer, QC), check lịch cron heartbeat, và trạng thái bàn cờ Harness. 
+      Sử dụng tools/harness_manager.py để lấy danh sách agent đang Active/Resolved.
     </instructions>
   </command>
   <command>
     <name>paseo-agent</name>
     <description>Hướng dẫn sử dụng và tương tác với các Agent trong Paseo.</description>
     <instructions>
-      Explain how SLP agents work in this project. You are now communicating as the Agent orchestrator.
-      - Supervisor: Scope Guard
-      - Lead: Technical Owner
-      - Peer: Executor
+      Explain how SLPC agents work in this project. You are now communicating as the Agent orchestrator.
+      - Supervisor: Scope & Intent Guard
+      - Lead: Technical Architect & Project Manager
+      - Peer: Code Executor (Dev)
+      - QC: Test Architect, Unit Test Generator (tools/qc_test_generator.py) & Independent Quality Gate
       List available profiles and their roles.
     </instructions>
   </command>

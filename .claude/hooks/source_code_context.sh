@@ -4,8 +4,9 @@
 
 set -e
 
-PROJECTS_DIR="/home/baoltb/Desktop/Paseo_Project/projects"
-TOOLS_DIR="/home/baoltb/Desktop/Paseo_Project/tools"
+PROJECT_ROOT="${PASEO_REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+PROJECTS_DIR="${PROJECTS_DIR:-$PROJECT_ROOT/projects}"
+TOOLS_DIR="${TOOLS_DIR:-$PROJECT_ROOT/tools}"
 
 # Read stdin JSON from Claude Code
 INPUT_JSON=$(cat || echo "{}")

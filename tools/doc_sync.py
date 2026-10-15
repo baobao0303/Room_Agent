@@ -16,6 +16,9 @@ SKILLS_DIR = BASE_DIR / ".agents/skills"
 
 def sync_specs():
     print("--> Scanning docs/spec/ directory...")
+    if not DOCS_SPEC_DIR.exists() or not DOCS_SPEC_DIR.is_dir():
+        print(f"  (docs/spec directory not found at {DOCS_SPEC_DIR})")
+        return {}
     projects = [p for p in DOCS_SPEC_DIR.iterdir() if p.is_dir()]
     summary = {}
 
@@ -24,7 +27,7 @@ def sync_specs():
         summary[p_name] = {"ba": [], "design": [], "dev": []}
         for sub in ["ba", "design", "dev"]:
             sub_path = p / sub
-            if sub_path.exists():
+            if sub_path.exists() and sub_path.is_dir():
                 files = [f.name for f in sub_path.iterdir() if f.is_file() and f.suffix == ".md"]
                 summary[p_name][sub] = sorted(files)
 
@@ -39,6 +42,9 @@ def sync_specs():
 
 def sync_skills():
     print("\n--> Scanning .agents/skills/ directory...")
+    if not SKILLS_DIR.exists() or not SKILLS_DIR.is_dir():
+        print(f"  (.agents/skills directory not found at {SKILLS_DIR})")
+        return []
     skills = [s.name for s in SKILLS_DIR.iterdir() if s.is_dir() and not s.name.startswith(".")]
     print(f"✓ Found {len(skills)} active skills in .agents/skills/:")
     for s in sorted(skills):

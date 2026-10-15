@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-tools/remote_mcp_server.py - High-Performance Model Context Protocol (MCP) Server for REMOTE ACME (https://remote.example.com)
+tools/remote_mcp_server.py - High-Performance Model Context Protocol (MCP) Server for Remote Azure DevOps
 Provides full stdio JSON-RPC 2.0 interface for Work Items, Repositories, Pull Requests, Use Cases, and Git.
 """
 
 import sys
 import os
+import re
 import json
 import base64
 import urllib.request
@@ -15,23 +16,42 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DOC_REPO_PATH = Path("/home/baoltb/Desktop/crm-doc")
-FE_REPO_PATH = Path("/home/baoltb/Desktop/Paseo_Project/projects/crm-fe") if Path("/home/baoltb/Desktop/Paseo_Project/projects/crm-fe").exists() else Path("/home/baoltb/Desktop/WiCRM/crm-fe")
+_default_doc = BASE_DIR / "projects/crm-doc" if (BASE_DIR / "projects/crm-doc").exists() else BASE_DIR.parent / "crm-doc"
+_default_fe = BASE_DIR / "projects/crm-fe" if (BASE_DIR / "projects/crm-fe").exists() else BASE_DIR.parent / "crm-fe"
+DOC_REPO_PATH = Path(os.getenv("DOC_REPO_PATH") or os.getenv("CRM_DOC_PATH") or str(_default_doc))
+FE_REPO_PATH = Path(os.getenv("FE_REPO_PATH") or os.getenv("CRM_FE_PATH") or str(_default_fe))
 CRM_DOC_READER = BASE_DIR / "tools/crm_doc_reader.py"
 
 # REMOTE Configuration
-REMOTE_ORG_URL = os.getenv("AZURE_DEVOPS_ORG_URL", "https://remote.example.com/MainCollection").rstrip("/")
-REMOTE_PROJECT = os.getenv("AZURE_DEVOPS_DEFAULT_PROJECT", "ACME")
+REMOTE_ORG_URL = os.getenv("AZURE_DEVOPS_ORG_URL", "").rstrip("/")
+REMOTE_PROJECT = os.getenv("AZURE_DEVOPS_DEFAULT_PROJECT") or os.getenv("AZURE_DEVOPS_PROJECT", "")
 REMOTE_PAT = os.getenv("AZURE_DEVOPS_PAT", "")
 
+def get_remote_config() -> tuple[str, str, str]:
+    """Validate and return (org_url, project, pat) from environment variables.
+    Fails with clear ValueError if any required variable is unset."""
+    org_url = os.getenv("AZURE_DEVOPS_ORG_URL", REMOTE_ORG_URL).rstrip("/")
+    project = os.getenv("AZURE_DEVOPS_DEFAULT_PROJECT") or os.getenv("AZURE_DEVOPS_PROJECT", REMOTE_PROJECT)
+    pat = os.getenv("AZURE_DEVOPS_PAT", REMOTE_PAT)
+    missing = []
+    if not org_url:
+        missing.append("AZURE_DEVOPS_ORG_URL")
+    if not project:
+        missing.append("AZURE_DEVOPS_DEFAULT_PROJECT (or AZURE_DEVOPS_PROJECT)")
+    if not pat:
+        missing.append("AZURE_DEVOPS_PAT")
+    if missing:
+        raise ValueError(f"Missing required environment variables for Remote MCP Server: {', '.join(missing)}")
+    return org_url, project, pat
+
 def get_auth_header() -> Dict[str, str]:
-    if not REMOTE_PAT:
-        return {}
-    token_b64 = base64.b64encode(f":{REMOTE_PAT}".encode("utf-8")).decode("ascii")
+    _, _, pat = get_remote_config()
+    token_b64 = base64.b64encode(f":{pat}".encode("utf-8")).decode("ascii")
     return {"Authorization": f"Basic {token_b64}"}
 
 def remote_api_get(endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
-    url = f"{REMOTE_ORG_URL}/{endpoint}"
+    org_url, _, _ = get_remote_config()
+    url = f"{org_url}/{endpoint}"
     if params:
         query_str = urllib.parse.urlencode(params)
         url = f"{url}?{query_str}"
@@ -41,7 +61,8 @@ def remote_api_get(endpoint: str, params: Optional[Dict[str, Any]] = None) -> An
         return json.loads(resp.read().decode("utf-8"))
 
 def remote_api_post(endpoint: str, payload: Dict[str, Any], params: Optional[Dict[str, Any]] = None) -> Any:
-    url = f"{REMOTE_ORG_URL}/{endpoint}"
+    org_url, _, _ = get_remote_config()
+    url = f"{org_url}/{endpoint}"
     if params:
         query_str = urllib.parse.urlencode(params)
         url = f"{url}?{query_str}"
@@ -52,10 +73,39 @@ def remote_api_post(endpoint: str, payload: Dict[str, Any], params: Optional[Dic
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
+ALLOWED_WORK_ITEM_TYPES = {
+    "User Story", "Bug", "Task", "Epic", "Feature", "Issue", "Test Case", "Testcase", "Technical Story"
+}
+ALLOWED_STATES = {
+    "New", "Active", "Resolved", "Closed", "Removed", "Done",
+    "In Progress", "To Do", "Committed", "Approved", "Accepted", "Blocked"
+}
+ALLOWED_FIELDS = {
+    "System.Id",
+    "System.Title",
+    "System.WorkItemType",
+    "System.State",
+    "System.AssignedTo",
+    "System.CreatedDate",
+    "System.ChangedDate",
+    "System.AreaPath",
+    "System.IterationPath",
+    "System.Description",
+    "System.Tags",
+    "Microsoft.VSTS.Common.Priority",
+    "Microsoft.VSTS.Common.AcceptanceCriteria",
+    "Microsoft.VSTS.Scheduling.StoryPoints",
+    "Microsoft.VSTS.Scheduling.RemainingWork",
+}
+
+def escape_wiql_literal(value: Any) -> str:
+    """Escape single quotes in values for WIQL queries."""
+    return str(value).replace("'", "''")
+
 TOOLS_SCHEMA = [
     {
         "name": "remote_list_work_items",
-        "description": "List recent work items (User Stories, Bugs, Tasks, Epics) from REMOTE ACME project.",
+        "description": "List recent work items (User Stories, Bugs, Tasks, Epics) from configured Remote Azure DevOps project.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -72,19 +122,24 @@ TOOLS_SCHEMA = [
                     "type": "integer",
                     "description": "Maximum number of items to return (default: 15)",
                     "default": 15
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional list of fields to retrieve (must be in whitelist)"
                 }
             }
         }
     },
     {
         "name": "remote_get_work_item",
-        "description": "Retrieve full details, description, acceptance criteria, state, and fields of a REMOTE Work Item by ID.",
+        "description": "Retrieve full details, description, acceptance criteria, state, and fields of a Remote Work Item by ID.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "work_item_id": {
                     "type": "integer",
-                    "description": "REMOTE Work Item ID (e.g. 160736)"
+                    "description": "Remote Work Item ID (e.g. 160736)"
                 }
             },
             "required": ["work_item_id"]
@@ -92,13 +147,13 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_query_wiql",
-        "description": "Execute a custom WIQL (Work Item Query Language) query on REMOTE ACME.",
+        "description": "Execute a custom WIQL (Work Item Query Language) query on configured Remote Azure DevOps project.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "wiql": {
                     "type": "string",
-                    "description": "WIQL query string (e.g. 'SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.WorkItemType] = \\'Bug\\' ORDER BY [System.ChangedDate] DESC')"
+                    "description": "WIQL query string starting with SELECT (e.g. 'SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.WorkItemType] = \\'Bug\\' ORDER BY [System.ChangedDate] DESC')"
                 }
             },
             "required": ["wiql"]
@@ -106,7 +161,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_list_repositories",
-        "description": "List all Git repositories under REMOTE project ACME (e.g. crm-crm, crm-fe, helm-charts).",
+        "description": "List all Git repositories under configured Remote Azure DevOps project.",
         "inputSchema": {
             "type": "object",
             "properties": {}
@@ -114,7 +169,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_list_pull_requests",
-        "description": "List active or completed Pull Requests for a REMOTE repository.",
+        "description": "List active or completed Pull Requests for a Remote repository.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -134,7 +189,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_search_use_cases",
-        "description": "Semantic search across all ACME CRM Use Cases (UC1.01 to UC4.09), User Stories, and Acceptance Criteria from REMOTE docs/base.",
+        "description": "Semantic search across all CRM Use Cases (UC1.01 to UC4.09), User Stories, and Acceptance Criteria from Remote docs/base.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -167,7 +222,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_sync_docs",
-        "description": "Synchronize and pull latest documentation changes from REMOTE remote repository (branch docs/base).",
+        "description": "Synchronize and pull latest documentation changes from Remote repository (branch docs/base).",
         "inputSchema": {
             "type": "object",
             "properties": {}
@@ -175,7 +230,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_list_doc_tree",
-        "description": "Get hierarchical directory tree of all ACME CRM documentation on REMOTE.",
+        "description": "Get hierarchical directory tree of all CRM documentation on Remote.",
         "inputSchema": {
             "type": "object",
             "properties": {}
@@ -183,7 +238,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_git_status",
-        "description": "Get git branch and working tree status for REMOTE repositories (crm-doc or crm-fe).",
+        "description": "Get git branch and working tree status for Remote repositories (crm-doc or crm-fe).",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -198,7 +253,7 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "remote_git_log",
-        "description": "View recent git commit log from REMOTE repository.",
+        "description": "View recent git commit log from Remote repository.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -225,28 +280,64 @@ def run_reader_cmd(args: List[str]) -> str:
 
 def execute_tool(name: str, arguments: Dict[str, Any]) -> str:
     if name == "remote_list_work_items":
+        org_url, project, _ = get_remote_config()
         wi_type = arguments.get("work_item_type")
         state = arguments.get("state")
         top = arguments.get("top", 15)
+        user_fields = arguments.get("fields")
 
-        where_clauses = ["[System.TeamProject] = @project"]
+        try:
+            top_val = int(top)
+            if top_val <= 0:
+                top_val = 15
+        except (ValueError, TypeError):
+            top_val = 15
+
+        safe_project = escape_wiql_literal(project)
+        where_clauses = [f"[System.TeamProject] = '{safe_project}'"]
+
         if wi_type:
-            where_clauses.append(f"[System.WorkItemType] = '{wi_type}'")
-        if state:
-            where_clauses.append(f"[System.State] = '{state}'")
+            matched_type = next((t for t in ALLOWED_WORK_ITEM_TYPES if t.lower() == str(wi_type).strip().lower()), None)
+            if not matched_type:
+                raise ValueError(f"Invalid work_item_type: '{wi_type}'. Allowed types: {sorted(ALLOWED_WORK_ITEM_TYPES)}")
+            where_clauses.append(f"[System.WorkItemType] = '{escape_wiql_literal(matched_type)}'")
 
+        if state:
+            matched_state = next((s for s in ALLOWED_STATES if s.lower() == str(state).strip().lower()), None)
+            if not matched_state:
+                raise ValueError(f"Invalid state: '{state}'. Allowed states: {sorted(ALLOWED_STATES)}")
+            where_clauses.append(f"[System.State] = '{escape_wiql_literal(matched_state)}'")
+
+        # Whitelist field values
+        select_fields = ["System.Id", "System.Title", "System.WorkItemType", "System.State", "System.AssignedTo"]
+        if user_fields:
+            if isinstance(user_fields, str):
+                parsed_fields = [f.strip() for f in user_fields.split(",") if f.strip()]
+            elif isinstance(user_fields, list):
+                parsed_fields = [str(f).strip() for f in user_fields if str(f).strip()]
+            else:
+                raise ValueError("fields must be a comma-separated string or list of field names.")
+
+            invalid_fields = [f for f in parsed_fields if f not in ALLOWED_FIELDS]
+            if invalid_fields:
+                raise ValueError(f"Invalid field(s): {invalid_fields}. Allowed fields: {sorted(ALLOWED_FIELDS)}")
+            if parsed_fields:
+                select_fields = parsed_fields
+
+        select_clause = ", ".join(f"[{f.strip('[]')}]" for f in select_fields)
         where_stmt = " AND ".join(where_clauses)
-        wiql = f"SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State], [System.AssignedTo] FROM WorkItems WHERE {where_stmt} ORDER BY [System.ChangedDate] DESC"
-        
-        data = remote_api_post(f"{REMOTE_PROJECT}/_apis/wit/wiql", {"query": wiql}, {"api-version": "5.0", "$top": str(top)})
+        wiql = f"SELECT {select_clause} FROM WorkItems WHERE {where_stmt} ORDER BY [System.ChangedDate] DESC"
+
+        data = remote_api_post(f"{project}/_apis/wit/wiql", {"query": wiql}, {"api-version": "5.0", "$top": str(top_val)})
         work_items_meta = data.get("workItems", [])
         if not work_items_meta:
-            return f"No work items found matching criteria in REMOTE project {REMOTE_PROJECT}."
+            return f"No work items found matching criteria in REMOTE project {project}."
 
-        ids_str = ",".join(str(w["id"]) for w in work_items_meta[:top])
+        ids_str = ",".join(str(w["id"]) for w in work_items_meta[:top_val])
+        fetch_fields = list(dict.fromkeys(select_fields + ["System.Id", "System.Title", "System.WorkItemType", "System.State", "System.AssignedTo", "System.CreatedDate"]))
         details = remote_api_get(f"_apis/wit/workitems", {
             "ids": ids_str,
-            "fields": "System.Id,System.Title,System.WorkItemType,System.State,System.AssignedTo,System.CreatedDate",
+            "fields": ",".join(fetch_fields),
             "api-version": "5.0"
         })
 
@@ -255,19 +346,27 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> str:
             fields = item.get("fields", {})
             assigned = fields.get("System.AssignedTo", {})
             assigned_name = assigned.get("displayName") if isinstance(assigned, dict) else (assigned or "Unassigned")
-            results.append({
+            entry = {
                 "id": fields.get("System.Id"),
                 "type": fields.get("System.WorkItemType"),
                 "state": fields.get("System.State"),
                 "title": fields.get("System.Title"),
                 "assigned_to": assigned_name,
                 "url": item.get("_links", {}).get("html", {}).get("href")
-            })
+            }
+            for rf in select_fields:
+                if rf not in entry:
+                    entry[rf] = fields.get(rf)
+            results.append(entry)
         return json.dumps(results, indent=2, ensure_ascii=False)
 
     elif name == "remote_get_work_item":
         wi_id = arguments.get("work_item_id")
-        data = remote_api_get(f"_apis/wit/workitems/{wi_id}", {"$expand": "all", "api-version": "5.0"})
+        try:
+            wi_id_int = int(wi_id)
+        except (ValueError, TypeError):
+            raise ValueError(f"Invalid work_item_id: {wi_id}. Must be an integer.")
+        data = remote_api_get(f"_apis/wit/workitems/{wi_id_int}", {"$expand": "all", "api-version": "5.0"})
         fields = data.get("fields", {})
         cleaned = {
             "id": data.get("id"),
@@ -287,12 +386,16 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> str:
         return json.dumps({k: v for k, v in cleaned.items() if v is not None}, indent=2, ensure_ascii=False)
 
     elif name == "remote_query_wiql":
+        _, project, _ = get_remote_config()
         wiql = arguments.get("wiql", "")
-        data = remote_api_post(f"{REMOTE_PROJECT}/_apis/wit/wiql", {"query": wiql}, {"api-version": "5.0"})
+        if not isinstance(wiql, str) or not re.match(r"^\s*SELECT\s+", wiql, re.IGNORECASE):
+            raise ValueError("Invalid WIQL query: query must start with 'SELECT'.")
+        data = remote_api_post(f"{project}/_apis/wit/wiql", {"query": wiql.strip()}, {"api-version": "5.0"})
         return json.dumps(data, indent=2, ensure_ascii=False)
 
     elif name == "remote_list_repositories":
-        data = remote_api_get(f"{REMOTE_PROJECT}/_apis/git/repositories", {"api-version": "5.0"})
+        _, project, _ = get_remote_config()
+        data = remote_api_get(f"{project}/_apis/git/repositories", {"api-version": "5.0"})
         repos = [{
             "id": r.get("id"),
             "name": r.get("name"),
@@ -303,9 +406,10 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> str:
         return json.dumps(repos, indent=2, ensure_ascii=False)
 
     elif name == "remote_list_pull_requests":
+        _, project, _ = get_remote_config()
         repo_name = arguments.get("repository", "crm-fe")
         status = arguments.get("status", "active")
-        data = remote_api_get(f"{REMOTE_PROJECT}/_apis/git/repositories/{repo_name}/pullrequests", {
+        data = remote_api_get(f"{project}/_apis/git/repositories/{repo_name}/pullrequests", {
             "searchCriteria.status": status,
             "api-version": "5.0"
         })
@@ -443,6 +547,13 @@ def handle_request(req: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return None
 
 def main():
+    try:
+        get_remote_config()
+    except ValueError as err:
+        sys.stderr.write(f"Error: {err}\n")
+        sys.stderr.flush()
+        sys.exit(1)
+
     for line in sys.stdin:
         line = line.strip()
         if not line:
