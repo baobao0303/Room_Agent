@@ -57,6 +57,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .angular/
+.astro/
 .nx/cache/
 coverage/
 .turbo/
@@ -88,3 +89,4 @@ scratch/
 /game/
 /codex-room-setup/
 /.harness_progress.json
+/.harness_hooks.jsonl

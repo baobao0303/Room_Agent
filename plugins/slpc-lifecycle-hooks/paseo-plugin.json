@@ -1,0 +1,6 @@
+{
+  "id": "slpc-lifecycle-hooks",
+  "requirements": {
+    "paseo": ">=0.8.0"
+  }
+}

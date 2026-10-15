@@ -18,8 +18,17 @@ Chỉ thị dành cho Agent khi làm việc trong thư mục `tools/`.
   - Đồng bộ REMOTE: `./scripts/harness sync-remote`
   - Thêm/Cập nhật: `python3 /home/baoltb/Desktop/Paseo_Project/tools/harness_manager.py <add|update|list|stats> ...`
 - **`research/research_agent.py`**:
-  - Nghiên cứu kỹ thuật qua Hermes Gateway hoặc CLI.
+  - Nghiên cứu kỹ thuật qua Hermes Gateway, Router9 (`ag/gemini-3.8-flash-high`), Hermes CLI hoặc tổng hợp BM25 cục bộ.
   - Cú pháp: `python3 /home/baoltb/Desktop/Paseo_Project/tools/research/research_agent.py "<topic>" [output_path]`
+- **`profile_research_gen.py`**:
+  - Pipeline ép buộc mọi Profile của Paseo (`Supervisor`, `Lead`, `Peer`, `QC`, `Lead BA`, `Peer BA`, `Lead Dev`, `Peer Dev`, `Lead design`, `Peer Design`) thực thi **Research + Gen** tự động trước/trong khi xử lý task.
+  - Cú pháp: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile "<Role>" --topic "<Task>" [--source <file>] [--spec <spec>] [--task-id <id>] [--uc <UC>] [--sync-harness]`
+- **`qc_test_generator.py`**:
+  - Bộ sinh Test Matrix & Unit Test tự động theo **5-Stage ISTQB Pipeline** (cho `QC` và `Peer`).
+  - Cú pháp: `python3 /home/baoltb/Desktop/Paseo_Project/tools/qc_test_generator.py --source <file> --spec <spec> --task-id <id> --out-spec <spec_ts> --sync-harness [--run]`
+- **`agent_progress.py`**:
+  - Quản lý Sổ cái Tiến độ & Bàn giao (`docs/AGENT_PROGRESS.md`) + tìm/đọc thread `.jsonl` (`find-thread`, `read-thread`, `sessions`, `status`, `log`).
+
 
 ---
 

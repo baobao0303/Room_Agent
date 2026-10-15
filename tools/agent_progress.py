@@ -278,11 +278,12 @@ def cmd_sessions() -> None:
     codex_rt_dir = home / ".codex-runtime"
 
     print("======================================================================")
-    print("🧠 BẢN ĐỒ VỊ TRÍ CONTEXT WINDOW CỦA CÁC AGENT ĐANG CHẠY")
+    print("🧠 BẢN ĐỒ VỊ TRÍ CONTEXT WINDOW & SUB-AGENTS CỦA 4 ROLE (SLPC)")
     print("======================================================================")
     print(f"1. Paseo Agent Metadata : {paseo_agents_dir}")
     print(f"2. Claude Context JSONL : {claude_proj_dir}")
-    print(f"3. Codex Room Runtimes  : {codex_rt_dir}/{{supervisor,lead,peer}}")
+    print(f"3. Codex Room Runtimes  : {codex_rt_dir}/{{supervisor,lead,peer,qc}}")
+    print(f"4. Sub-Agents (031)     : {home / '.paseo/claude-config/agents'} & {home / '.codex/skills/claude-code-sub-agents'}")
     print("----------------------------------------------------------------------")
     if paseo_agents_dir.is_dir():
         files = sorted(paseo_agents_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:8]
@@ -306,6 +307,86 @@ def cmd_sessions() -> None:
     print("======================================================================")
 
 
+def _collect_all_thread_files() -> list[tuple[str, Path]]:
+    home = Path.home()
+    candidates: list[tuple[str, Path]] = []
+    claude_proj_dir = home / ".paseo" / "claude-config" / "projects" / "-home-baoltb-Desktop-Paseo-Project"
+    if claude_proj_dir.is_dir():
+        for p in claude_proj_dir.glob("*.jsonl"):
+            candidates.append(("paseo-claude", p))
+    for role in ("supervisor", "lead", "peer", "qc"):
+        sess_dir = home / ".codex-runtime" / role / "sessions"
+        if sess_dir.is_dir():
+            for p in sess_dir.rglob("*.jsonl"):
+                candidates.append((f"codex-{role}", p))
+    codex_sess = home / ".codex" / "sessions"
+    if codex_sess.is_dir():
+        for p in codex_sess.rglob("*.jsonl"):
+            candidates.append(("codex-cli", p))
+    return sorted(candidates, key=lambda item: item[1].stat().st_mtime, reverse=True)
+
+
+def cmd_find_thread(query: str = "", limit: int = 15) -> None:
+    q = (query or "").strip().lower()
+    results = []
+    for source, path in _collect_all_thread_files():
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+        if q and q not in text.lower() and q not in path.name.lower():
+            continue
+        results.append({
+            "thread_id": path.stem,
+            "source": source,
+            "path": str(path),
+            "size_kb": round(path.stat().st_size / 1024, 1),
+            "updated_at": datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+        })
+        if len(results) >= limit:
+            break
+    print(json.dumps({"query": query, "count": len(results), "threads": results}, indent=2, ensure_ascii=False))
+
+
+def cmd_read_thread(thread_id_or_path: str, max_messages: int = 40) -> None:
+    target = Path(thread_id_or_path).expanduser()
+    if not target.is_file():
+        for _, candidate in _collect_all_thread_files():
+            if candidate.stem.startswith(thread_id_or_path) or thread_id_or_path in candidate.name:
+                target = candidate
+                break
+    if not target.is_file():
+        print(json.dumps({"error": f"Thread not found: {thread_id_or_path}"}))
+        return
+    messages = []
+    for line in target.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except Exception:
+            continue
+        role = obj.get("type") or obj.get("role") or obj.get("message", {}).get("role")
+        content = obj.get("message", {}).get("content") or obj.get("content")
+        text_parts = []
+        if isinstance(content, str):
+            text_parts.append(content)
+        elif isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") in ("text", "input_text", "output_text"):
+                    text_parts.append(str(part.get("text", "")))
+        merged = "\n".join(t for t in text_parts if t).strip()
+        if merged:
+            messages.append({"role": role, "text": merged[:1200]})
+    print(json.dumps({
+        "thread_id": target.stem,
+        "path": str(target),
+        "total_extracted_messages": len(messages),
+        "messages": messages[-max_messages:],
+    }, indent=2, ensure_ascii=False))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Quản lý sổ cái tiến độ & bàn giao công việc giữa các Agent")
     subparsers = parser.add_subparsers(dest="command")
@@ -315,8 +396,16 @@ def main() -> int:
     subparsers.add_parser("sync", help="Tái tạo lại file docs/AGENT_PROGRESS.md từ trạng thái hiện tại")
     subparsers.add_parser("sessions", help="Liệt kê vị trí file Context Window (*.jsonl) của các Agent đang chạy")
 
+    find_parser = subparsers.add_parser("find-thread", help="[Knowledge Skill Phase 1] Tìm kiếm thread (*.jsonl) theo từ khóa")
+    find_parser.add_argument("query", nargs="?", default="", help="Từ khóa tìm kiếm trong các session thread")
+    find_parser.add_argument("--limit", type=int, default=15, help="Số lượng thread tối đa trả về")
+
+    read_parser = subparsers.add_parser("read-thread", help="[Knowledge Skill Phase 2] Đọc nội dung rút gọn của 1 thread (*.jsonl)")
+    read_parser.add_argument("thread", help="Thread ID (sessionId) hoặc đường dẫn file .jsonl")
+    read_parser.add_argument("--max-messages", type=int, default=40, help="Số thông điệp tối đa trích xuất")
+
     log_parser = subparsers.add_parser("log", help="Ghi nhận thêm một phiên làm việc của Agent")
-    log_parser.add_argument("--agent", required=True, help="Tên Agent hoặc Role (VD: Supervisor, Lead, Peer, Antigravity)")
+    log_parser.add_argument("--agent", required=True, help="Tên Agent hoặc Role (VD: Supervisor, Lead, Peer, QC, Antigravity)")
     log_parser.add_argument("--summary", required=True, help="Tóm tắt ngắn gọn phiên làm việc")
     log_parser.add_argument("--focus", help="Cập nhật trọng tâm công việc hiện tại")
     log_parser.add_argument("--done", help="Danh sách việc đã hoàn thành (ngăn cách bởi dấu ';')")
@@ -339,6 +428,12 @@ def main() -> int:
         return 0
     if args.command == "sessions":
         cmd_sessions()
+        return 0
+    if args.command == "find-thread":
+        cmd_find_thread(args.query, args.limit)
+        return 0
+    if args.command == "read-thread":
+        cmd_read_thread(args.thread, args.max_messages)
         return 0
     if args.command == "log":
         cmd_log(args, state)

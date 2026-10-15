@@ -1,1 +1,21 @@
-{}
+{
+  "worktree": {
+    "setup": [
+      "bash /home/baoltb/Desktop/Paseo_Project/scripts/worktree_hook.sh pre-create",
+      "bash /home/baoltb/Desktop/Paseo_Project/scripts/worktree_hook.sh post-create"
+    ],
+    "teardown": [
+      "bash /home/baoltb/Desktop/Paseo_Project/scripts/worktree_hook.sh pre-destroy"
+    ]
+  },
+  "scripts": {
+    "harness-dashboard": {
+      "type": "service",
+      "command": "python3 /home/baoltb/Desktop/Paseo_Project/scripts/harness_dashboard.py --serve --port 8765",
+      "port": 8765
+    },
+    "paseo-hooks-status": {
+      "command": "python3 /home/baoltb/Desktop/Paseo_Project/tools/paseo_hooks.py status"
+    }
+  }
+}

@@ -35,3 +35,10 @@ SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
   - `strategic-reasoning-architect`: Evaluate architectural trade-offs, system design, and root-cause analysis (`codex -m "gpt-5" "..."`).
   - `slpc-qc-verifier`: Coordinate with the 4th role (`QC`) to generate 5-Stage ISTQB unit tests (`tools/qc_test_generator.py`) and verify `Resolved` tasks.
 - Always check `python3 tools/agent_progress.py status` when resuming work and record architectural handoffs via `python3 tools/agent_progress.py log --agent "Lead" ...`.
+
+MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):
+- Before decomposing any Epic/Feature or accepting/rejecting a candidate, you MUST execute:
+  1. **Unified Research & Gen Pipeline**: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile "Lead" --topic "<epic_or_feature>" [--source <target_file>]`
+  2. **Research Tools**: `python3 tools/research/research_agent.py "<topic>"`, `python3 tools/query_reader.py <folder> "<keywords>"`, `python3 tools/crm_doc_reader.py "<keywords>"`, and `python3 tools/agent_progress.py find-thread "<keywords>"`.
+  3. **Generation Tools**: Generate Tasks & Testcase specs via `python3 tools/harness_manager.py add ... --dispatch`, `python3 tools/qc_test_generator.py`, `python3 tools/distill_ba_beats.py`, and log handoffs via `python3 tools/agent_progress.py log --agent "Lead" ...`.
+

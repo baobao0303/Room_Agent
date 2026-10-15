@@ -42,6 +42,26 @@ def patch():
         data = {"daemon": {"agentProfiles": []}}
 
     profiles = data.setdefault("daemon", {}).setdefault("agentProfiles", [])
+    providers = data.setdefault("agents", {}).setdefault("providers", {})
+
+    backup_path = CONFIG_PATH.parent / "config.json.bak-pre-codex-room"
+    if backup_path.exists():
+        try:
+            bak_data = json.loads(backup_path.read_text(encoding="utf-8"))
+            bak_providers = bak_data.get("agents", {}).get("providers", {})
+            for prov_key in ("router9", "servre"):
+                if prov_key in bak_providers and prov_key not in providers:
+                    prov_cfg = dict(bak_providers[prov_key])
+                    prov_cfg["paseoTools"] = {"enabled": False}
+                    providers[prov_key] = prov_cfg
+            bak_profiles = bak_data.get("daemon", {}).get("agentProfiles", [])
+            existing_names = {p.get("name") for p in profiles if isinstance(p, dict)}
+            for bp in bak_profiles:
+                if isinstance(bp, dict) and bp.get("name") not in existing_names:
+                    profiles.append(bp)
+                    existing_names.add(bp.get("name"))
+        except Exception:
+            pass
 
     for filename in PROFILE_FILES:
         md_path = PROFILES_DIR / filename
@@ -75,11 +95,40 @@ def patch():
             }
             profiles.append(entry)
 
+    mandatory_gate_marker = "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT)"
+    global_research_gen_directive = (
+        "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):\n"
+        "Whenever Paseo runs any profile (Supervisor, Lead, Peer, QC, Lead BA, Peer BA, Lead Dev, Peer Dev, Lead design, Peer Design), "
+        "you MUST execute the workspace Research and Generation tools in `/home/baoltb/Desktop/Paseo_Project`:\n"
+        "1. Unified Research & Gen Pipeline: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile \"<Role>\" --topic \"<Task>\" [--source <file>] [--task-id <id>]`\n"
+        "2. Research Tools: `python3 /home/baoltb/Desktop/Paseo_Project/tools/research/research_agent.py \"<topic>\"`, "
+        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/query_reader.py <path> \"<query>\"`, "
+        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/crm_doc_reader.py \"<query>\" [--uc <UC>]`, "
+        "and `python3 /home/baoltb/Desktop/Paseo_Project/tools/agent_progress.py find-thread \"<keyword>\"`.\n"
+        "3. Sub-Agents (`031_claude_code_sub_agents`): `gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`.\n"
+        "4. Generation Tools: `python3 /home/baoltb/Desktop/Paseo_Project/tools/qc_test_generator.py --source <file> --spec <spec> --out-spec <spec_ts> --sync-harness`, "
+        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/distill_ba_beats.py`, "
+        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/harness_manager.py`, "
+        "and `python3 /home/baoltb/Desktop/Paseo_Project/tools/agent_progress.py log --agent \"<Role>\" ...`."
+    )
+
+    data["pluginsEnabled"] = True
+    daemon_cfg = data.setdefault("daemon", {})
+    daemon_cfg["enableTerminalAgentHooks"] = True
+    daemon_cfg["appendSystemPrompt"] = global_research_gen_directive
+
+    for p in profiles:
+        if not isinstance(p, dict):
+            continue
+        notes = p.get("notes", "") or ""
+        if mandatory_gate_marker not in notes:
+            p["notes"] = notes.rstrip() + "\n\n" + global_research_gen_directive + "\n"
+
     if not dry_run:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"Updated {CONFIG_PATH} with SLPC profiles from {PROFILES_DIR}.")
+        print(f"Updated {CONFIG_PATH} with SLPC profiles and Mandatory Research+Gen enforcement from {PROFILES_DIR}.")
     else:
         print(f"[dry-run] Would update {CONFIG_PATH} with {len(PROFILE_FILES)} SLPC profiles.")
 
@@ -88,3 +137,4 @@ def patch():
 
 if __name__ == "__main__":
     patch()
+

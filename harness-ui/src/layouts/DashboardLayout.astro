@@ -67,14 +67,14 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
 
           <button
             type="button"
-            class={`nav-tab ${activeTab === 'qc-automation' ? 'active' : ''}`}
-            data-tab-target="qc-automation"
-            id="nav-tab-qc-automation"
+            class={`nav-tab ${activeTab === 'qc-workbench' || activeTab === 'qc-automation' ? 'active' : ''}`}
+            data-tab-target="qc-workbench"
+            id="nav-tab-qc-workbench"
             role="tab"
-            aria-selected={activeTab === 'qc-automation' ? 'true' : 'false'}
-            aria-controls="tab-qc-automation"
+            aria-selected={activeTab === 'qc-workbench' || activeTab === 'qc-automation' ? 'true' : 'false'}
+            aria-controls="tab-qc-workbench"
           >
-            <span>QC Automation</span>
+            <span>QC Workbench</span>
           </button>
 
           <button
@@ -144,14 +144,20 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
       let uiVer: string | null = null;
       let pollInterval: number | null = null;
 
+      function normalizeTab(t: string): string {
+        if (t === 'qc-automation') return 'qc-workbench';
+        return t;
+      }
+
       function updateActiveTab(tabName: string) {
+        const norm = normalizeTab(tabName);
         const tabs = document.querySelectorAll<HTMLButtonElement>('.nav-tab');
         const panels = document.querySelectorAll<HTMLElement>('[data-tab-content]');
 
         let found = false;
         tabs.forEach((tab) => {
-          const target = tab.dataset.tabTarget;
-          const isActive = target === tabName;
+          const target = normalizeTab(tab.dataset.tabTarget || '');
+          const isActive = target === norm;
           if (isActive) {
             tab.classList.add('active');
             tab.setAttribute('aria-selected', 'true');
@@ -163,11 +169,13 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
         });
 
         // Default to work-items if target not found
-        const effectiveTab = found ? tabName : 'work-items';
+        const effectiveTab = found ? norm : 'work-items';
 
         panels.forEach((panel) => {
-          const content = panel.dataset.tabContent;
-          if (content === effectiveTab) {
+          const contents = (panel.dataset.tabContent || '').split(' ').map(normalizeTab);
+          const panelId = panel.id.replace(/^tab-/, '');
+          const isMatch = contents.includes(effectiveTab) || normalizeTab(panelId) === effectiveTab;
+          if (isMatch) {
             panel.removeAttribute('hidden');
             panel.style.display = 'block';
           } else {

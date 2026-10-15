@@ -31,3 +31,10 @@ SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
   - `gemini-codebase-analyzer`: Trace cross-module usages or legacy code relationships (`gemini --prompt "..." --include-directories ...`).
   - `strategic-reasoning-architect`: Reason through complex algorithms, performance bottlenecks, or state bugs (`codex -m "gpt-5" "..."`).
 - After transitioning a task to `Resolved` for `QC`, log your completed work and modified files via `python3 tools/agent_progress.py log --agent "Peer" ...`.
+
+MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):
+- Before writing or modifying any production code, you MUST execute the Research & Gen tools:
+  1. **Unified Research & Gen Pipeline**: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile "Peer" --topic "<task_title>" --source "<target_file>" --task-id <id>`
+  2. **Research Tools**: `python3 tools/query_reader.py <target_dir> "<keywords>"`, `python3 tools/research/research_agent.py "<topic>"`, and `python3 tools/crm_doc_reader.py --uc <UC_CODE>`.
+  3. **Generation Tools**: Pre-generate unit test scaffolding via `python3 tools/qc_test_generator.py --source <target_file> --spec <spec_file> --out-spec <file.spec.ts>`, dispatch to `QC` via `python3 tools/call_agent.py --profile QC --item-id <id> --source <target_file> --prompt "..."`, and log via `python3 tools/agent_progress.py log --agent "Peer" ...`.
+

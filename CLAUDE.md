@@ -21,25 +21,27 @@
   </command>
   <command>
     <name>paseo-advisor</name>
-    <description>Lấy ý kiến tư vấn (second opinion) từ agent khác.</description>
+    <description>Lấy ý kiến tư vấn (second opinion) từ sub-agent chuyên biệt (031_claude_code_sub_agents).</description>
     <instructions>
-      Chạy sub-agent (qua delegate_task hoặc tương đương) để review giải pháp hiện tại mà không đổi owner của task chính. 
+      Gọi sub-agent `strategic-reasoning-architect` hoặc `gemini-codebase-analyzer` (trong `.claude/agents/`) để review giải pháp hiện tại mà không đổi owner của task chính. 
       Sau khi có ý kiến, tổng hợp và báo cáo lại cho user.
     </instructions>
   </command>
   <command>
     <name>paseo-committee</name>
-    <description>Spawn 2 agents phân tích root cause & lập kế hoạch.</description>
+    <description>Spawn 2 sub-agents (`gemini-codebase-analyzer` + `strategic-reasoning-architect`) phân tích root cause & lập kế hoạch.</description>
     <instructions>
-      Spawn 2 sub-agents với góc nhìn khác nhau (ví dụ: Frontend và Backend) để cùng phân tích một vấn đề. 
-      Thu thập 2 report độc lập, so sánh và đưa ra kết luận cuối cùng (Root Cause Analysis).
+      Spawn song song 2 sub-agents từ `031_claude_code_sub_agents`:
+      1. `gemini-codebase-analyzer`: Quét toàn bộ codebase (1M+ context) tìm luồng dữ liệu và điểm chạm.
+      2. `strategic-reasoning-architect`: Phân tích nguyên nhân gốc rễ (Root Cause) và đề xuất phương án kiến trúc.
+      Thu thập 2 report độc lập, so sánh và đưa ra kết luận cuối cùng.
     </instructions>
   </command>
   <command>
     <name>paseo-review</name>
-    <description>Gọi nhóm sub-agents review chéo (Code, Spec, UI) trước nghiệm thu.</description>
+    <description>Gọi bộ 3 sub-agents (`gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`) review chéo trước nghiệm thu.</description>
     <instructions>
-      Spawn các sub-agents chuyên biệt (ví dụ: Technical Architect, Spec Reviewer) để đánh giá toàn diện. Các sub-agents chỉ trả report, bot chính tự tổng hợp và ra quyết định.
+      Spawn 3 sub-agents chuyên biệt trong `.claude/agents/` (`gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`) để đánh giá toàn diện Code, Spec và 5-Stage ISTQB Unit Tests. Các sub-agents chỉ trả report, bot chính tự tổng hợp và ra quyết định.
     </instructions>
   </command>
   <command>

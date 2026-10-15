@@ -341,6 +341,7 @@ Các Agent **không dùng Harness DB để nhớ lịch sử hội thoại nội
 | **Codex Room – Supervisor (`codex-supervisor`)** | `~/.paseo/agents/<workspace-slug>/<agentId>.json` | `~/.codex-runtime/supervisor/sessions/YYYY/MM/DD/*.jsonl` & `~/.codex-runtime/supervisor/thread_history_*.sqlite` |
 | **Codex Room – Lead (`codex-lead`)** | `~/.paseo/agents/<workspace-slug>/<agentId>.json` | `~/.codex-runtime/lead/sessions/YYYY/MM/DD/*.jsonl` & `~/.codex-runtime/lead/thread_history_*.sqlite` |
 | **Codex Room – Peer (`codex-peer`)** | `~/.paseo/agents/<workspace-slug>/<agentId>.json` | `~/.codex-runtime/peer/sessions/YYYY/MM/DD/*.jsonl` & `~/.codex-runtime/peer/thread_history_*.sqlite` |
+| **Codex Room – QC (`codex-qc`)** | `~/.paseo/agents/<workspace-slug>/<agentId>.json` | `~/.codex-runtime/qc/sessions/YYYY/MM/DD/*.jsonl` & `~/.codex-runtime/qc/thread_history_*.sqlite` |
 | **Codex CLI Độc lập (ngoài Paseo)** | `~/.codex/session_index.jsonl` | `~/.codex/sessions/YYYY/MM/DD/*.jsonl` & `~/.codex/thread_history_1.sqlite` |
 | **Antigravity IDE** | `~/.gemini/antigravity/brain/<conversation-id>/` | `~/.gemini/antigravity/brain/<conversation-id>/.system_generated/logs/transcript.jsonl` (và `transcript_full.jsonl`) |
 
@@ -348,5 +349,29 @@ Các Agent **không dùng Harness DB để nhớ lịch sử hội thoại nội
 > **Tra cứu nhanh các file Context Window đang active của dự án**:
 > Chạy lệnh `python3 tools/agent_progress.py sessions` để liệt kê ngay danh sách các Agent trong Paseo cùng đường dẫn tuyệt đối tới file `.jsonl` chứa Context Window của từng Agent.
 
+---
 
+## 9. Mở rộng lên 4 Role (`SLPC`: `Supervisor - Lead - Peer - QC`) & Tích hợp `031_claude_code_sub_agents`
 
+Vì hệ thống của chúng ta vận hành theo mô hình **4 Role (`SLPC`: `Supervisor - Lead - Peer - QC`)** có thêm cực **`QC`** độc lập (Independent Quality Gate & ISTQB 5-Stage Test Specialist), toàn bộ hệ thống `codex-room-setup`, Paseo, Claude Code, Codex và Hermes đã được nâng cấp từ 3 role lên **4 role** và tích hợp bộ Subagent Skill từ [`hoangnb24/storage/tree/main/031_claude_code_sub_agents`](https://github.com/hoangnb24/storage/tree/main/031_claude_code_sub_agents):
+
+### 9.1. Nâng cấp Codex Room từ 3 Role lên 4 Role (`supervisor | lead | peer | qc`)
+- **Overlay thứ 4 (`qc.config.toml`)**: Tạo mới tại `codex-room-setup/home/.config/codex-room/overlays/qc.config.toml` và `~/.config/codex-room/overlays/qc.config.toml` (`model = "gpt-6.1-sol"`, `model_reasoning_effort = "medium"`, `paseoTools.enabled = false`).
+- **Runtime thứ 4 (`~/.codex-runtime/qc`)**: Cập nhật `codex-room`, `codex-room-sync`, `scripts/sync-all`, `scripts/install-room`, `scripts/verify`, `scripts/lib/model-alignment.py`, và `scripts/lib/paseo-tools.jq` để hỗ trợ đầy đủ 4 role `supervisor | lead | peer | qc` và 4 provider `codex-supervisor | codex-lead | codex-peer | codex-qc`.
+
+### 9.2. Bộ 3 Sub-Agents (`031_claude_code_sub_agents` + `slpc-qc-verifier`)
+1. **`gemini-codebase-analyzer`** (từ `031_claude_code_sub_agents/gemini-codebase-analyzer.md`):
+   - Sử dụng `gemini --prompt "..." --all-files` (tận dụng Context Window 1M+ tokens của Gemini 2.5 Pro) để quét toàn bộ codebase, đối chiếu Spec với thực tế triển khai, tìm luồng dữ liệu xuyên suốt nhiều file và phát hiện nợ kỹ thuật.
+2. **`strategic-reasoning-architect`** (từ `031_claude_code_sub_agents/strategic-reasoning-architect.md`):
+   - Sử dụng `codex -m "gpt-5" "..."` để suy luận sâu về kiến trúc hệ thống, phân tích đánh đổi (trade-offs), tìm nguyên nhân gốc rễ (root-cause analysis) của các lỗi phức tạp/race conditions và lập lộ trình chiến lược.
+3. **`slpc-qc-verifier`** (bổ sung chuyên biệt cho Role thứ 4 `QC`):
+   - Sub-agent chuyên trách cổng kiểm soát chất lượng độc lập (Independent Quality Gate) và sinh/chạy Unit Test theo quy trình **5-Stage ISTQB Pipeline** (`python3 tools/qc_test_generator.py`), kết hợp `gemini-codebase-analyzer` và `strategic-reasoning-architect` để đối chiếu Spec $\leftrightarrow$ Codebase và cập nhật Test Matrix lên `Harness DB`.
+
+### 9.3. Vị trí cài đặt đồng bộ trên toàn bộ các tầng Agent
+| Tầng Môi trường | Đường dẫn cài đặt | Mục đích |
+| :--- | :--- | :--- |
+| **Project Claude Sub-Agents** | `/home/baoltb/Desktop/Paseo_Project/.claude/agents/*.md` | Cho phép Claude Code trong workspace gọi trực tiếp 3 sub-agents (`gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`). |
+| **Paseo Claude Config (`router9`/`claude`)** | `~/.paseo/claude-config/agents/*.md` & `~/.claude/agents/*.md` | Cho phép toàn bộ các Agent chạy trên Paseo Daemon (`Supervisor`, `Lead`, `Peer`, `QC`) gọi sub-agents ở cấp global. |
+| **Codex Room 4 Roles (`supervisor`/`lead`/`peer`/`qc`)** | `~/.codex/skills/claude-code-sub-agents/` (symlink tự động vào `~/.codex-runtime/{supervisor,lead,peer,qc}/skills/`) | Cung cấp skill `claude-code-sub-agents` cho cả 4 role trong Codex Room. |
+| **Project & Hermes Skills** | `.agents/skills/claude-code-sub-agents/SKILL.md` & `~/.hermes/skills/031_claude_code_sub_agents` | Đồng bộ skill chuẩn cho Antigravity, Hermes và `setup_home.sh`. |
+| **4 Role Profiles (`SLPC`)** | `profiles/{supervisor,lead,peer,qc}.md` (đã patch vào `~/.paseo/config.json`) | Hướng dẫn từng role (`Supervisor`, `Lead`, `Peer`, `QC`) cách kết hợp 3 sub-agents phù hợp với chức năng của mình. |

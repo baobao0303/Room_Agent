@@ -8,6 +8,7 @@ Usage:
 import argparse
 import http.server
 import json
+import mimetypes
 import os
 import shlex
 import subprocess
@@ -15,9 +16,9 @@ import sys
 import threading
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
@@ -25,6 +26,41 @@ sys.path.insert(0, str(BASE_DIR))
 from tools.floci_client import FlociHarnessDB
 from tools.harness_manager import HarnessManager
 from tools import qc_test_generator as qc_gen
+from tools import agent_progress
+
+DIST_DIR = BASE_DIR / "harness-ui" / "dist"
+INDEX_FILE = DIST_DIR / "index.html"
+
+MIME_OVERRIDES = {
+    ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
+    ".woff2": "font/woff2",
+    ".woff": "font/woff",
+    ".ttf": "font/ttf",
+    ".wasm": "application/wasm",
+}
+
+
+def _get_content_type(file_path: Path) -> str:
+    ext = file_path.suffix.lower()
+    if ext in MIME_OVERRIDES:
+        return MIME_OVERRIDES[ext]
+    guessed, _ = mimetypes.guess_type(str(file_path))
+    if guessed:
+        if guessed.startswith("text/") or guessed in ("application/javascript", "text/javascript", "application/json"):
+            return f"{guessed}; charset=utf-8"
+        return guessed
+    return "application/octet-stream"
 
 FIELDS = [
     "id", "type", "title", "description", "acceptance_criteria", "state",
@@ -1613,6 +1649,39 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self._safe_write(body)
 
+    def _serve_file(self, file_path: Path):
+        try:
+            content_type = _get_content_type(file_path)
+            data = file_path.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(data)))
+            path_str = str(file_path)
+            if "/_astro/" in path_str or "/assets/" in path_str:
+                self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+            elif file_path.suffix.lower() in (".html", ""):
+                self.send_header("Cache-Control", "no-cache")
+            else:
+                self.send_header("Cache-Control", "public, max-age=3600")
+            self.end_headers()
+            self._safe_write(data)
+        except Exception as e:
+            self.send_error(500, f"Error reading file: {e}")
+
+    def _serve_inline_template(self):
+        rows, json_str = get_cached_rows()
+        clean_data = json_str.replace("</", "<\\/")
+        html = HTML_TEMPLATE.replace("__DATA__", clean_data)
+        body = html.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self._safe_write(body)
+
     def _read_json_body(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))
         if length <= 0:
@@ -1667,19 +1736,132 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(snapshot)
             return
 
-        if url_path in ["/", "/harness_dashboard.html"]:
-            rows, json_str = get_cached_rows()
-            clean_data = json_str.replace("</", "<\\/")
-            html = HTML_TEMPLATE.replace("__DATA__", clean_data)
-            body = html.encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self._safe_write(body)
+        if url_path == "/api/progress":
+            try:
+                state = agent_progress.load_state()
+                payload = dict(state)
+
+                # Check optional thread query parameter
+                thread_param = qs.get("thread", [None])[0]
+                if thread_param:
+                    target = Path(thread_param).expanduser()
+                    if not target.is_file():
+                        for _, candidate in agent_progress._collect_all_thread_files():
+                            if candidate.stem.startswith(thread_param) or thread_param in candidate.name:
+                                target = candidate
+                                break
+                    if not target.is_file():
+                        self._send_json({"error": f"Thread not found: {thread_param}"}, status=404)
+                        return
+
+                    messages = []
+                    for line in target.read_text(encoding="utf-8", errors="ignore").splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            obj = json.loads(line)
+                        except Exception:
+                            continue
+                        role = obj.get("type") or obj.get("role") or obj.get("message", {}).get("role")
+                        content = obj.get("message", {}).get("content") or obj.get("content")
+                        text_parts = []
+                        if isinstance(content, str):
+                            text_parts.append(content)
+                        elif isinstance(content, list):
+                            for part in content:
+                                if isinstance(part, dict) and part.get("type") in ("text", "input_text", "output_text"):
+                                    text_parts.append(str(part.get("text", "")))
+                        merged = "\n".join(t for t in text_parts if t).strip()
+                        if merged:
+                            messages.append({"role": role, "text": merged[:1200]})
+
+                    limit_msg_raw = qs.get("max_messages", qs.get("limit", [40]))[0]
+                    try:
+                        limit_msg = int(limit_msg_raw)
+                    except ValueError:
+                        limit_msg = 40
+                    turn_messages = messages[-limit_msg:] if limit_msg > 0 else messages
+
+                    thread_detail = {
+                        "thread_id": target.stem,
+                        "path": str(target),
+                        "total_extracted_messages": len(messages),
+                        "messages": turn_messages,
+                    }
+                    payload["thread_detail"] = thread_detail
+                    payload["messages"] = turn_messages
+                    payload["total_extracted_messages"] = len(messages)
+                    payload["thread_id"] = target.stem
+                    payload["thread_path"] = str(target)
+
+                # Collect session threads
+                limit_threads_raw = qs.get("limit_threads", qs.get("limit", [50]))[0] if not thread_param else 50
+                try:
+                    limit_threads = int(limit_threads_raw)
+                except ValueError:
+                    limit_threads = 50
+
+                thread_list = []
+                for source, p in agent_progress._collect_all_thread_files()[:limit_threads]:
+                    try:
+                        st = p.stat()
+                        thread_list.append({
+                            "thread_id": p.stem,
+                            "source": source,
+                            "role": source.replace("codex-", "").replace("paseo-", ""),
+                            "path": str(p),
+                            "size_kb": round(st.st_size / 1024, 1),
+                            "mtime": st.st_mtime,
+                            "updated_at": datetime.fromtimestamp(st.st_mtime, tz=timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+                        })
+                    except Exception:
+                        continue
+                payload["threads"] = thread_list
+                payload["markdown_path"] = "docs/AGENT_PROGRESS.md"
+                self._send_json(payload)
+            except Exception as e:
+                self._send_json({"error": str(e)}, status=500)
             return
+
+        # Static file serving: / or /index.html serves dist/index.html if exists, else falls back to HTML_TEMPLATE
+        if url_path in ["/", "/index.html"]:
+            if INDEX_FILE.is_file():
+                self._serve_file(INDEX_FILE)
+                return
+            self._serve_inline_template()
+            return
+
+        # Explicit legacy dashboard URL always serves HTML_TEMPLATE
+        if url_path == "/harness_dashboard.html":
+            self._serve_inline_template()
+            return
+
+        # Serve static assets from harness-ui/dist/
+        if DIST_DIR.is_dir():
+            clean_path = unquote(url_path.lstrip("/"))
+            target_path = (DIST_DIR / clean_path).resolve()
+            try:
+                is_safe = target_path.is_relative_to(DIST_DIR)
+            except (AttributeError, ValueError):
+                is_safe = False
+
+            if is_safe:
+                if target_path.is_file():
+                    self._serve_file(target_path)
+                    return
+                if target_path.is_dir() and (target_path / "index.html").is_file():
+                    self._serve_file(target_path / "index.html")
+                    return
+                if target_path.with_suffix(".html").is_file():
+                    self._serve_file(target_path.with_suffix(".html"))
+                    return
+                if not Path(clean_path).suffix and INDEX_FILE.is_file():
+                    self._serve_file(INDEX_FILE)
+                    return
+            else:
+                self.send_error(403, "Forbidden")
+                return
 
         self.send_error(404, "Not Found")
 

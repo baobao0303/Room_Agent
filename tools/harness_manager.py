@@ -347,6 +347,7 @@ def main():
     p_up.add_argument("--state", required=True, choices=["New", "Accepted", "Active", "Resolved", "Closed", "Blocked", "Removed"])
     p_up.add_argument("--assigned-to", default=None)
     p_up.add_argument("--assigned-to-profile", default=None)
+    p_up.add_argument("--dispatch", action="store_true", help="Automatically trigger/wake up the assigned agent profile via Paseo")
 
     # Subcommand: list
     p_list = subparsers.add_parser("list", help="List work items")
@@ -398,6 +399,14 @@ def main():
         elif args.command == "update":
             res = mgr.update_state(item_id=args.id, target_state=args.state, assigned_to=args.assigned_to, assigned_to_profile=args.assigned_to_profile)
             print(json.dumps(res, indent=2, ensure_ascii=False))
+            if getattr(args, "dispatch", False) and args.assigned_to_profile:
+                call_script = os.path.join(BASE_DIR, "tools", "call_agent.py")
+                if os.path.exists(call_script):
+                    import subprocess
+                    item = mgr.get_work_item(args.id) or {}
+                    title = item.get("title", f"Work Item #{args.id}")
+                    prompt = f"Work Item #{args.id} transitioned to '{args.state}': {title}"
+                    subprocess.run(["python3", call_script, "--profile", args.assigned_to_profile, "--prompt", prompt, "--item-id", str(args.id)])
         elif args.command == "list":
             items = mgr.list_work_items(wi_type=args.type, state=args.state, source=args.source, assigned_to_profile=args.assigned_to_profile, parent_id=args.parent_id)
             print(json.dumps(items, indent=2, ensure_ascii=False))

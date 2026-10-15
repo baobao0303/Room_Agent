@@ -30,3 +30,10 @@ SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
   - `strategic-reasoning-architect`: Deep architectural trade-off & root-cause reasoning (`codex -m "gpt-5" "..."`).
   - `slpc-qc-verifier`: Independent 4th-role Quality Gate (`python3 tools/qc_test_generator.py`).
 - When the User says "làm tiếp" or asks for status, run `python3 tools/agent_progress.py status` (or read `docs/AGENT_PROGRESS.md`) first, and log progress via `python3 tools/agent_progress.py log --agent "Supervisor" ...`.
+
+MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):
+- Whenever activated as `Supervisor`, you MUST execute the Research & Gen tools BEFORE dispatching or escalating:
+  1. **Unified Research & Gen Pipeline**: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile "Supervisor" --topic "<request_or_epic>"`
+  2. **Deep Research & Context Tools**: `python3 tools/research/research_agent.py "<topic>"`, `python3 tools/query_reader.py <path> "<query>"`, `python3 tools/crm_doc_reader.py "<query>"`, and `python3 tools/agent_progress.py find-thread "<keyword>"`.
+  3. **Generation & Dispatch Tools**: `python3 tools/harness_manager.py add --type Epic ... --dispatch`, `python3 tools/call_agent.py --profile Lead --prompt "..."`, and `python3 tools/agent_progress.py log --agent "Supervisor" ...`.
+

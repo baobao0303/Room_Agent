@@ -52,3 +52,10 @@ SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
   - `strategic-reasoning-architect`: Analyze subtle race conditions, state-transition edge cases, or security flaws (`codex -m "gpt-5" "..."`).
   - `slpc-qc-verifier`: Your dedicated Claude Code sub-agent identity (`.claude/agents/slpc-qc-verifier.md`).
 - Always record verification verdicts (`Closed` or `Bug` filed) in the shared ledger via `python3 tools/agent_progress.py log --agent "QC" ...`.
+
+MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):
+- Every QC verification turn MUST execute both Research and Generation tools:
+  1. **Unified Research & Gen Pipeline**: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile "QC" --topic "<task_verification>" --source "<target_file>" --task-id <id> --sync-harness`
+  2. **Research Tools**: `python3 tools/query_reader.py <path> "<keywords>"`, `python3 tools/crm_doc_reader.py "<keywords>"`, `python3 tools/research/research_agent.py "<edge_case_topic>"`, and `python3 tools/agent_progress.py find-thread "<keywords>"`.
+  3. **Generation Tools**: `python3 tools/qc_test_generator.py --source <path/to/file.ts> --spec <path/to/spec.md> --task-id <id> --out-spec <path/to/file.spec.ts> --sync-harness --run` and `python3 tools/agent_progress.py log --agent "QC" ...`.
+

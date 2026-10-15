@@ -76,6 +76,13 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
   - Xem nhanh trạng thái để báo cáo User khi được yêu cầu *"làm tiếp"*: `python3 tools/agent_progress.py status` (hoặc đọc `docs/AGENT_PROGRESS.md`)
   - Ghi nhận công việc sau khi hoàn thành một bước: `python3 tools/agent_progress.py log --agent "<Role>" --summary "<Tóm tắt>" --done "<Việc đã xong>" --missing "<Việc còn thiếu>" --next "<Bước kế tiếp>" --files "<File đã sửa>"`
 
+### F. Claude Code & Codex Sub-Agents (`031_claude_code_sub_agents` / Skill `claude-code-sub-agents`)
+- **Đường dẫn cài đặt**: `.claude/agents/*.md`, `~/.paseo/claude-config/agents/*.md`, `.agents/skills/claude-code-sub-agents/SKILL.md`, và `~/.codex/skills/claude-code-sub-agents/SKILL.md`.
+- **3 Sub-Agents chuyên biệt cho 4 Role (`Supervisor - Lead - Peer - QC`)**:
+  1. `gemini-codebase-analyzer`: Phân tích toàn cảnh codebase quy mô lớn với Context Window 1M+ tokens (`gemini --prompt "..." --all-files`).
+  2. `strategic-reasoning-architect`: Suy luận chiến lược, đánh giá kiến trúc và tìm Root Cause phức tạp (`codex -m "gpt-5" "..."`).
+  3. `slpc-qc-verifier`: Sub-agent chuyên trách Role thứ 4 (`QC`) thực thi quy trình 5-Stage ISTQB Pipeline (`python3 tools/qc_test_generator.py`) và nghiệm thu độc lập.
+
 ---
 
 ## 4. Coding & Operation Rules
