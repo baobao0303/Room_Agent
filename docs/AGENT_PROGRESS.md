@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-15 11:00:19 +0700`
+- **Cập nhật lần cuối**: `2026-10-15 11:05:19 +0700`
 - **Agent cập nhật gần nhất**: `Paseo/Agent`
-- **Trọng tâm hiện tại**: [Supervisor] Paseo m\u1edf ch\u01b0a l\u00ean host linux
+- **Trọng tâm hiện tại**: Đặc tả UI Raw Data Mapping
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Theo dõi tiến trình GitHub Actions trên repo Room_Agent và chạy pipeline trên Jenkins
+  > Lead tạo task và phân rã component cho Peer Dev
 
 ---
 
@@ -48,6 +48,8 @@
 - [x] Turn N/A ended with outcome=unknown (agentId=None)
 - [x] Cập nhật .github/workflows/docker-harness-ui.yml tự động build Docker image lên GHCR (ghcr.io/baobao0303/room_agent/harness-ui:latest) và phát hành Release tag harness-ui-latest kèm file harness-ui-docker-latest.tar.gz + harness-ui-dist.tar.gz
 - [x] tạo Jenkinsfile tự động kéo bản build từ GitHub về chạy container
+- [x] Tạo tài liệu đặc tả nghiệp vụ & kỹ thuật docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md
+- [x] Cập nhật docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md khớp 100% UI Mockup (4-step wizard, 2-pane layout, JSON sample viewer, Data Table)
 
 ---
 
@@ -59,6 +61,40 @@
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #25 — `2026-10-15 11:05:19 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead tạo task và phân rã component cho Peer Dev
+
+### Phiên #24 — `2026-10-15 11:05:15 +0700` | **Supervisor**
+- **Tóm tắt**: Cập nhật đặc tả UI Wizard Mapping dữ liệu 4 bước từ mockup
+- **Đã thực hiện**:
+  - Cập nhật docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md khớp 100% UI Mockup (4-step wizard, 2-pane layout, JSON sample viewer, Data Table)
+- **File đã tạo/cập nhật**: `docs/spec/raw-data-mapping-spec.md`, `docs/spec/wicx-crm-fe/spec-raw-data-mapping.md`
+- **Bàn giao bước tiếp theo**: Lead tạo task và phân rã component cho Peer Dev
+
+### Phiên #23 — `2026-10-15 11:04:12 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB và giao Peer Dev triển khai UI Visual Mapper
+
+### Phiên #22 — `2026-10-15 11:04:09 +0700` | **Supervisor**
+- **Tóm tắt**: Hoàn thành tạo spec mapping dữ liệu thô
+- **Đã thực hiện**:
+  - Tạo tài liệu đặc tả nghiệp vụ & kỹ thuật docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md
+- **File đã tạo/cập nhật**: `docs/spec/raw-data-mapping-spec.md`, `docs/spec/wicx-crm-fe/spec-raw-data-mapping.md`
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB và giao Peer Dev triển khai UI Visual Mapper
+
+### Phiên #21 — `2026-10-15 11:02:32 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Mapping dữ liệu thô
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_mapping_d_li_u_th.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_mapping_d_li_u_th.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_mapping_d_li_u_th.md`, `tools/research/gen_brief_supervisor_mapping_d_li_u_th.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_mapping_d_li_u_th.md và tools/research/gen_brief_supervisor_mapping_d_li_u_th.md.
 
 ### Phiên #20 — `2026-10-15 11:00:19 +0700` | **Paseo/Agent**
 - **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
