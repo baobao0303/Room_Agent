@@ -582,25 +582,28 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
   .qc-workbench-island {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
+    min-width: 0;
   }
 
-  /* Top Split Grid */
+  /* Top Split Grid - use minmax(0, 1fr) so long CLI strings never blow out grid tracks */
   .qc-top-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 16px;
+    min-width: 0;
   }
 
   .qc-card-panel {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .panel-card-header {
@@ -609,36 +612,39 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     justify-content: space-between;
     gap: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color, #30363d);
     flex-wrap: wrap;
+    min-width: 0;
   }
 
   .header-title-wrap {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
 
   .panel-card-header h3,
   .panel-card-header h4 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary, #e6edf3);
   }
 
   /* 5-Stage Step Indicators */
   .stage-pills-bar {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 4px;
   }
 
   .stage-step {
     padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(59, 130, 246, 0.12);
-    color: #93C5FD;
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    background: rgba(57, 211, 83, 0.14);
+    color: var(--accent-green, #39d353);
+    border: 1px solid rgba(57, 211, 83, 0.4);
     font-size: 10px;
     font-weight: 700;
     font-family: var(--font-mono);
@@ -649,44 +655,51 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     display: flex;
     flex-direction: column;
     gap: 12px;
+    min-width: 0;
   }
 
   .form-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    min-width: 0;
   }
 
-  .flex-1 { flex: 1; }
-  .flex-2 { flex: 2; }
-  .flex-3 { flex: 3; }
+  .flex-1 { flex: 1; min-width: 0; }
+  .flex-2 { flex: 2; min-width: 0; }
+  .flex-3 { flex: 3; min-width: 0; }
 
   .form-group {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
   }
 
   .field-label {
     font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-weight: 600;
+    color: var(--accent-green, #39d353);
   }
 
   .field-label .req {
-    color: var(--danger);
+    color: #ff7b72;
   }
 
-  .qc-form input,
+  .qc-form input[type="text"],
+  .qc-form input[type="number"],
   .custom-cmd-section input {
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    color: var(--text);
-    font-size: 13px;
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    padding: 8px 10px;
+    color: var(--text-primary, #e6edf3);
+    font-size: 12px;
     outline: none;
-    font-family: var(--font);
-    transition: border-color 0.15s ease;
+    font-family: var(--font-mono);
+    width: 100%;
+    min-width: 0;
+    transition: border-color 150ms ease;
   }
 
   .mono-input {
@@ -696,8 +709,8 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
 
   .qc-form input:focus,
   .custom-cmd-section input:focus {
-    border-color: var(--border-focus);
-    box-shadow: 0 0 0 1px var(--border-focus);
+    border-color: var(--accent-green, #39d353);
+    box-shadow: 0 0 0 1px rgba(57, 211, 83, 0.35);
   }
 
   .form-checkboxes {
@@ -713,7 +726,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: var(--text);
+    color: var(--text-primary, #e6edf3);
     cursor: pointer;
   }
 
@@ -721,6 +734,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
     margin-top: 4px;
   }
@@ -734,46 +748,49 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
   .status-msg {
     font-size: 12px;
   }
-  .status-msg.success { color: #34D399; }
-  .status-msg.error { color: #FB7185; }
+  .status-msg.success { color: #39d353; }
+  .status-msg.error { color: #ff7b72; }
 
   /* Coverage & Spec Preview */
   .qc-result-container {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
     padding: 12px;
+    min-width: 0;
   }
 
   .result-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
   }
 
   .box-label {
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: var(--text-muted);
+    color: var(--text-muted, #8b949e);
   }
 
   .btn-copy {
-    background: transparent;
-    border: 1px solid var(--border);
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
     border-radius: 4px;
-    color: var(--text-secondary);
+    color: var(--accent-green, #39d353);
+    font-family: var(--font-mono);
     font-size: 11px;
-    padding: 2px 8px;
+    padding: 3px 8px;
     cursor: pointer;
   }
 
   .btn-copy:hover {
-    background: var(--bg-elevated);
-    color: var(--text);
+    background: var(--accent-green, #39d353);
+    color: #0d1117;
   }
 
   .coverage-badges {
@@ -785,17 +802,17 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
   .cov-badge {
     padding: 3px 8px;
     border-radius: 4px;
-    background: rgba(59, 130, 246, 0.14);
-    color: #93C5FD;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(88, 166, 255, 0.14);
+    color: #79c0ff;
+    border: 1px solid rgba(88, 166, 255, 0.4);
     font-size: 11px;
     font-family: var(--font-mono);
   }
 
   .cov-badge.success {
-    background: rgba(16, 185, 129, 0.14);
-    color: #6EE7B7;
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(57, 211, 83, 0.14);
+    color: #39d353;
+    border-color: rgba(57, 211, 83, 0.45);
   }
 
   .spec-preview-box {
@@ -808,41 +825,55 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
   }
 
   .presets-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+    min-width: 0;
   }
 
   .btn-preset {
     display: flex;
     flex-direction: column;
     gap: 3px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
     padding: 8px 10px;
     text-align: left;
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all 150ms ease;
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
   }
 
   .btn-preset:hover {
-    background: var(--bg-elevated);
-    border-color: var(--primary);
+    background: #1f242c;
+    border-color: var(--accent-green, #39d353);
   }
 
   .preset-name {
+    display: block;
+    width: 100%;
+    min-width: 0;
     font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
+    font-weight: 700;
+    color: var(--text-primary, #e6edf3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .preset-cmd {
+    display: block;
+    width: 100%;
+    min-width: 0;
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--text-muted, #8b949e);
     font-family: var(--font-mono);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -855,12 +886,14 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     flex-direction: column;
     gap: 8px;
     margin-top: 4px;
+    min-width: 0;
   }
 
   .cmd-input-row {
     display: flex;
     gap: 8px;
     align-items: center;
+    min-width: 0;
   }
 
   /* Terminal Panel */
@@ -868,6 +901,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-width: 0;
   }
 
   .live-pulse-badge {
@@ -876,7 +910,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     gap: 6px;
     font-size: 10px;
     font-weight: 700;
-    color: #34D399;
+    color: var(--accent-green, #39d353);
     letter-spacing: 0.08em;
   }
 
@@ -885,6 +919,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-width: 0;
   }
 
   .job-pills-bar {
@@ -892,114 +927,66 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     align-items: center;
     gap: 6px;
     overflow-x: auto;
+    max-width: 100%;
   }
 
   .job-pill {
     padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    color: var(--text-muted, #8b949e);
     font-size: 11px;
     font-family: var(--font-mono);
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.12s ease;
+    transition: all 150ms ease;
   }
 
   .job-pill:hover {
-    background: var(--bg-elevated);
-    color: var(--text);
+    background: #1f242c;
+    color: var(--text-primary, #e6edf3);
   }
 
-  .job-pill.running { border-color: rgba(59, 130, 246, 0.4); color: #93C5FD; }
-  .job-pill.passed { border-color: rgba(16, 185, 129, 0.4); color: #6EE7B7; }
-  .job-pill.failed { border-color: rgba(244, 63, 94, 0.4); color: #FDA4AF; }
+  .job-pill.running { border-color: rgba(88, 166, 255, 0.5); color: #79c0ff; }
+  .job-pill.passed { border-color: rgba(57, 211, 83, 0.5); color: #39d353; }
+  .job-pill.failed { border-color: rgba(248, 81, 73, 0.5); color: #ff7b72; }
 
   .job-pill.active-job {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--primary);
-    font-weight: 600;
+    background: rgba(57, 211, 83, 0.16);
+    border-color: var(--accent-green, #39d353);
+    color: var(--accent-green, #39d353);
+    font-weight: 700;
   }
 
   .terminal-stream {
-    background: var(--bg-terminal);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: #090d11;
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
     padding: 14px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: #A7F3D0;
+    color: var(--accent-green, #39d353);
     white-space: pre-wrap;
+    word-break: break-word;
     min-height: 220px;
     max-height: 400px;
     overflow-y: auto;
     line-height: 1.5;
   }
 
-  .terminal-box {
-    background: var(--bg-terminal);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: #CBD5E1;
-    overflow-y: auto;
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-  }
-
-  .btn-sm {
-    padding: 5px 10px;
-    font-size: 12px;
-  }
-
-  .btn-primary {
-    background: var(--primary);
-    color: #fff;
-  }
-
-  .btn-primary:hover {
-    background: var(--primary-hover);
-  }
-
-  .btn-secondary {
-    background: var(--bg-input);
-    border-color: var(--border);
-    color: var(--text-secondary);
-  }
-
-  .btn-secondary:hover {
-    background: var(--bg-elevated);
-    color: var(--text);
-    border-color: var(--border-hover);
-  }
-
   @media (max-width: 1024px) {
     .qc-top-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
   @media (max-width: 600px) {
     .form-row {
-      flex-direction: column;
+      grid-template-columns: minmax(0, 1fr);
     }
     .presets-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
     .cmd-input-row {
       flex-direction: column;

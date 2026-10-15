@@ -567,27 +567,27 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
   /* 4 Core Role Cards Grid */
   .agent-cards-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    min-width: 0;
   }
 
   .agent-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    padding: 16px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 12px;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    min-width: 0;
+    overflow: hidden;
+    transition: border-color 150ms ease;
   }
 
   .agent-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--border-hover);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    border-color: var(--accent-green, #39d353);
   }
 
   .agent-card-top {
@@ -600,7 +600,7 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--bg-input);
+    background: var(--code-bg, #161b22);
     border: 2px solid;
     display: flex;
     align-items: center;
@@ -614,6 +614,7 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
   .agent-header-info {
     display: flex;
     flex-direction: column;
+    min-width: 0;
   }
 
   .agent-name {
@@ -624,13 +625,13 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
 
   .agent-role-sub {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--text-muted, #8b949e);
     font-weight: 500;
   }
 
   .agent-desc {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-muted, #8b949e);
     line-height: 1.4;
     margin: 0;
     min-height: 34px;
@@ -638,11 +639,11 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
 
   .agent-stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
     padding: 10px 8px;
     text-align: center;
   }
@@ -659,13 +660,13 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
     font-weight: 700;
   }
 
-  .stat-active { color: #60A5FA; }
-  .stat-resolved { color: #FBBF24; }
-  .stat-closed { color: #34D399; }
+  .stat-active { color: #58a6ff; }
+  .stat-resolved { color: #e3b341; }
+  .stat-closed { color: #39d353; }
 
   .stat-lbl {
     font-size: 10px;
-    color: var(--text-muted);
+    color: var(--text-muted, #8b949e);
     font-weight: 500;
   }
 
@@ -682,11 +683,12 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
 
   /* Sub Panels */
   .card-sub {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    padding: 16px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .box-header {
@@ -695,41 +697,47 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
     gap: 2px;
     margin-bottom: 14px;
     padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color, #30363d);
   }
 
   .box-header h4 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary, #e6edf3);
   }
 
   /* Dispatch Guidance Grid */
   .dispatch-guidance-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 16px;
+    min-width: 0;
   }
 
   .dispatch-form {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-width: 0;
   }
 
   .form-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    min-width: 0;
   }
 
   .flex-1 {
     flex: 1;
+    min-width: 0;
   }
 
   .form-group {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
   }
 
   .field-label {
@@ -872,75 +880,36 @@ Chưa có phiên thực thi agent nào đang chạy. Sử dụng form phía trê
   }
 
   .log-terminal {
-    background: var(--bg-terminal);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: #090d11;
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
     padding: 14px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: #A7F3D0;
+    color: var(--accent-green, #39d353);
     white-space: pre-wrap;
+    word-break: break-word;
     min-height: 180px;
     max-height: 320px;
     overflow-y: auto;
     line-height: 1.5;
   }
 
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-  }
-
-  .btn-sm {
-    padding: 5px 10px;
-    font-size: 12px;
-  }
-
-  .btn-primary {
-    background: var(--primary);
-    color: #fff;
-  }
-
-  .btn-primary:hover {
-    background: var(--primary-hover);
-  }
-
-  .btn-secondary {
-    background: var(--bg-input);
-    border-color: var(--border);
-    color: var(--text-secondary);
-  }
-
-  .btn-secondary:hover {
-    background: var(--bg-elevated);
-    color: var(--text);
-    border-color: var(--border-hover);
-  }
-
   @media (max-width: 1100px) {
     .agent-cards-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .dispatch-guidance-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
   @media (max-width: 600px) {
     .agent-cards-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
     .form-row {
-      flex-direction: column;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>
