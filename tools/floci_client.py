@@ -123,6 +123,42 @@ def _save_local_store(store: Dict[str, Any]) -> None:
         pass
 
 
+def _normalize_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(item, dict):
+        return item
+    out = dict(item)
+    raw_prof = str(out.get("assigned_to_profile") or "").strip()
+    p_low = raw_prof.lower()
+    if p_low not in ("supervisor", "lead", "peer", "qc"):
+        if p_low.startswith("peer"):
+            if p_low != "peer" and not out.get("assigned_to"):
+                out["assigned_to"] = raw_prof
+            out["assigned_to_profile"] = "peer"
+        elif p_low.startswith("lead"):
+            if p_low != "lead" and not out.get("assigned_to"):
+                out["assigned_to"] = raw_prof
+            out["assigned_to_profile"] = "lead"
+        elif p_low.startswith("sup"):
+            out["assigned_to_profile"] = "supervisor"
+        elif p_low.startswith("qc") or p_low.startswith("qa"):
+            out["assigned_to_profile"] = "qc"
+        else:
+            wtype = str(out.get("type") or "").strip().lower()
+            if wtype == "epic":
+                out["assigned_to_profile"] = "supervisor"
+            elif wtype in ("feature", "user story", "story"):
+                out["assigned_to_profile"] = "lead"
+            elif wtype in ("testcase", "test case", "bug"):
+                out["assigned_to_profile"] = "qc"
+            else:
+                out["assigned_to_profile"] = "peer"
+
+    raw_src = str(out.get("source") or "local").strip().lower()
+    out["source"] = "tfs" if raw_src == "tfs" else "local"
+    return out
+
+
+
 class FlociHarnessDB:
     def __init__(
         self,
@@ -271,8 +307,8 @@ class FlociHarnessDB:
         if "source" not in item or not item["source"]:
             item["source"] = "local"
 
-        cleaned = {k: v for k, v in item.items() if v is not None}
-        decoded = DecimalEncoder.decode(cleaned)
+        cleaned = _normalize_item({k: v for k, v in item.items() if v is not None})
+        decoded = _normalize_item(DecimalEncoder.decode(cleaned))
 
         store = _load_local_store()
         store["work_items"][str(decoded["id"])] = decoded
@@ -293,11 +329,12 @@ class FlociHarnessDB:
                 res = table.get_item(Key={"id": item_id})
                 item = res.get("Item")
                 if item:
-                    return DecimalEncoder.decode(item)
+                    return _normalize_item(DecimalEncoder.decode(item))
             except Exception:
                 pass
         store = _load_local_store()
-        return store["work_items"].get(str(item_id))
+        found = store["work_items"].get(str(item_id))
+        return _normalize_item(found) if found else None
 
     def update_work_item_state(
         self,
@@ -315,6 +352,7 @@ class FlociHarnessDB:
             local_item["assigned_to"] = assigned_to
         if assigned_to_profile:
             local_item["assigned_to_profile"] = assigned_to_profile
+        local_item = _normalize_item(local_item)
         store["work_items"][str(item_id)] = local_item
         _save_local_store(store)
 
@@ -329,7 +367,7 @@ class FlociHarnessDB:
                     values[":assigned"] = assigned_to
                 if assigned_to_profile:
                     expr += ", assigned_to_profile = :assigned_prof"
-                    values[":assigned_prof"] = assigned_to_profile
+                    values[":assigned_prof"] = local_item.get("assigned_to_profile", assigned_to_profile)
                 res = table.update_item(
                     Key={"id": item_id},
                     UpdateExpression=expr,
@@ -337,7 +375,7 @@ class FlociHarnessDB:
                     ExpressionAttributeValues=values,
                     ReturnValues="ALL_NEW"
                 )
-                return DecimalEncoder.decode(res.get("Attributes", {}))
+                return _normalize_item(DecimalEncoder.decode(res.get("Attributes", {})))
             except Exception:
                 pass
         return local_item
@@ -402,7 +440,7 @@ class FlociHarnessDB:
                     start_key = response.get("LastEvaluatedKey")
                     if not start_key:
                         done = True
-                decoded = [DecimalEncoder.decode(i) for i in items]
+                decoded = [_normalize_item(DecimalEncoder.decode(i)) for i in items]
                 if not any([wi_type, state, source, iteration, assigned_to_profile, parent_item_id is not None]) and decoded:
                     store = _load_local_store()
                     local_map = store.get("work_items", {})
@@ -410,15 +448,16 @@ class FlociHarnessDB:
                     for d in decoded:
                         sid = str(d["id"])
                         loc = local_map.get(sid)
-                        if isinstance(loc, dict) and str(loc.get("updated_at") or "") > str(d.get("updated_at") or ""):
-                            merged_by_id[sid] = loc
+                        if isinstance(loc, dict) and str(loc.get("updated_at") or "") >= str(d.get("updated_at") or ""):
+                            merged_by_id[sid] = _normalize_item(loc)
                         else:
                             merged_by_id[sid] = d
                     for sid, loc in local_map.items():
                         if sid not in merged_by_id and isinstance(loc, dict) and loc.get("id") is not None:
-                            merged_by_id[sid] = loc
-                    store["work_items"] = merged_by_id
-                    _save_local_store(store)
+                            merged_by_id[sid] = _normalize_item(loc)
+                    if merged_by_id != local_map:
+                        store["work_items"] = merged_by_id
+                        _save_local_store(store)
                     decoded = list(merged_by_id.values())
                 decoded.sort(key=lambda x: x.get("id", 0), reverse=True)
                 return decoded

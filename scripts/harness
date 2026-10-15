@@ -154,6 +154,12 @@ def handle_work_item(args):
     cmd_args = sys.argv[2:]
     os.execv(sys.executable, [sys.executable, str(mgr_script)] + cmd_args)
 
+# 5. Continuous Doctor & Auto-Healer
+def handle_doctor(args):
+    doc_script = BASE_DIR / "tools/harness_doctor.py"
+    cmd_args = sys.argv[2:]
+    os.execv(sys.executable, [sys.executable, str(doc_script)] + cmd_args)
+
 def main():
     parser = argparse.ArgumentParser(description="Harness CLI (Floci Cloud Storage)", prog="./scripts/harness")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -192,6 +198,9 @@ def main():
     # work-item
     subparsers.add_parser("work-item", help="Manage portfolio work items")
 
+    # doctor
+    subparsers.add_parser("doctor", help="Run continuous health checks & auto-healing across Paseo SLPC Harness")
+
     # init / seed
     subparsers.add_parser("init", help="Initialize Floci DynamoDB tables & S3")
     subparsers.add_parser("seed", help="Seed sample stories and tools into Floci")
@@ -208,6 +217,8 @@ def main():
         handle_sync_remote(args)
     elif args.command == "work-item":
         handle_work_item(args)
+    elif args.command == "doctor":
+        handle_doctor(args)
     elif args.command == "init":
         handle_init(args)
     elif args.command == "seed":

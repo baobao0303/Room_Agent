@@ -51,6 +51,7 @@ from tools.floci_client import FlociHarnessDB
 from tools.harness_manager import HarnessManager
 from tools import qc_test_generator as qc_gen
 from tools import agent_progress
+from tools import harness_doctor
 
 DIST_DIR = BASE_DIR / "harness-ui" / "dist"
 INDEX_FILE = DIST_DIR / "index.html"
@@ -566,6 +567,13 @@ def scan_workspace_Targets():
             "category": "Ops",
             "title": "Harness Matrix & Backlog Statistics",
             "command": "./scripts/harness query stats && ./scripts/harness query matrix",
+            "cwd": str(BASE_DIR)
+        },
+        {
+            "id": "harness-doctor",
+            "category": "Doctor",
+            "title": "🩺 Harness Doctor (Check & Auto-Heal)",
+            "command": "./scripts/harness doctor --fix",
             "cwd": str(BASE_DIR)
         }
     ]
@@ -2335,6 +2343,12 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             })
             return
 
+        if url_path == "/api/doctor":
+            force = "force" in qs
+            report = get_doctor_report(force=force)
+            self._send_json(report)
+            return
+
         if url_path == "/api/nodes":
             with _NODES_LOCK:
                 nodes_snapshot = [dict(n) for n in _CONNECTED_NODES]
@@ -2760,10 +2774,54 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 self._send_json({"error": str(e)}, status=500)
             return
 
+        if parsed.path == "/api/doctor/heal":
+            try:
+                if "auto_heal" in body:
+                    _DOCTOR_STATE["auto_heal"] = bool(body["auto_heal"])
+                report = get_doctor_report(force=True, force_heal=True)
+                get_cached_rows(force=True)
+                self._send_json(report)
+            except Exception as e:
+                self._send_json({"error": str(e)}, status=500)
+            return
+
         self.send_error(404, "Not Found")
 
     def log_message(self, format, *args):
         pass
+
+
+_DOCTOR_LOCK = threading.Lock()
+_DOCTOR_STATE = {
+    "report": None,
+    "last_check": 0.0,
+    "auto_heal": True,
+    "check_count": 0,
+}
+
+
+def get_doctor_report(force: bool = False, force_heal: bool = False) -> dict:
+    now = time.time()
+    if not force and _DOCTOR_STATE["report"] is not None and (now - _DOCTOR_STATE["last_check"] < 6.0):
+        return _DOCTOR_STATE["report"]
+    with _DOCTOR_LOCK:
+        heal_flag = True if force_heal else bool(_DOCTOR_STATE.get("auto_heal", True))
+        rep = harness_doctor.run_doctor(auto_heal=heal_flag, in_process=True)
+        _DOCTOR_STATE["check_count"] = int(_DOCTOR_STATE.get("check_count", 0)) + 1
+        rep["check_count"] = _DOCTOR_STATE["check_count"]
+        rep["auto_heal_enabled"] = bool(_DOCTOR_STATE.get("auto_heal", True))
+        _DOCTOR_STATE["report"] = rep
+        _DOCTOR_STATE["last_check"] = time.time()
+        return rep
+
+
+def _bg_doctor_loop():
+    while True:
+        try:
+            get_doctor_report(force=True)
+        except Exception:
+            pass
+        time.sleep(8.0)
 
 
 def _stop_existing_dashboard_server(port=None):
@@ -2827,6 +2885,7 @@ def _is_port_healthy(port: int) -> bool:
 def run_server(port=8765, host="0.0.0.0", out_path="/tmp/harness_dashboard.html"):
     _stop_existing_dashboard_server(port=port)
     threading.Thread(target=_bg_floci_sync_loop, args=(out_path,), daemon=True).start()
+    threading.Thread(target=_bg_doctor_loop, daemon=True).start()
     http.server.ThreadingHTTPServer.allow_reuse_address = True
     server_address = (host, port)
     httpd = http.server.ThreadingHTTPServer(server_address, DashboardHandler)
