@@ -3,6 +3,83 @@
 ---
 
 <div class="qc-workbench-island">
+  <!-- Paseo Multi-Node Connector & Smart Developer Link Auto-Generator -->
+  <div class="qc-card-panel paseo-smart-bar">
+    <div class="panel-card-header">
+      <div class="header-title-wrap">
+        <span class="panel-tag">PASEO MULTI-NODE &amp; SMART LINK AUTO-GEN</span>
+        <h3>Kết nối Nhiều Máy (Paseo Node) &amp; Dán Link Người Làm Tự Sinh File Test</h3>
+      </div>
+      <div class="active-node-indicator" id="active-node-badge">
+        <span class="pulse-dot"></span>
+        <span id="active-node-label">Node: Local / Current Host</span>
+      </div>
+    </div>
+
+    <div class="paseo-smart-grid">
+      <!-- Box 1: Connect Machine / Paseo Host -->
+      <div class="smart-subbox">
+        <div class="subbox-header">
+          <span class="subbox-title">1. KẾT NỐI MÁY TRẠM / PASEO NODE (MULTI-MACHINE)</span>
+          <span class="subbox-hint">Dán link máy đích để đọc &amp; ghi file trực tiếp trên máy đó</span>
+        </div>
+        <div class="node-connect-row">
+          <input
+            type="text"
+            id="paseo-node-url"
+            class="mono-input flex-2"
+            placeholder="Dán link máy: http://100.92.98.99:8765 hoặc paseo://100.124.36.46:6767"
+          />
+          <input
+            type="text"
+            id="paseo-node-name"
+            class="mono-input flex-1"
+            placeholder="Tên máy (VD: Máy Dev A)"
+          />
+          <button type="button" id="btn-connect-node" class="btn btn-secondary btn-sm">
+            <span>⚡ Kết nối máy</span>
+          </button>
+        </div>
+        <div class="node-chips-list" id="paseo-node-list">
+          <!-- Populated dynamically via /api/nodes -->
+        </div>
+      </div>
+
+      <!-- Box 2: Paste Developer Link -> Auto Read & Generate Spec Files -->
+      <div class="smart-subbox">
+        <div class="subbox-header">
+          <span class="subbox-title">2. DÁN LINK NGƯỜI LÀM / PR / WORK ITEM / FILE URL</span>
+          <span class="subbox-hint">Tự động bóc tách file code, chạy 5-Stage ISTQB &amp; ghi file .spec.ts</span>
+        </div>
+        <div class="smart-link-row">
+          <input
+            type="text"
+            id="smart-dev-link"
+            class="mono-input flex-3"
+            placeholder="Dán link TFS (?path=...), GitHub PR/Blob, Work Item #159425, hoặc tên người làm..."
+          />
+          <button type="button" id="btn-smart-resolve" class="btn btn-primary btn-sm">
+            <span>🚀 Đọc Link &amp; Tự Tạo File Test</span>
+          </button>
+        </div>
+        <div class="smart-quick-row">
+          <div class="demo-links-wrap">
+            <span class="quick-label">Thử nhanh:</span>
+            <button type="button" class="btn-demo-link" data-link="#159425" title="Work Item #159425 (Le Thien Bao)">#159425 (BaoLT)</button>
+            <button type="button" class="btn-demo-link" data-link="#160055" title="Work Item #160055">#160055</button>
+            <button type="button" class="btn-demo-link" data-link="https://tfs.First.com/tfs/DefaultCollection/WICX/_git/wicx-crm-fe?path=/libs/wicx-core/src/utils/helps/validator.helper.ts" title="Link TFS ?path=validator.helper.ts">TFS ?path=validator.helper.ts</button>
+            <button type="button" class="btn-demo-link" data-link="Le Thien Bao" title="Tìm theo tên người làm">Dev: Le Thien Bao</button>
+          </div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="smart-write-alongside" checked />
+            <span>Ghi file <code>.generated.spec.ts</code> cạnh file gốc trên máy đích</span>
+          </label>
+        </div>
+        <div id="smart-link-result" class="smart-link-result" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Top Split Grid: Generator & Test Suite Runner -->
   <div class="qc-top-grid">
     <!-- Panel 1: 5-Stage ISTQB Test Generator -->
@@ -24,7 +101,7 @@
       <form id="form-qc-gen" onsubmit="return false;" class="qc-form">
         <div class="form-row">
           <div class="form-group flex-1">
-            <label for="qc-source" class="field-label">File nguồn cần test (Source file) <span class="req">*</span>:</label>
+            <label for="qc-source" class="field-label">File nguồn hoặc Link người làm (Source / URL) <span class="req">*</span>:</label>
             <input
               type="text"
               id="qc-source"
@@ -60,6 +137,10 @@
         </div>
 
         <div class="form-checkboxes">
+          <label class="checkbox-label">
+            <input type="checkbox" id="qc-write-alongside" checked />
+            <span>Ghi trực tiếp cạnh file gốc (<code>.generated.spec.ts</code>)</span>
+          </label>
           <label class="checkbox-label">
             <input type="checkbox" id="qc-sync-harness" checked />
             <span>Tự động đồng bộ Testcase lên Harness DB</span>
@@ -224,8 +305,126 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     error?: string;
   }
 
+  interface PaseoNodeItem {
+    id: string;
+    name: string;
+    url: string;
+    paseo_url?: string;
+    workspace?: string;
+    status?: string;
+    latency_ms?: number;
+  }
+
+  interface GeneratedFileEntry {
+    source_file: string;
+    out_spec: string;
+    written_on_disk?: boolean;
+    total_cases: number;
+    requirement_coverage_pct?: number;
+    coverage_item_pct?: number;
+    symbol_coverage_pct?: number;
+    synced_to_harness?: number;
+    spec_code?: string;
+  }
+
+  interface SmartLinkResponse {
+    ok?: boolean;
+    input_link?: string;
+    link_kind?: string;
+    task_id?: number | null;
+    developer?: string;
+    target_node?: string;
+    workspace?: string;
+    discovered_sources?: string[];
+    generated_files?: GeneratedFileEntry[];
+    total_cases_generated?: number;
+    total_synced_to_harness?: number;
+    coverage_report?: CoverageReport;
+    spec_code?: string;
+    out_spec?: string;
+    job_id?: string;
+    error?: string;
+  }
+
   let activeJobId: string | null = null;
   let qcJobPollInterval: number | null = null;
+
+  function getActivePaseoNode(): string {
+    try {
+      const win = window as unknown as Record<string, unknown>;
+      return String(win['__PASEO_ACTIVE_NODE__'] || localStorage.getItem('paseo_active_node') || '').trim();
+    } catch {
+      return '';
+    }
+  }
+
+  function setActivePaseoNode(url: string, label = '') {
+    try {
+      const win = window as unknown as Record<string, (u: string) => void>;
+      if (typeof win['__PASEO_SET_NODE__'] === 'function') {
+        win['__PASEO_SET_NODE__'](url);
+      } else {
+        localStorage.setItem('paseo_active_node', url);
+      }
+    } catch {
+      // ignore storage errors
+    }
+    const badgeLabel = document.getElementById('active-node-label');
+    if (badgeLabel) {
+      badgeLabel.textContent = url
+        ? `Node đang chọn: ${label || url} (${url})`
+        : 'Node đang chọn: Máy hiện tại (Local/Default)';
+    }
+    loadSourceFilesAndPresets();
+    pollJobs();
+  }
+
+  async function loadPaseoNodes() {
+    const listEl = document.getElementById('paseo-node-list');
+    if (!listEl) return;
+    try {
+      const res = await fetch('/api/nodes?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const nodes: PaseoNodeItem[] = Array.isArray(data.nodes) ? data.nodes : [];
+      const activeUrl = getActivePaseoNode();
+
+      const badgeLabel = document.getElementById('active-node-label');
+      if (badgeLabel) {
+        const matched = nodes.find((n) => n.url === activeUrl);
+        badgeLabel.textContent = matched
+          ? `Node: ${matched.name} (${matched.url}) — WS: ${matched.workspace || data.current_workspace || ''}`
+          : activeUrl
+            ? `Node: ${activeUrl}`
+            : `Node: Local Host (${data.current_workspace || '/home/baoltb/Desktop/Paseo_Project'})`;
+      }
+
+      listEl.innerHTML = nodes
+        .map((n) => {
+          const isOnline = n.status === 'online';
+          const isSelected = activeUrl ? n.url === activeUrl : n.id === 'local';
+          const lat = n.latency_ms !== undefined ? `${n.latency_ms}ms` : '';
+          return `<button type="button" class="node-chip ${isOnline ? 'online' : 'offline'} ${isSelected ? 'selected' : ''}" data-node-url="${escHtml(n.url)}" data-node-name="${escHtml(n.name)}" title="Workspace: ${escHtml(n.workspace || '')} | Click để chuyển sang máy này">
+            <span class="node-dot"></span>
+            <span class="node-chip-name">${escHtml(n.name)}</span>
+            <span class="node-chip-url">${escHtml(n.url)}</span>
+            ${lat ? `<span class="node-chip-lat">${escHtml(lat)}</span>` : ''}
+          </button>`;
+        })
+        .join('');
+
+      listEl.querySelectorAll<HTMLButtonElement>('.node-chip').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const url = btn.dataset.nodeUrl || '';
+          const name = btn.dataset.nodeName || url;
+          setActivePaseoNode(url, name);
+          loadPaseoNodes();
+        });
+      });
+    } catch {
+      // Fallback node chip
+    }
+  }
 
   function escHtml(s: unknown): string {
     return String(s ?? '')
@@ -375,6 +574,169 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
 
   // Setup Event Listeners
   function setupQcEvents() {
+    // 1. Connect Remote Paseo / Harness Machine Node
+    const btnConnectNode = document.getElementById('btn-connect-node') as HTMLButtonElement | null;
+    btnConnectNode?.addEventListener('click', async () => {
+      const urlInput = document.getElementById('paseo-node-url') as HTMLInputElement | null;
+      const nameInput = document.getElementById('paseo-node-name') as HTMLInputElement | null;
+      const rawUrl = urlInput?.value.trim() || '';
+      const rawName = nameInput?.value.trim() || '';
+
+      if (!rawUrl) {
+        alert('Vui lòng dán link máy trạm hoặc Paseo Node (VD: http://100.92.98.99:8765)!');
+        urlInput?.focus();
+        return;
+      }
+
+      if (btnConnectNode) {
+        btnConnectNode.disabled = true;
+        btnConnectNode.textContent = 'Đang kết nối...';
+      }
+
+      try {
+        const res = await fetch('/api/nodes/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: rawUrl, name: rawName }),
+        });
+        const data = await res.json();
+        if (data.node && data.node.url) {
+          setActivePaseoNode(data.node.url, data.node.name || rawName);
+        }
+        await loadPaseoNodes();
+        if (urlInput) urlInput.value = '';
+        if (nameInput) nameInput.value = '';
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        alert('Lỗi kết nối máy: ' + msg);
+      } finally {
+        if (btnConnectNode) {
+          btnConnectNode.disabled = false;
+          btnConnectNode.innerHTML = '<span>⚡ Kết nối máy</span>';
+        }
+      }
+    });
+
+    // 2. Demo Link Quick Pills
+    document.querySelectorAll<HTMLButtonElement>('.btn-demo-link').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const link = btn.dataset.link || '';
+        const input = document.getElementById('smart-dev-link') as HTMLInputElement | null;
+        if (input && link) {
+          input.value = link;
+          document.getElementById('btn-smart-resolve')?.click();
+        }
+      });
+    });
+
+    // 3. Smart Developer Link Auto-Reader & Test File Generator
+    const btnSmartResolve = document.getElementById('btn-smart-resolve') as HTMLButtonElement | null;
+    btnSmartResolve?.addEventListener('click', async () => {
+      const linkInput = document.getElementById('smart-dev-link') as HTMLInputElement | null;
+      const writeAlongside = document.getElementById('smart-write-alongside') as HTMLInputElement | null;
+      const resultBox = document.getElementById('smart-link-result');
+      const rawLink = linkInput?.value.trim() || '';
+
+      if (!rawLink) {
+        alert('Vui lòng dán link PR / Commit / TFS ?path= / Work Item #ID hoặc tên người làm!');
+        linkInput?.focus();
+        return;
+      }
+
+      if (btnSmartResolve) {
+        btnSmartResolve.disabled = true;
+        btnSmartResolve.textContent = '⏳ Đang đọc link & tạo file...';
+      }
+
+      try {
+        const payload = {
+          link: rawLink,
+          write_alongside: Boolean(writeAlongside?.checked),
+          sync_harness: true,
+          run_test: true,
+          target_node: getActivePaseoNode(),
+        };
+
+        const res = await fetch('/api/automation/resolve-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const data: SmartLinkResponse = await res.json();
+        const files = data.generated_files || [];
+
+        if (resultBox) {
+          resultBox.style.display = 'flex';
+          const fileRows = files
+            .map(
+              (f) =>
+                `<div class="gen-file-item">
+                  <span class="gen-badge">✓ WRITTEN</span>
+                  <code class="gen-src">${escHtml(f.source_file)}</code>
+                  <span class="gen-arrow">→</span>
+                  <code class="gen-out">${escHtml(f.out_spec)}</code>
+                  <span class="gen-meta">(${f.total_cases} cases | REQ ${f.requirement_coverage_pct ?? 100}%)</span>
+                </div>`
+            )
+            .join('');
+
+          resultBox.innerHTML = `
+            <div class="smart-res-summary">
+              <strong>[AUTO-GEN HOÀN TẤT]</strong> Loại link: <code>${escHtml(data.link_kind)}</code>
+              ${data.developer ? `| Người làm: <strong>${escHtml(data.developer)}</strong>` : ''}
+              ${data.task_id ? `| Work Item: <strong>#${data.task_id}</strong>` : ''}
+              | Đã tạo <strong>${files.length}</strong> file test (<strong>${data.total_cases_generated ?? 0}</strong> ISTQB cases) trên workspace <code>${escHtml(data.workspace || 'local')}</code>
+            </div>
+            <div class="gen-files-list">${fileRows}</div>
+          `;
+        }
+
+        // Also populate the main Coverage & Spec Preview box below
+        const cov = data.coverage_report || {};
+        const resBox = document.getElementById('qc-result-box');
+        const badges = document.getElementById('qc-cov-badges');
+        const preview = document.getElementById('qc-spec-preview');
+
+        if (resBox) resBox.style.display = 'flex';
+        if (badges) {
+          badges.innerHTML = `
+            <span class="cov-badge">Files Generated: <strong>${files.length}</strong></span>
+            <span class="cov-badge">Total Cases: <strong>${data.total_cases_generated ?? cov.total_cases ?? 0}</strong></span>
+            <span class="cov-badge">REQ Coverage: <strong>${cov.requirement_coverage_pct ?? 100}%</strong></span>
+            <span class="cov-badge">CI Coverage: <strong>${cov.coverage_item_pct ?? 100}%</strong></span>
+            <span class="cov-badge success">Written to Disk (.generated.spec.ts)</span>
+          `;
+        }
+        if (preview && data.spec_code) {
+          preview.textContent = data.spec_code;
+        }
+
+        if (data.job_id) {
+          activeJobId = data.job_id;
+          await pollJobs();
+        }
+
+        window.dispatchEvent(new CustomEvent('work-items-updated'));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (resultBox) {
+          resultBox.style.display = 'flex';
+          resultBox.innerHTML = `<span class="status-msg error">Lỗi đọc link: ${escHtml(msg)}</span>`;
+        }
+      } finally {
+        if (btnSmartResolve) {
+          btnSmartResolve.disabled = false;
+          btnSmartResolve.innerHTML = '<span>🚀 Đọc Link &amp; Tự Tạo File Test</span>';
+        }
+      }
+    });
+
     // Presets click handlers (initial buttons in HTML)
     document.querySelectorAll<HTMLButtonElement>('.btn-preset').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -406,6 +768,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
       const specInput = document.getElementById('qc-spec') as HTMLInputElement | null;
       const taskIdInput = document.getElementById('qc-task-id') as HTMLInputElement | null;
       const outPathInput = document.getElementById('qc-out-spec') as HTMLInputElement | null;
+      const writeAlongside = document.getElementById('qc-write-alongside') as HTMLInputElement | null;
       const syncHarness = document.getElementById('qc-sync-harness') as HTMLInputElement | null;
       const runAfter = document.getElementById('qc-run-after') as HTMLInputElement | null;
       const statusMsg = document.getElementById('qc-gen-status');
@@ -428,8 +791,10 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
           spec: specInput?.value.trim() || '',
           task_id: taskIdInput?.value ? Number(taskIdInput.value) : null,
           out_spec: outPathInput?.value.trim() || '/tmp/generated.spec.ts',
+          write_alongside: Boolean(writeAlongside?.checked),
           sync_harness: Boolean(syncHarness?.checked),
           run_test: Boolean(runAfter?.checked),
+          target_node: getActivePaseoNode(),
         };
 
         const res = await fetch('/api/automation/qc-generate', {
@@ -458,7 +823,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
             <span class="cov-badge">REQ Coverage: <strong>${cov.requirement_coverage_pct ?? 0}%</strong></span>
             <span class="cov-badge">CI Coverage: <strong>${cov.coverage_item_pct ?? 0}%</strong></span>
             <span class="cov-badge">Symbol Coverage: <strong>${cov.symbol_coverage_pct ?? 0}%</strong></span>
-            <span class="cov-badge success">5-Stage ISTQB Verified</span>
+            <span class="cov-badge success">Out: ${escHtml(data.out_spec || '/tmp/generated.spec.ts')}</span>
           `;
         }
         if (preview) {
@@ -466,7 +831,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
         }
 
         if (statusMsg) {
-          statusMsg.textContent = `Đã sinh thành công ${cov.total_cases ?? 0} testcases!`;
+          statusMsg.textContent = `Đã sinh ${cov.total_cases ?? 0} testcases → ${data.out_spec || '/tmp/generated.spec.ts'}`;
           statusMsg.className = 'status-msg success';
         }
 
@@ -553,11 +918,16 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
       if (tidInput && e.detail.taskId) {
         tidInput.value = e.detail.taskId;
       }
+      const smartInput = document.getElementById('smart-dev-link') as HTMLInputElement | null;
+      if (smartInput && e.detail.taskId) {
+        smartInput.value = `#${e.detail.taskId}`;
+      }
     }) as EventListener);
   }
 
   function initQcWorkbench() {
     setupQcEvents();
+    loadPaseoNodes();
     loadSourceFilesAndPresets();
     pollJobs();
 
@@ -584,6 +954,253 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+  }
+
+  /* Paseo Multi-Node & Smart Link Auto-Gen Bar */
+  .paseo-smart-bar {
+    border-color: rgba(57, 211, 83, 0.45);
+    background: linear-gradient(180deg, rgba(22, 27, 34, 0.9) 0%, #0d1117 100%);
+  }
+
+  .active-node-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm, 6px);
+    background: rgba(57, 211, 83, 0.12);
+    border: 1px solid rgba(57, 211, 83, 0.4);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-green, #39d353);
+    font-family: var(--font-mono);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .paseo-smart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .smart-subbox {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    min-width: 0;
+  }
+
+  .subbox-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .subbox-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-green, #39d353);
+    letter-spacing: 0.04em;
+  }
+
+  .subbox-hint {
+    font-size: 11px;
+    color: var(--text-muted, #8b949e);
+  }
+
+  .node-connect-row,
+  .smart-link-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .node-connect-row input,
+  .smart-link-row input {
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: var(--radius-sm, 6px);
+    padding: 7px 10px;
+    color: var(--text-primary, #e6edf3);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    min-width: 0;
+    width: 100%;
+    outline: none;
+  }
+
+  .node-connect-row input:focus,
+  .smart-link-row input:focus {
+    border-color: var(--accent-green, #39d353);
+  }
+
+  .node-chips-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .node-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    color: var(--text-primary, #e6edf3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .node-chip:hover {
+    border-color: var(--accent-green, #39d353);
+  }
+
+  .node-chip.selected {
+    background: rgba(57, 211, 83, 0.16);
+    border-color: var(--accent-green, #39d353);
+    color: var(--accent-green, #39d353);
+    font-weight: 700;
+  }
+
+  .node-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #8b949e;
+    flex-shrink: 0;
+  }
+
+  .node-chip.online .node-dot {
+    background: #39d353;
+    box-shadow: 0 0 6px #39d353;
+  }
+
+  .node-chip-url {
+    color: var(--text-muted, #8b949e);
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .node-chip-lat {
+    font-size: 10px;
+    color: #79c0ff;
+  }
+
+  .smart-quick-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .demo-links-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .quick-label {
+    font-size: 11px;
+    color: var(--text-muted, #8b949e);
+  }
+
+  .btn-demo-link {
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--bg-primary, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    color: #79c0ff;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+
+  .btn-demo-link:hover {
+    border-color: var(--accent-green, #39d353);
+    color: var(--accent-green, #39d353);
+  }
+
+  .smart-link-result {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm, 6px);
+    background: #090d11;
+    border: 1px solid rgba(57, 211, 83, 0.35);
+    font-size: 11px;
+    min-width: 0;
+  }
+
+  .smart-res-summary {
+    color: var(--text-primary, #e6edf3);
+    line-height: 1.4;
+  }
+
+  .gen-files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .gen-file-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .gen-badge {
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(57, 211, 83, 0.18);
+    color: #39d353;
+    font-weight: 700;
+    font-size: 10px;
+  }
+
+  .gen-src {
+    color: #79c0ff;
+    word-break: break-all;
+  }
+
+  .gen-arrow {
+    color: var(--text-muted, #8b949e);
+  }
+
+  .gen-out {
+    color: #39d353;
+    word-break: break-all;
+  }
+
+  .gen-meta {
+    color: var(--text-muted, #8b949e);
   }
 
   /* Top Split Grid - use minmax(0, 1fr) so long CLI strings never blow out grid tracks */
@@ -976,6 +1593,7 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
   }
 
   @media (max-width: 1024px) {
+    .paseo-smart-grid,
     .qc-top-grid {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -988,6 +1606,8 @@ Chưa có tác vụ kiểm thử nào đang chạy. Chọn một Preset hoặc �
     .presets-grid {
       grid-template-columns: minmax(0, 1fr);
     }
+    .node-connect-row,
+    .smart-link-row,
     .cmd-input-row {
       flex-direction: column;
       align-items: stretch;

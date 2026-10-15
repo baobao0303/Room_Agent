@@ -38,10 +38,38 @@ const harnessEnv = {
         const configuredBase = (harnessEnv.PUBLIC_API_BASE_URL || "http://100.92.98.99:8765").replace(/\/+$/, "");
         const tailscaleBase = (harnessEnv.PUBLIC_TAILSCALE_API_URL || "http://100.92.98.99:8765").replace(/\/+$/, "");
 
+        function normalizeNodeUrl(raw) {
+          let u = String(raw || "").trim();
+          if (!u) return "";
+          if (u.startsWith("paseo://")) u = "http://" + u.slice("paseo://".length);
+          if (!u.startsWith("http://") && !u.startsWith("https://")) u = "http://" + u;
+          return u.replace(/\/+$/, "");
+        }
+
+        let activeNodeUrl = "";
+        try {
+          activeNodeUrl = normalizeNodeUrl(localStorage.getItem("paseo_active_node") || "");
+        } catch (e) {}
+        window["__PASEO_ACTIVE_NODE__"] = activeNodeUrl || configuredBase;
+
+        window["__PASEO_SET_NODE__"] = function (newUrl) {
+          const norm = normalizeNodeUrl(newUrl);
+          activeNodeUrl = norm;
+          window["__PASEO_ACTIVE_NODE__"] = norm || configuredBase;
+          try {
+            if (norm) localStorage.setItem("paseo_active_node", norm);
+            else localStorage.removeItem("paseo_active_node");
+          } catch (e) {}
+          window.dispatchEvent(new CustomEvent("paseo-node-changed", { detail: { url: window["__PASEO_ACTIVE_NODE__"] } }));
+        };
+
         function getCandidateUrls(apiPath) {
           const candidates = [];
           const loc = window.location;
           const isSameBackendPort = loc.port === "8765";
+          if (activeNodeUrl) {
+            candidates.push(activeNodeUrl + apiPath);
+          }
           if (isSameBackendPort && (loc.protocol === "http:" || loc.protocol === "https:")) {
             candidates.push(apiPath);
           }

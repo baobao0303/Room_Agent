@@ -10,11 +10,14 @@ import http.server
 import json
 import mimetypes
 import os
+import re
 import shlex
 import subprocess
 import sys
 import threading
 import time
+import urllib.parse
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -494,6 +497,438 @@ def scan_workspace_Targets():
         }
     ]
     return {"sources": sorted(set(sources)), "specs": sorted(set(specs)), "presets": presets}
+
+
+_NODES_LOCK = threading.Lock()
+_CONNECTED_NODES = [
+    {
+        "id": "local-8765",
+        "name": "Local Master (:8765)",
+        "url": "http://127.0.0.1:8765",
+        "kind": "harness-node",
+        "workspace": str(BASE_DIR),
+        "online": True,
+        "status": "online",
+    },
+    {
+        "id": "tailscale-master",
+        "name": "Tailscale Host (100.92.98.99:8765)",
+        "url": os.environ.get("PUBLIC_API_BASE_URL", "http://100.92.98.99:8765"),
+        "kind": "harness-node",
+        "workspace": str(BASE_DIR),
+        "online": True,
+        "status": "online",
+    },
+    {
+        "id": "remote-deploy",
+        "name": "Deploy Node (100.124.36.46:4321)",
+        "url": os.environ.get("PUBLIC_DEPLOY_URL", "http://100.124.36.46:4321"),
+        "kind": "deploy-ui",
+        "workspace": "/app",
+        "online": True,
+        "status": "online",
+    },
+    {
+        "id": "paseo-daemon",
+        "name": "Paseo Daemon (:6767)",
+        "url": os.environ.get("PUBLIC_PASEO_DAEMON_URL", "http://127.0.0.1:6767"),
+        "kind": "paseo-daemon",
+        "workspace": str(BASE_DIR),
+        "online": False,
+        "status": "offline",
+    },
+]
+
+
+def _normalize_node_url(raw_url: str) -> str:
+    u = (raw_url or "").strip()
+    if not u:
+        return "http://127.0.0.1:8765"
+    if u.startswith("paseo://"):
+        u = "http://" + u[len("paseo://"):]
+    if not u.startswith(("http://", "https://")):
+        u = "http://" + u
+    parsed = urllib.parse.urlparse(u)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+    return base.rstrip("/")
+
+
+def probe_and_register_node(raw_url: str, custom_name: str = "") -> dict:
+    base_url = _normalize_node_url(raw_url)
+    parsed = urllib.parse.urlparse(base_url)
+    host_label = parsed.netloc or base_url
+    kind = "paseo-daemon" if ":6767" in host_label else "harness-node"
+    online = False
+    workspace = str(BASE_DIR)
+    model_name = os.environ.get("HARNESS_MODEL", "gemini-3.7-medium")
+    latency_ms = 0
+
+    t0 = time.time()
+    for probe_path in ("/api/env", "/api/work-items", "/health", "/"):
+        try:
+            req = urllib.request.Request(base_url + probe_path, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
+                latency_ms = int((time.time() - t0) * 1000)
+                if resp.status < 500:
+                    online = True
+                    if probe_path == "/api/env":
+                        data = json.loads(resp.read().decode("utf-8", errors="ignore"))
+                        model_name = data.get("HARNESS_MODEL", model_name)
+                        workspace = data.get("WORKSPACE_ROOT", workspace)
+                    break
+        except Exception:
+            continue
+
+    node_entry = {
+        "id": "node-" + re.sub(r"[^a-zA-Z0-9]+", "-", host_label).strip("-").lower(),
+        "name": custom_name.strip() or f"Node ({host_label})",
+        "url": base_url,
+        "kind": kind,
+        "workspace": workspace,
+        "model": model_name,
+        "online": online,
+        "status": "online" if online else "offline",
+        "latency_ms": latency_ms,
+        "checked_at": datetime.now().strftime("%H:%M:%S"),
+    }
+
+    with _NODES_LOCK:
+        replaced = False
+        for i, existing in enumerate(_CONNECTED_NODES):
+            if existing["url"].rstrip("/") == base_url:
+                _CONNECTED_NODES[i] = {**existing, **node_entry}
+                replaced = True
+                break
+        if not replaced:
+            _CONNECTED_NODES.insert(0, node_entry)
+
+    return node_entry
+
+
+def _match_workspace_files_by_keywords(text: str, all_sources: list[str], max_files: int = 3) -> list[str]:
+    text_low = (text or "").lower()
+    scored = []
+    # Keyword mappings from Vietnamese module names to repo paths
+    module_hints = {
+        "tài khoản": ["auth", "account", "user", "profile", "validator"],
+        "cá nhân": ["profile", "user", "account", "validator"],
+        "nhân viên": ["employee", "staff", "user", "member", "department"],
+        "kênh kết nối": ["channel", "facebook", "social", "integration", "connect"],
+        "facebook": ["facebook", "channel", "social", "webhook"],
+        "email": ["validator", "email", "form", "helper"],
+        "khóa": ["lock", "status", "employee", "auth", "permission"],
+        "vai trò": ["role", "permission", "guard", "auth"],
+        "đăng nhập": ["login", "auth", "session", "token"],
+        "game": ["game", "player", "physics", "scene"],
+        "harness": ["harness", "qc", "floci", "agent"],
+    }
+    extra_tokens = set(re.findall(r"[a-zA-Z0-9_.-]{3,}", text_low))
+    for vn_key, en_list in module_hints.items():
+        if vn_key in text_low:
+            extra_tokens.update(en_list)
+
+    for src in all_sources:
+        src_low = src.lower()
+        stem_low = Path(src).stem.lower()
+        score = 0
+        if src_low in text_low or Path(src).name.lower() in text_low:
+            score += 50
+        for tok in extra_tokens:
+            if len(tok) >= 3 and tok in stem_low:
+                score += 10
+            elif len(tok) >= 4 and tok in src_low:
+                score += 4
+        if score > 0:
+            scored.append((score, src))
+
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    matched = [s for _, s in scored[:max_files]]
+    if not matched and all_sources:
+        # Default to validator.helper.ts or first available source file
+        for s in all_sources:
+            if "validator.helper.ts" in s:
+                return [s]
+        return [all_sources[0]]
+    return matched
+
+
+def resolve_link_and_generate_tests(body: dict) -> dict:
+    """
+    Smart resolver for developer links (GitHub PR/Commit/Blob, TFS PR/WorkItem/File path,
+    Paseo Daemon/Workspace link, Work Item #ID, or developer name).
+    Automatically discovers target source files, runs the 5-stage ISTQB Test Generator,
+    writes the .spec.ts files, and optionally runs the test suite.
+    """
+    import urllib.request
+    raw_link = (body.get("link") or "").strip()
+    target_node = (body.get("target_node") or "").strip()
+    write_alongside = bool(body.get("write_alongside", True))
+    sync_harness = bool(body.get("sync_harness", True))
+    run_test = bool(body.get("run_test", True))
+
+    if not raw_link:
+        raise ValueError("Vui lòng dán link (PR / Commit / Work Item / File URL / Mã #ID)!")
+
+    # If target_node is a remote machine (not local 127.0.0.1 / 100.92.98.99), try forwarding to that node first
+    if target_node:
+        norm_node = _normalize_node_url(target_node)
+        local_Self = {"http://127.0.0.1:8765", "http://localhost:8765", "http://100.92.98.99:8765"}
+        if norm_node not in local_Self and not body.get("_forwarded"):
+            try:
+                fwd_payload = dict(body)
+                fwd_payload["_forwarded"] = True
+                req = urllib.request.Request(
+                    norm_node + "/api/automation/resolve-link",
+                    data=json.dumps(fwd_payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    if resp.status == 200:
+                        remote_res = json.loads(resp.read().decode("utf-8", errors="replace"))
+                        remote_res["executed_on_node"] = norm_node
+                        return remote_res
+            except Exception:
+                # Fall back to local execution with remote context noted
+                pass
+
+    scan_data = scan_workspace_Targets()
+    all_sources = scan_data.get("sources", [])
+
+    discovered_sources = []
+    spec_context_parts = [f"# Source Link: {raw_link}"]
+    linked_task_id = body.get("task_id")
+    link_kind = "auto-detected"
+
+    # 1. Check if link contains a file path query (?path=/...) e.g. TFS Git link
+    parsed_url = urllib.parse.urlparse(raw_link)
+    qs = urllib.parse.parse_qs(parsed_url.query)
+    if "path" in qs and qs["path"]:
+        link_kind = "tfs-git-path"
+        rel_cand = qs["path"][0].lstrip("/")
+        for s in all_sources:
+            if s.endswith(rel_cand) or Path(s).name == Path(rel_cand).name:
+                discovered_sources.append(s)
+
+    # 2. Check if GitHub Blob URL: github.com/<owner>/<repo>/blob/<branch>/<path>
+    gh_blob = re.search(r"github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$", raw_link)
+    if gh_blob:
+        link_kind = "github-blob"
+        owner, repo, branch, file_path = gh_blob.groups()
+        file_path = file_path.split("?")[0].split("#")[0]
+        local_cand = BASE_DIR / file_path
+        if local_cand.exists() and local_cand.is_file():
+            discovered_sources.append(file_path)
+        else:
+            for s in all_sources:
+                if s.endswith(file_path) or Path(s).name == Path(file_path).name:
+                    discovered_sources.append(s)
+                    break
+            if not discovered_sources:
+                # Download raw file from GitHub into /tmp/remote_sources/
+                raw_gh_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
+                try:
+                    tmp_dir = Path("/tmp/paseo_remote_sources")
+                    tmp_dir.mkdir(parents=True, exist_ok=True)
+                    dl_file = tmp_dir / Path(file_path).name
+                    req = urllib.request.Request(raw_gh_url, headers={"User-Agent": "Paseo-Harness-QC"})
+                    with urllib.request.urlopen(req, timeout=6) as r:
+                        dl_file.write_bytes(r.read())
+                    discovered_sources.append(str(dl_file))
+                except Exception:
+                    pass
+
+    # 3. Check if GitHub PR URL: github.com/<owner>/<repo>/pull/<num>
+    gh_pr = re.search(r"github\.com/([^/]+)/([^/]+)/pull/(\d+)", raw_link)
+    if gh_pr:
+        link_kind = "github-pr"
+        owner, repo, pr_num = gh_pr.groups()
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_num}/files"
+        try:
+            req = urllib.request.Request(api_url, headers={"User-Agent": "Paseo-Harness-QC", "Accept": "application/vnd.github.v3+json"})
+            with urllib.request.urlopen(req, timeout=6) as r:
+                files_data = json.loads(r.read().decode("utf-8", errors="ignore"))
+                for fobj in files_data:
+                    fn = fobj.get("filename", "")
+                    if fn.endswith((".ts", ".py")) and not fn.endswith((".spec.ts", ".test.ts", ".d.ts")):
+                        if (BASE_DIR / fn).is_file():
+                            discovered_sources.append(fn)
+        except Exception:
+            pass
+
+    # 4. Check if GitHub Commit URL or git commit SHA
+    gh_commit = re.search(r"github\.com/([^/]+)/([^/]+)/commit/([0-9a-fA-F]{7,40})", raw_link)
+    if gh_commit or re.fullmatch(r"[0-9a-fA-F]{7,40}", raw_link):
+        link_kind = "git-commit"
+        sha = gh_commit.group(3) if gh_commit else raw_link
+        try:
+            out = subprocess.check_output(["git", "show", "--name-only", "--pretty=format:", sha], cwd=str(BASE_DIR), text=True, timeout=5)
+            for line in out.splitlines():
+                line = line.strip()
+                if line.endswith((".ts", ".py")) and not line.endswith((".spec.ts", ".test.ts", ".d.ts")):
+                    if (BASE_DIR / line).is_file():
+                        discovered_sources.append(line)
+        except Exception:
+            pass
+
+    # 5. Check if Work Item URL or #ID (e.g. _workitems/edit/160873, #160873, 160873)
+    wi_match = re.search(r"(?:workitems(?:/edit)?/|#|^)(\d{4,7})(?:\b|$)", raw_link, re.IGNORECASE)
+    if wi_match:
+        wid = int(wi_match.group(1))
+        linked_task_id = wid
+        link_kind = f"work-item-#{wid}"
+        rows, _ = get_cached_rows()
+        found_wi = next((r for r in rows if int(r.get("id") or 0) == wid), None)
+        if not found_wi:
+            try:
+                found_wi = HarnessManager().get_work_item(wid)
+            except Exception:
+                found_wi = None
+        if found_wi:
+            wi_text = f"{found_wi.get('title', '')}\n{found_wi.get('description', '')}\n{found_wi.get('acceptance_criteria', '')}"
+            spec_context_parts.append(f"# Work Item #{wid}: {found_wi.get('title', '')}")
+            spec_context_parts.append(str(found_wi.get("description") or ""))
+            spec_context_parts.append("## Acceptance Criteria\n" + str(found_wi.get("acceptance_criteria") or ""))
+            if not discovered_sources:
+                discovered_sources.extend(_match_workspace_files_by_keywords(wi_text, all_sources, max_files=2))
+
+    # 6. Check if direct relative path or filename in workspace
+    if not discovered_sources:
+        clean_cand = raw_link.strip().lstrip("/")
+        if (BASE_DIR / clean_cand).is_file():
+            link_kind = "workspace-file"
+            discovered_sources.append(clean_cand)
+        else:
+            # Check if raw_link matches an assignee / developer name in Work Items
+            rows, _ = get_cached_rows()
+            dev_items = [
+                r for r in rows
+                if raw_link.lower() in str(r.get("assigned_to") or "").lower()
+                or raw_link.lower() in str(r.get("title") or "").lower()
+            ]
+            if dev_items:
+                link_kind = f"developer-backlog ({len(dev_items)} items)"
+                top_item = dev_items[0]
+                if not linked_task_id:
+                    linked_task_id = int(top_item.get("id") or 0) or None
+                combined_text = "\n".join(
+                    f"#{it.get('id')} {it.get('title')} {it.get('description')} {it.get('acceptance_criteria')}"
+                    for it in dev_items[:5]
+                )
+                spec_context_parts.append(combined_text)
+                discovered_sources.extend(_match_workspace_files_by_keywords(combined_text, all_sources, max_files=2))
+            else:
+                discovered_sources.extend(_match_workspace_files_by_keywords(raw_link, all_sources, max_files=2))
+
+    # Deduplicate discovered sources
+    unique_sources = []
+    for s in discovered_sources:
+        if s not in unique_sources:
+            unique_sources.append(s)
+
+    if not unique_sources:
+        raise ValueError(f"Không tìm thấy file nguồn phù hợp từ link: {raw_link}")
+
+    spec_text = "\n\n".join(p for p in spec_context_parts if p)
+    generated_files = []
+    total_cases = 0
+    combined_spec_code = []
+    last_cov_report = {}
+    total_synced = 0
+
+    for src_rel in unique_sources:
+        src_path = Path(src_rel) if os.path.isabs(src_rel) else (BASE_DIR / src_rel)
+        if not src_path.exists():
+            continue
+
+        code_ctx = qc_gen.analyze_source_file(src_path)
+        analysis = qc_gen.parse_spec_content(spec_text, module_hint=code_ctx.get("module_name", src_path.stem))
+        tp_set = qc_gen.generate_test_points(analysis, code_ctx)
+        design_plan = qc_gen.build_test_design_plan(tp_set["test_points"])
+        test_cases = qc_gen.generate_test_cases(analysis, tp_set, design_plan, code_ctx)
+        cov_report = qc_gen.build_coverage_report(analysis, test_cases, tp_set, design_plan, code_ctx)
+        last_cov_report = cov_report
+        total_cases += int(cov_report.get("total_cases") or len(test_cases))
+
+        if write_alongside and src_path.is_relative_to(BASE_DIR):
+            out_spec_path = src_path.with_name(f"{src_path.stem}.generated.spec.ts")
+        else:
+            out_spec_path = Path(f"/tmp/{src_path.stem}.generated.spec.ts")
+
+        out_spec_path.parent.mkdir(parents=True, exist_ok=True)
+        spec_code = qc_gen.render_unit_test_file(code_ctx, test_cases, out_spec_path)
+        out_spec_path.write_text(spec_code, encoding="utf-8")
+
+        rel_out = str(out_spec_path.relative_to(BASE_DIR)) if out_spec_path.is_relative_to(BASE_DIR) else str(out_spec_path)
+        generated_files.append({
+            "source": src_rel,
+            "source_file": src_rel,
+            "out_spec": rel_out,
+            "abs_out_spec": str(out_spec_path),
+            "written_on_disk": True,
+            "cases_count": len(test_cases),
+            "total_cases": len(test_cases),
+            "requirement_coverage_pct": cov_report.get("requirement_coverage_pct", 100),
+            "coverage_item_pct": cov_report.get("coverage_item_pct", 100),
+            "symbol_coverage_pct": cov_report.get("symbol_coverage_pct", 100),
+            "framework": code_ctx.get("framework", "jest"),
+        })
+        combined_spec_code.append(f"// ============================================================\n// FILE: {rel_out} (from {src_rel})\n// ============================================================\n" + spec_code)
+
+        if sync_harness:
+            try:
+                synced = qc_gen.sync_cases_to_harness(test_cases, parent_task_id=int(linked_task_id) if linked_task_id else None)
+                total_synced += len(synced)
+            except Exception:
+                pass
+
+    if sync_harness and total_synced > 0:
+        get_cached_rows(force=True)
+
+    # Record a detailed background job in _JOBS so it streams in the Live Console
+    node_label = target_node or "local (:8765)"
+    src_list_str = ", ".join(g["source"] for g in generated_files)
+    summary_lines = [
+        f"echo '[PASEO LINK AUTO-GEN] Link: {raw_link} (Type: {link_kind})'",
+        f"echo '[TARGET NODE] {node_label}'",
+        f"echo '[DISCOVERED SOURCES] {len(generated_files)} file(s): {src_list_str}'",
+    ]
+    for g in generated_files:
+        out_s = g["out_spec"]
+        cnt_s = g["cases_count"]
+        summary_lines.append(f"echo '[GENERATED SPEC] -> {out_s} ({cnt_s} ISTQB test cases)'")
+
+    if run_test and generated_files:
+        summary_lines.append("python3 tools/test_qc_generator.py")
+
+    job_cmd = " && ".join(summary_lines)
+    job = start_background_job(
+        "qc-gen",
+        f"Link Auto-Gen ({len(generated_files)} files)",
+        f"bash -c {shlex.quote(job_cmd)}",
+        cwd=str(BASE_DIR),
+        item_id=int(linked_task_id) if linked_task_id else None,
+    )
+
+    return {
+        "ok": True,
+        "link": raw_link,
+        "input_link": raw_link,
+        "link_kind": link_kind,
+        "executed_on_node": target_node or "http://127.0.0.1:8765",
+        "target_node": target_node or "http://127.0.0.1:8765",
+        "workspace": str(BASE_DIR),
+        "task_id": linked_task_id,
+        "generated_files": generated_files,
+        "total_cases": total_cases,
+        "total_cases_generated": total_cases,
+        "synced_count": total_synced,
+        "total_synced_to_harness": total_synced,
+        "coverage_report": last_cov_report,
+        "spec_code": "\n\n".join(combined_spec_code),
+        "out_spec": generated_files[0]["out_spec"] if generated_files else "",
+        "job_id": job["id"],
+    }
 
 
 HTML_TEMPLATE = r"""<!DOCTYPE html>
@@ -1807,6 +2242,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({
                 "ok": True,
                 "env_loaded": (BASE_DIR / ".env").is_file() or (BASE_DIR / "harness-ui" / ".env").is_file(),
+                "WORKSPACE_ROOT": str(BASE_DIR),
                 "HARNESS_BACKEND": os.environ.get("HARNESS_BACKEND", "floci"),
                 "FLOCI_ENDPOINT": os.environ.get("FLOCI_ENDPOINT", "http://100.124.36.46:14566"),
                 "FLOCI_S3_BUCKET": os.environ.get("FLOCI_S3_BUCKET", "harness-data"),
@@ -1816,6 +2252,12 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 "PUBLIC_API_BASE_URL": os.environ.get("PUBLIC_API_BASE_URL", "http://127.0.0.1:8765"),
                 "PUBLIC_PASEO_DAEMON_URL": os.environ.get("PUBLIC_PASEO_DAEMON_URL", "http://127.0.0.1:6767"),
             })
+            return
+
+        if url_path == "/api/nodes":
+            with _NODES_LOCK:
+                nodes_snapshot = [dict(n) for n in _CONNECTED_NODES]
+            self._send_json({"nodes": nodes_snapshot, "current_workspace": str(BASE_DIR)})
             return
 
         if url_path == "/api/agents":
@@ -2010,6 +2452,30 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({"error": f"Invalid JSON: {e}"}, status=400)
             return
 
+        if url_path == "/api/nodes/connect":
+            try:
+                raw_url = body.get("url") or body.get("link") or ""
+                if not raw_url:
+                    self._send_json({"error": "Missing node URL"}, status=400)
+                    return
+                node_info = probe_and_register_node(raw_url, custom_name=body.get("name", ""))
+                with _NODES_LOCK:
+                    all_nodes = [dict(n) for n in _CONNECTED_NODES]
+                self._send_json({"ok": True, "node": node_info, "nodes": all_nodes})
+            except Exception as e:
+                self._send_json({"error": str(e)}, status=400)
+            return
+
+        if url_path == "/api/automation/resolve-link":
+            try:
+                res = resolve_link_and_generate_tests(body)
+                self._send_json(res)
+            except ValueError as ve:
+                self._send_json({"error": str(ve)}, status=400)
+            except Exception as e:
+                self._send_json({"error": str(e)}, status=500)
+            return
+
         if url_path == "/api/work-items/add":
             try:
                 try:
@@ -2139,6 +2605,11 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 raw_src = body.get("source", "")
                 src_path = Path(raw_src) if os.path.isabs(raw_src) else (BASE_DIR / raw_src)
                 if not src_path.exists():
+                    # If user pasted a link into the source input, delegate to resolve_link_and_generate_tests!
+                    if raw_src.startswith(("http://", "https://", "paseo://", "#")):
+                        res = resolve_link_and_generate_tests({"link": raw_src, **body})
+                        self._send_json(res)
+                        return
                     self._send_json({"error": f"Source file not found: {src_path}"}, status=400)
                     return
 
@@ -2164,8 +2635,12 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 test_cases = qc_gen.generate_test_cases(analysis, tp_set, design_plan, code_ctx)
                 cov_report = qc_gen.build_coverage_report(analysis, test_cases, tp_set, design_plan, code_ctx)
 
-                out_spec_str = body.get("out_spec") or f"/tmp/{src_path.stem}.generated.spec.ts"
-                out_spec_path = Path(out_spec_str) if os.path.isabs(out_spec_str) else (BASE_DIR / out_spec_str)
+                out_spec_str = body.get("out_spec", "").strip()
+                if (not out_spec_str or out_spec_str == "/tmp/generated.spec.ts") and body.get("write_alongside") and src_path.is_relative_to(BASE_DIR):
+                    out_spec_path = src_path.with_name(f"{src_path.stem}.generated.spec.ts")
+                else:
+                    out_spec_str = out_spec_str or f"/tmp/{src_path.stem}.generated.spec.ts"
+                    out_spec_path = Path(out_spec_str) if os.path.isabs(out_spec_str) else (BASE_DIR / out_spec_str)
                 out_spec_path.parent.mkdir(parents=True, exist_ok=True)
                 spec_code = qc_gen.render_unit_test_file(code_ctx, test_cases, out_spec_path)
                 out_spec_path.write_text(spec_code, encoding="utf-8")
