@@ -23,38 +23,40 @@ interface SpecDoc {
 
 let specDocs: SpecDoc[] = [];
 
-try {
-  const specDir = path.resolve(process.cwd(), '../docs/spec');
-  if (fs.existsSync(specDir)) {
-    function readDirRecursive(d: string): SpecDoc[] {
-      const results: SpecDoc[] = [];
-      const entries = fs.readdirSync(d, { withFileTypes: true });
-      for (const entry of entries) {
-        const full = path.join(d, entry.name);
-        if (entry.isDirectory()) {
-          results.push(...readDirRecursive(full));
-        } else if (entry.isFile() && entry.name.endsWith('.md')) {
-          const rel = path.relative(specDir, full);
-          const raw = fs.readFileSync(full, 'utf-8');
-          // Extract first H1 title if present
-          const titleMatch = raw.match(/^#\s+(.+)$/m);
-          const title = titleMatch ? titleMatch[1].trim() : entry.name.replace('.md', '');
-          results.push({
-            slug: rel.replace(/\.md$/, ''),
-            title,
-            relPath: rel,
-            size: raw.length,
-            content: raw,
-          });
+if (view === 'all' || view === 'specs') {
+  try {
+    const specDir = path.resolve(process.cwd(), '../docs/spec');
+    if (fs.existsSync(specDir)) {
+      function readDirRecursive(d: string): SpecDoc[] {
+        const results: SpecDoc[] = [];
+        const entries = fs.readdirSync(d, { withFileTypes: true });
+        for (const entry of entries) {
+          const full = path.join(d, entry.name);
+          if (entry.isDirectory()) {
+            results.push(...readDirRecursive(full));
+          } else if (entry.isFile() && entry.name.endsWith('.md')) {
+            const rel = path.relative(specDir, full);
+            const raw = fs.readFileSync(full, 'utf-8');
+            // Extract first H1 title if present
+            const titleMatch = raw.match(/^#\s+(.+)$/m);
+            const title = titleMatch ? titleMatch[1].trim() : entry.name.replace('.md', '');
+            results.push({
+              slug: rel.replace(/\.md$/, ''),
+              title,
+              relPath: rel,
+              size: raw.length,
+              content: raw,
+            });
+          }
         }
+        return results;
       }
-      return results;
-    }
 
-    specDocs = readDirRecursive(specDir);
+      specDocs = readDirRecursive(specDir);
+    }
+  } catch (e) {
+    console.warn('[ProgressLedger] Could not read docs/spec:', e);
   }
-} catch (e) {
-  console.warn('[ProgressLedger] Could not read docs/spec:', e);
 }
 ---
 
@@ -244,39 +246,43 @@ try {
   )}
 
   <!-- Modal: Context Window Message Viewer -->
-  <dialog id="dlg-thread-viewer" class="dashboard-dialog" aria-labelledby="dlg-thread-title">
-    <div class="dialog-card thread-viewer-card">
-      <div class="dialog-header">
-        <div class="dialog-title-area">
-          <div class="dialog-tags">
-            <span class="mono-badge" id="tv-thread-id">Thread: --</span>
-            <span class="src-tag src-local" id="tv-thread-source">source</span>
-            <span class="pill st-Active" id="tv-message-count">0 messages</span>
+  { (view === 'all' || view === 'ledger') && (
+    <dialog id="dlg-thread-viewer" class="dashboard-dialog" aria-labelledby="dlg-thread-title">
+      <div class="dialog-card thread-viewer-card">
+        <div class="dialog-header">
+          <div class="dialog-title-area">
+            <div class="dialog-tags">
+              <span class="mono-badge" id="tv-thread-id">Thread: --</span>
+              <span class="src-tag src-local" id="tv-thread-source">source</span>
+              <span class="pill st-Active" id="tv-message-count">0 messages</span>
+            </div>
+            <h3 id="dlg-thread-title">Context Window Messages Inspector</h3>
+            <span class="thread-path-text" id="tv-thread-path">/path/to/thread.jsonl</span>
           </div>
-          <h3 id="dlg-thread-title">Context Window Messages Inspector</h3>
-          <span class="thread-path-text" id="tv-thread-path">/path/to/thread.jsonl</span>
+          <button type="button" class="btn-close-dialog" id="btn-close-tv" aria-label="Đóng">&times;</button>
         </div>
-        <button type="button" class="btn-close-dialog" id="btn-close-tv" aria-label="Đóng">&times;</button>
-      </div>
 
-      <div class="dialog-body">
-        <div class="messages-container" id="tv-messages-list">
-          <div class="loading-state">Đang tải và trích xuất tin nhắn hội thoại từ file .jsonl...</div>
+        <div class="dialog-body">
+          <div class="messages-container" id="tv-messages-list">
+            <div class="loading-state">Đang tải và trích xuất tin nhắn hội thoại từ file .jsonl...</div>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <span class="footer-hint">Hiển thị các turns trao đổi giữa user, assistant và system tools</span>
+          <button type="button" id="btn-close-tv-footer" class="btn btn-secondary btn-sm">Đóng</button>
         </div>
       </div>
-
-      <div class="dialog-footer">
-        <span class="footer-hint">Hiển thị các turns trao đổi giữa user, assistant và system tools</span>
-        <button type="button" id="btn-close-tv-footer" class="btn btn-secondary btn-sm">Đóng</button>
-      </div>
-    </div>
-  </dialog>
+    </dialog>
+  )}
 </div>
 
 <!-- Embedded Specs Data for Client-Side Fast Rendering -->
-<script define:vars={{ specDocs }}>
-  window.__HARNESS_SPECS__ = specDocs;
-</script>
+{ (view === 'all' || view === 'specs') && (
+  <script define:vars={{ specDocs }}>
+    window.__HARNESS_SPECS__ = specDocs;
+  </script>
+)}
 
 <script>
   interface ProgressSession {

@@ -23,6 +23,27 @@ from urllib.parse import parse_qs, unquote, urlparse
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+
+def _load_env_files():
+    for env_path in (BASE_DIR / ".env", BASE_DIR / "harness-ui" / ".env", BASE_DIR / ".env.example"):
+        if not env_path.is_file():
+            continue
+        try:
+            for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("'").strip('"')
+                if k and k not in os.environ:
+                    os.environ[k] = v
+        except Exception:
+            pass
+
+
+_load_env_files()
+
 from tools.floci_client import FlociHarnessDB
 from tools.harness_manager import HarnessManager
 from tools import qc_test_generator as qc_gen
@@ -1722,6 +1743,21 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._safe_write(body)
             return
 
+        if url_path == "/api/env":
+            self._send_json({
+                "ok": True,
+                "env_loaded": (BASE_DIR / ".env").is_file() or (BASE_DIR / "harness-ui" / ".env").is_file(),
+                "HARNESS_BACKEND": os.environ.get("HARNESS_BACKEND", "floci"),
+                "FLOCI_ENDPOINT": os.environ.get("FLOCI_ENDPOINT", "http://100.124.36.46:14566"),
+                "FLOCI_S3_BUCKET": os.environ.get("FLOCI_S3_BUCKET", "harness-data"),
+                "HARNESS_MODEL": os.environ.get("HARNESS_MODEL", "gemini-3.7-medium"),
+                "AWS_REGION": os.environ.get("AWS_REGION", "us-east-1"),
+                "HARNESS_LOG_LEVEL": os.environ.get("HARNESS_LOG_LEVEL", "info"),
+                "PUBLIC_API_BASE_URL": os.environ.get("PUBLIC_API_BASE_URL", "http://127.0.0.1:8765"),
+                "PUBLIC_PASEO_DAEMON_URL": os.environ.get("PUBLIC_PASEO_DAEMON_URL", "http://127.0.0.1:6767"),
+            })
+            return
+
         if url_path == "/api/agents":
             self._send_json({"profiles": get_slpc_profiles()})
             return
@@ -1744,13 +1780,22 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 # Check optional thread query parameter
                 thread_param = qs.get("thread", [None])[0]
                 if thread_param:
-                    target = Path(thread_param).expanduser()
-                    if not target.is_file():
+                    if "\x00" in thread_param:
+                        self._send_json({"error": "Invalid thread parameter: embedded null byte"}, status=400)
+                        return
+                    target = None
+                    try:
+                        cand = Path(thread_param).expanduser()
+                        if cand.is_file():
+                            target = cand
+                    except (ValueError, OSError):
+                        pass
+                    if not target or not target.is_file():
                         for _, candidate in agent_progress._collect_all_thread_files():
                             if candidate.stem.startswith(thread_param) or thread_param in candidate.name:
                                 target = candidate
                                 break
-                    if not target.is_file():
+                    if not target or not target.is_file():
                         self._send_json({"error": f"Thread not found: {thread_param}"}, status=404)
                         return
 
@@ -1763,8 +1808,30 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                             obj = json.loads(line)
                         except Exception:
                             continue
-                        role = obj.get("type") or obj.get("role") or obj.get("message", {}).get("role")
-                        content = obj.get("message", {}).get("content") or obj.get("content")
+
+                        if not isinstance(obj, dict):
+                            continue
+
+                        msg_val = obj.get("message")
+                        msg_dict = msg_val if isinstance(msg_val, dict) else {}
+
+                        role = (
+                            obj.get("type")
+                            or obj.get("role")
+                            or msg_dict.get("role")
+                            or msg_dict.get("type")
+                        )
+
+                        if isinstance(msg_val, str):
+                            content = msg_val
+                        else:
+                            content = (
+                                msg_dict.get("content")
+                                or msg_dict.get("text")
+                                or obj.get("content")
+                                or obj.get("text")
+                            )
+
                         text_parts = []
                         if isinstance(content, str):
                             text_parts.append(content)
@@ -1772,6 +1839,12 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                             for part in content:
                                 if isinstance(part, dict) and part.get("type") in ("text", "input_text", "output_text"):
                                     text_parts.append(str(part.get("text", "")))
+                                elif isinstance(part, str):
+                                    text_parts.append(part)
+                        elif isinstance(content, dict):
+                            if "text" in content:
+                                text_parts.append(str(content["text"]))
+
                         merged = "\n".join(t for t in text_parts if t).strip()
                         if merged:
                             messages.append({"role": role, "text": merged[:1200]})
@@ -1840,10 +1913,14 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         # Serve static assets from harness-ui/dist/
         if DIST_DIR.is_dir():
             clean_path = unquote(url_path.lstrip("/"))
-            target_path = (DIST_DIR / clean_path).resolve()
+            if "\x00" in clean_path:
+                self.send_error(400, "Bad Request")
+                return
+
             try:
+                target_path = (DIST_DIR / clean_path).resolve()
                 is_safe = target_path.is_relative_to(DIST_DIR)
-            except (AttributeError, ValueError):
+            except (AttributeError, ValueError, OSError):
                 is_safe = False
 
             if is_safe:
@@ -2049,17 +2126,36 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
-def _stop_existing_dashboard_server():
+def _stop_existing_dashboard_server(port=None):
     skip_pids = {os.getpid()}
     try:
-        out = subprocess.check_output(["pgrep", "-f", "harness_dashboard.py --serve"], text=True)
+        out = subprocess.check_output(["pgrep", "-f", "harness_dashboard.py.*--serve"], text=True)
         for line in out.splitlines():
-            pid = int(line.strip())
-            if pid not in skip_pids:
+            line = line.strip()
+            if not line:
+                continue
+            pid = int(line)
+            if pid in skip_pids:
+                continue
+            if port is not None:
                 try:
-                    os.kill(pid, 9)
-                except OSError:
+                    cmdline_file = Path(f"/proc/{pid}/cmdline")
+                    if cmdline_file.exists():
+                        raw_args = cmdline_file.read_bytes().split(b"\x00")
+                        args = [a.decode("utf-8", errors="ignore") for a in raw_args if a]
+                        if "--port" in args:
+                            idx = args.index("--port")
+                            proc_port = args[idx + 1] if idx + 1 < len(args) else "8765"
+                        else:
+                            proc_port = "8765"
+                        if proc_port != str(port):
+                            continue
+                except Exception:
                     pass
+            try:
+                os.kill(pid, 9)
+            except OSError:
+                pass
         time.sleep(0.3)
     except Exception:
         pass
@@ -2079,8 +2175,8 @@ def _bg_floci_sync_loop(out_path="/tmp/harness_dashboard.html"):
         time.sleep(8.0)
 
 
-def run_server(port=8765, host="127.0.0.1", out_path="/tmp/harness_dashboard.html"):
-    _stop_existing_dashboard_server()
+def run_server(port=8765, host="0.0.0.0", out_path="/tmp/harness_dashboard.html"):
+    _stop_existing_dashboard_server(port=port)
     threading.Thread(target=_bg_floci_sync_loop, args=(out_path,), daemon=True).start()
     http.server.ThreadingHTTPServer.allow_reuse_address = True
     server_address = (host, port)
@@ -2099,7 +2195,7 @@ def main():
 
     if args.daemon:
         generate_html(args.out, wait_if_empty=False)
-        _stop_existing_dashboard_server()
+        _stop_existing_dashboard_server(port=args.port)
         log_fh = open("/tmp/harness_dashboard_server.log", "w", encoding="utf-8")
         proc = subprocess.Popen(
             [sys.executable, str(Path(__file__).resolve()), "--serve", "--port", str(args.port)],

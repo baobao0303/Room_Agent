@@ -7,6 +7,16 @@ interface Props {
 }
 
 const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props;
+
+const harnessEnv = {
+  PUBLIC_API_BASE_URL: import.meta.env.PUBLIC_API_BASE_URL || "http://127.0.0.1:8765",
+  PUBLIC_PASEO_DAEMON_URL: import.meta.env.PUBLIC_PASEO_DAEMON_URL || "http://127.0.0.1:6767",
+  PUBLIC_HARNESS_BACKEND: import.meta.env.PUBLIC_HARNESS_BACKEND || "floci",
+  PUBLIC_FLOCI_ENDPOINT: import.meta.env.PUBLIC_FLOCI_ENDPOINT || "http://100.124.36.46:14566",
+  PUBLIC_FLOCI_S3_BUCKET: import.meta.env.PUBLIC_FLOCI_S3_BUCKET || "harness-data",
+  PUBLIC_HARNESS_MODEL: import.meta.env.PUBLIC_HARNESS_MODEL || "gemini-3.7-medium",
+  PUBLIC_AWS_REGION: import.meta.env.PUBLIC_AWS_REGION || "us-east-1",
+};
 ---
 
 <!doctype html>
@@ -19,6 +29,56 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script is:inline define:vars={{ harnessEnv }}>
+      (function () {
+        window["__HARNESS_ENV__"] = harnessEnv;
+        const rawFetch = window.fetch.bind(window);
+        const configuredBase = (harnessEnv.PUBLIC_API_BASE_URL || "http://127.0.0.1:8765").replace(/\/+$/, "");
+
+        function getCandidateUrls(apiPath) {
+          const candidates = [];
+          const loc = window.location;
+          const isSameBackendPort = loc.port === "8765";
+          if (isSameBackendPort && (loc.protocol === "http:" || loc.protocol === "https:")) {
+            candidates.push(apiPath);
+          }
+          if (configuredBase) {
+            candidates.push(configuredBase + apiPath);
+          }
+          if (loc.hostname && loc.hostname !== "127.0.0.1") {
+            candidates.push(`http://${loc.hostname}:8765${apiPath}`);
+          }
+          candidates.push(`http://127.0.0.1:8765${apiPath}`);
+          if (!isSameBackendPort && (loc.protocol === "http:" || loc.protocol === "https:")) {
+            candidates.push(apiPath);
+          }
+          return Array.from(new Set(candidates));
+        }
+
+        window.fetch = async function (input, init) {
+          const urlStr = typeof input === "string" ? input : (input instanceof URL ? input.toString() : null);
+          if (urlStr && urlStr.startsWith("/api/")) {
+            const candidates = getCandidateUrls(urlStr);
+            let lastErr = null;
+            let lastRes = null;
+            for (const candidate of candidates) {
+              try {
+                const res = await rawFetch(candidate, init);
+                if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 404)) {
+                  return res;
+                }
+                lastRes = res;
+              } catch (err) {
+                lastErr = err;
+              }
+            }
+            if (lastRes) return lastRes;
+            throw lastErr || new Error("Cannot reach Harness Backend API (:8765)");
+          }
+          return rawFetch(input, init);
+        };
+      })();
+    </script>
   </head>
   <body>
     <div class="dashboard-shell">
@@ -104,7 +164,11 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
 
         <!-- Right System Controls -->
         <div class="topbar-actions">
-          <div id="backend-status" class="badge live" title="Backend Server connection status (http://127.0.0.1:8765)">
+          <div id="env-status-pill" class="badge-tag" title={`ENV: BACKEND=${harnessEnv.PUBLIC_HARNESS_BACKEND} | FLOCI=${harnessEnv.PUBLIC_FLOCI_ENDPOINT} | MODEL=${harnessEnv.PUBLIC_HARNESS_MODEL}`}>
+            ENV: <strong id="env-backend-label">{harnessEnv.PUBLIC_HARNESS_BACKEND}</strong> • <span id="env-model-label">{harnessEnv.PUBLIC_HARNESS_MODEL}</span>
+          </div>
+
+          <div id="backend-status" class="badge live" title={`Backend Server connection status (${harnessEnv.PUBLIC_API_BASE_URL})`}>
             <span class="pulse-dot"></span>
             <span id="st-text">Connecting (:8765)...</span>
           </div>
@@ -127,14 +191,16 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
         <div class="footer-left">
           <span>PASEO SLPC HARNESS</span>
           <span class="dot-separator">•</span>
-          <span>TARGET BACKEND: <code class="mono-code">127.0.0.1:8765</code></span>
+          <span>API: <code class="mono-code" id="footer-api-url">{harnessEnv.PUBLIC_API_BASE_URL}</code></span>
           <span class="dot-separator">•</span>
-          <span>DEV PORT: <code class="mono-code">4321</code></span>
+          <span>FLOCI: <code class="mono-code" id="footer-floci-url">{harnessEnv.PUBLIC_FLOCI_ENDPOINT}</code></span>
+          <span class="dot-separator">•</span>
+          <span>BUCKET: <code class="mono-code" id="footer-s3-bucket">{harnessEnv.PUBLIC_FLOCI_S3_BUCKET}</code></span>
         </div>
         <div class="footer-right">
           <span id="footer-last-sync">Chưa đồng bộ</span>
           <span class="dot-separator">•</span>
-          <span class="badge-tag">Astro 5 Static</span>
+          <span class="badge-tag">Astro 5 Static (.env Connected)</span>
         </div>
       </footer>
     </div>
@@ -280,14 +346,36 @@ const { title = "Paseo Control Center", activeTab = "work-items" } = Astro.props
         }
       }
 
+      async function syncBackendEnv() {
+        try {
+          const res = await fetch('/api/env?t=' + Date.now());
+          if (!res.ok) return;
+          const envData = await res.json();
+          const elBackend = document.getElementById('env-backend-label');
+          const elModel = document.getElementById('env-model-label');
+          const elApi = document.getElementById('footer-api-url');
+          const elFloci = document.getElementById('footer-floci-url');
+          const elBucket = document.getElementById('footer-s3-bucket');
+          if (elBackend && envData.HARNESS_BACKEND) elBackend.textContent = envData.HARNESS_BACKEND;
+          if (elModel && envData.HARNESS_MODEL) elModel.textContent = envData.HARNESS_MODEL;
+          if (elApi && envData.PUBLIC_API_BASE_URL) elApi.textContent = envData.PUBLIC_API_BASE_URL;
+          if (elFloci && envData.FLOCI_ENDPOINT) elFloci.textContent = envData.FLOCI_ENDPOINT;
+          if (elBucket && envData.FLOCI_S3_BUCKET) elBucket.textContent = envData.FLOCI_S3_BUCKET;
+        } catch {
+          // Ignore if /api/env not available yet
+        }
+      }
+
       function initConnection() {
         const refreshBtn = document.getElementById('btn-global-refresh');
         if (refreshBtn) {
           refreshBtn.addEventListener('click', () => {
+            syncBackendEnv();
             pollHeartbeat();
           });
         }
 
+        syncBackendEnv();
         pollHeartbeat();
         pollInterval = window.setInterval(pollHeartbeat, 3000);
       }
