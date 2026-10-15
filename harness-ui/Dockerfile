@@ -18,7 +18,7 @@ FROM nginx:1.27-alpine AS runner
 
 # Only substitute PORT and API_UPSTREAM in nginx.conf.template (preserve $uri, $host, etc.)
 ENV PORT=80 \
-    API_UPSTREAM=http://127.0.0.1:8765 \
+    API_UPSTREAM=http://100.92.98.99:8765 \
     NGINX_ENVSUBST_FILTER="^(PORT|API_UPSTREAM)$"
 
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template

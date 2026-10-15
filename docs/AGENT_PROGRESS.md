@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-15 11:05:19 +0700`
+- **Cập nhật lần cuối**: `2026-10-15 11:30:00 +0700`
 - **Agent cập nhật gần nhất**: `Paseo/Agent`
-- **Trọng tâm hiện tại**: Đặc tả UI Raw Data Mapping
+- **Trọng tâm hiện tại**: Nghiên cứu nguyên bản từ source code, backend docs và 11 board artifact
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Lead tạo task và phân rã component cho Peer Dev
+  > Lead phân rã task trên Harness DB cho Peer Dev triển khai component
 
 ---
 
@@ -50,6 +50,13 @@
 - [x] tạo Jenkinsfile tự động kéo bản build từ GitHub về chạy container
 - [x] Tạo tài liệu đặc tả nghiệp vụ & kỹ thuật docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md
 - [x] Cập nhật docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md khớp 100% UI Mockup (4-step wizard, 2-pane layout, JSON sample viewer, Data Table)
+- [x] Chạy remote_sync_docs kéo nhánh docs/base của wicx-crm-doc và đọc vault obsidian-obsidian
+- [x] tổng hợp tài liệu mới: Sprint 5 Planning (sprint-5.md), Sprint 4 Review (sprint-review.md), Ref 20 Customer Entity Data Model, cập nhật cụm UC4.01/UC4.03/UC4.04 và bộ 62 Requirement Beats (02-Product/04-Requirement-Beats/INDEX.md)
+- [x] sửa auto-detect đường dẫn wicx-crm-doc trong tools/remote_mcp_server.py
+- [x] Ghi rõ cấu trúc từng element: tab, stepper 4 bước, pane trái 7 connector, pane phải header/actions, khối 1 form + JSON viewer 1..14, khối 2 bộ lọc, khối 3 bảng 12 cột, DTOs và 6 ACs
+- [x] Đã đọc trực tiếp và tổng hợp 11 board HTML artifact (Main, SourceList, WebSource, WebSource-forms, CreateEvent, Mapping, TestRun, Review, FbSource, FbSource-recent, RawData) và cập nhật đầy đủ vào docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md
+- [x] Chạy profile_research_gen.py và kích hoạt sub-agent research chuyên sâu tổng hợp tài liệu nguyên bản (event-field-catalog.md, projection-pipeline.md, 11 board artifact HTML, API models)
+- [x] Xuất tài liệu docs/spec/research-raw-data-mapping-projection.md đối chiếu 100% Kafka topic, MinIO bucket, Schema discovery SHA-256, Field Catalog xxHash64, DDL safe engine, Hangfire backfill, frontend mfe-cdp và 11 board HTML
 
 ---
 
@@ -61,6 +68,86 @@
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #37 — `2026-10-15 11:30:00 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB cho Peer Dev triển khai component
+
+### Phiên #36 — `2026-10-15 11:29:56 +0700` | **Supervisor**
+- **Tóm tắt**: Hoàn thành nghiên cứu chuyên sâu CDP Raw Data Mapping & Event Projection
+- **Đã thực hiện**:
+  - Xuất tài liệu docs/spec/research-raw-data-mapping-projection.md đối chiếu 100% Kafka topic, MinIO bucket, Schema discovery SHA-256, Field Catalog xxHash64, DDL safe engine, Hangfire backfill, frontend mfe-cdp và 11 board HTML
+- **File đã tạo/cập nhật**: `docs/spec/research-raw-data-mapping-projection.md`, `docs/spec/raw-data-mapping-spec.md`
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB cho Peer Dev triển khai component
+
+### Phiên #35 — `2026-10-15 11:27:23 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Đợi sub-agent hoàn thành báo cáo chi tiết vào docs/spec/research-raw-data-mapping-projection.md
+
+### Phiên #34 — `2026-10-15 11:27:19 +0700` | **Supervisor**
+- **Tóm tắt**: Kích hoạt lệnh research mở rộng cho phân hệ CDP Raw Data Mapping & Event Projection UI
+- **Đã thực hiện**:
+  - Chạy profile_research_gen.py và kích hoạt sub-agent research chuyên sâu tổng hợp tài liệu nguyên bản (event-field-catalog.md, projection-pipeline.md, 11 board artifact HTML, API models)
+- **Bàn giao bước tiếp theo**: Đợi sub-agent hoàn thành báo cáo chi tiết vào docs/spec/research-raw-data-mapping-projection.md
+
+### Phiên #33 — `2026-10-15 11:27:02 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: CDP Raw Data Mapping & Event Projection Field Mapping UI
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_cdp_raw_data_mapping_even.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_cdp_raw_data_mapping_even.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_cdp_raw_data_mapping_even.md`, `tools/research/gen_brief_supervisor_cdp_raw_data_mapping_even.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_cdp_raw_data_mapping_even.md và tools/research/gen_brief_supervisor_cdp_raw_data_mapping_even.md.
+
+### Phiên #32 — `2026-10-15 11:20:35 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB và giao Peer Dev triển khai component
+
+### Phiên #31 — `2026-10-15 11:20:29 +0700` | **Supervisor**
+- **Tóm tắt**: Đặc tả toàn diện 11 board artifact Field mapping UI kết hợp Wizard 4 bước
+- **Đã thực hiện**:
+  - Đã đọc trực tiếp và tổng hợp 11 board HTML artifact (Main, SourceList, WebSource, WebSource-forms, CreateEvent, Mapping, TestRun, Review, FbSource, FbSource-recent, RawData) và cập nhật đầy đủ vào docs/spec/raw-data-mapping-spec.md và docs/spec/wicx-crm-fe/spec-raw-data-mapping.md
+- **File đã tạo/cập nhật**: `docs/spec/raw-data-mapping-spec.md`, `docs/spec/wicx-crm-fe/spec-raw-data-mapping.md`
+- **Bàn giao bước tiếp theo**: Lead phân rã task trên Harness DB và giao Peer Dev triển khai component
+
+### Phiên #30 — `2026-10-15 11:12:27 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Chờ user xác nhận hoặc chuyển giao Lead phân rã component cho Peer Dev
+
+### Phiên #29 — `2026-10-15 11:11:58 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Chờ user xác nhận hoặc chuyển giao Lead phân rã component cho Peer Dev
+
+### Phiên #28 — `2026-10-15 11:11:52 +0700` | **Supervisor**
+- **Tóm tắt**: Chi tiết hóa toàn bộ UI mockup vào docs/spec/raw-data-mapping-spec.md
+- **Đã thực hiện**:
+  - Ghi rõ cấu trúc từng element: tab, stepper 4 bước, pane trái 7 connector, pane phải header/actions, khối 1 form + JSON viewer 1..14, khối 2 bộ lọc, khối 3 bảng 12 cột, DTOs và 6 ACs
+- **File đã tạo/cập nhật**: `docs/spec/raw-data-mapping-spec.md`, `docs/spec/wicx-crm-fe/spec-raw-data-mapping.md`
+- **Bàn giao bước tiếp theo**: Chờ user xác nhận hoặc chuyển giao Lead phân rã component cho Peer Dev
+
+### Phiên #27 — `2026-10-15 11:10:41 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Triển khai các User Story của Sprint 5 (US4.07, US2.04, US1.04, US3.1/3.2, Data Model 160723-160725)
+
+### Phiên #26 — `2026-10-15 11:09:23 +0700` | **BA / Doc Sync**
+- **Tóm tắt**: Đồng bộ và kiểm tra tài liệu mới từ MCP tfs-wicx (wicx-crm-doc) & MCP obsidian (obsidian-obsidian)
+- **Đã thực hiện**:
+  - Chạy remote_sync_docs kéo nhánh docs/base của wicx-crm-doc và đọc vault obsidian-obsidian
+  - tổng hợp tài liệu mới: Sprint 5 Planning (sprint-5.md), Sprint 4 Review (sprint-review.md), Ref 20 Customer Entity Data Model, cập nhật cụm UC4.01/UC4.03/UC4.04 và bộ 62 Requirement Beats (02-Product/04-Requirement-Beats/INDEX.md)
+  - sửa auto-detect đường dẫn wicx-crm-doc trong tools/remote_mcp_server.py
+- **File đã tạo/cập nhật**: `tools/remote_mcp_server.py`
+- **Bàn giao bước tiếp theo**: Triển khai các User Story của Sprint 5 (US4.07, US2.04, US1.04, US3.1/3.2, Data Model 160723-160725)
 
 ### Phiên #25 — `2026-10-15 11:05:19 +0700` | **Paseo/Agent**
 - **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
