@@ -2531,33 +2531,39 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         if url_path == "/api/work-items/update":
             try:
                 target_id = int(body["id"])
+                target_state = body.get("state")
+                res = None
+                now_iso = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 try:
                     mgr = HarnessManager()
-                    res = mgr.update_state(
-                        item_id=target_id,
-                        target_state=body["state"],
-                        assigned_to=body.get("assigned_to"),
-                        assigned_to_profile=body.get("assigned_to_profile"),
-                    )
-                    if body.get("description") is not None or body.get("acceptance_criteria") is not None:
-                        if body.get("description") is not None:
-                            res["description"] = body["description"]
-                        if body.get("acceptance_criteria") is not None:
-                            res["acceptance_criteria"] = body["acceptance_criteria"]
-                        try:
-                            FlociHarnessDB().put_work_item(res)
-                        except Exception:
-                            pass
-                    get_cached_rows(force=True)
-                except Exception as ddb_err:
-                    if isinstance(ddb_err, ValueError):
-                        raise
-                    rows, _ = get_cached_rows()
+                    existing = mgr.get_work_item(target_id)
+                    if existing:
+                        res = mgr.update_state(
+                            item_id=target_id,
+                            target_state=target_state or existing.get("state", "New"),
+                            assigned_to=body.get("assigned_to"),
+                            assigned_to_profile=body.get("assigned_to_profile"),
+                        )
+                        if body.get("description") is not None or body.get("acceptance_criteria") is not None:
+                            full_item = mgr.get_work_item(target_id) or dict(existing)
+                            full_item["state"] = target_state or full_item.get("state", "New")
+                            if body.get("description") is not None:
+                                full_item["description"] = body["description"]
+                            if body.get("acceptance_criteria") is not None:
+                                full_item["acceptance_criteria"] = body["acceptance_criteria"]
+                            full_item["updated_at"] = now_iso
+                            FlociHarnessDB().put_work_item(full_item)
+                            res = full_item
+                        get_cached_rows(force=True)
+                except Exception:
                     res = None
-                    now_iso = datetime.now().isoformat()
+
+                if not res:
+                    rows, _ = get_cached_rows()
                     for r in rows:
                         if int(r.get("id") or 0) == target_id:
-                            r["state"] = body["state"]
+                            if target_state:
+                                r["state"] = target_state
                             if body.get("assigned_to") is not None:
                                 r["assigned_to"] = body["assigned_to"]
                             if body.get("assigned_to_profile") is not None:
@@ -2568,11 +2574,16 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                                 r["acceptance_criteria"] = body["acceptance_criteria"]
                             r["updated_at"] = now_iso
                             res = r
+                            try:
+                                FlociHarnessDB().put_work_item(dict(r))
+                            except Exception:
+                                pass
                             break
                     if not res:
                         raise ValueError(f"Work item #{target_id} not found")
                     with _LOCK:
                         save_local_cache(rows)
+                    get_cached_rows(force=True)
                 self._send_json(res)
             except Exception as e:
                 self._send_json({"error": str(e)}, status=400)

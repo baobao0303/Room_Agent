@@ -35,58 +35,14 @@ from tools.floci_client import FlociHarnessDB
 DEFAULT_DB_PATH = os.getenv("HARNESS_DB", os.path.join(BASE_DIR, "harness.db"))
 HARNESS_BACKEND = os.getenv("HARNESS_BACKEND", "floci").lower()
 
+_ALL_STATES = ["New", "Accepted", "Active", "Blocked", "Resolved", "Closed", "Removed"]
+
 VALID_TRANSITIONS = {
-    "User Story": {
-        "New": ["Accepted", "Removed"],
-        "Accepted": ["Active", "Removed"],
-        "Active": ["Resolved", "Blocked", "Removed"],
-        "Blocked": ["Active"],
-        "Resolved": ["Closed", "Accepted"],
-        "Closed": [], "Removed": []
-    },
-    "Technical Story": {
-        "New": ["Accepted", "Removed"],
-        "Accepted": ["Active", "Removed"],
-        "Active": ["Resolved", "Blocked", "Removed"],
-        "Blocked": ["Active"],
-        "Resolved": ["Closed", "Accepted"],
-        "Closed": [], "Removed": []
-    },
-    "Task": {
-        "New": ["Active", "Removed"],
-        "Active": ["Resolved", "Blocked", "Removed"],
-        "Blocked": ["Active"],
-        "Resolved": ["Closed", "Active"],
-        "Closed": [], "Removed": []
-    },
-    "Bug": {
-        "New": ["Active", "Removed"],
-        "Active": ["Resolved", "Removed"],
-        "Resolved": ["Closed", "New"],
-        "Closed": [], "Removed": []
-    },
-    "Testcase": {
-        "New": ["Active", "Removed"],
-        "Active": ["Resolved", "Removed"],
-        "Resolved": ["Closed", "New"],
-        "Closed": [], "Removed": []
-    },
-    "Epic": {
-        "New": ["Accepted", "Active", "Resolved", "Closed", "Removed"],
-        "Accepted": ["Active", "Removed"],
-        "Active": ["Resolved", "Blocked", "Removed"],
-        "Blocked": ["Active"],
-        "Resolved": ["Closed", "Active"],
-        "Closed": [], "Removed": []
-    },
-    "Feature": {
-        "New": ["Accepted", "Active", "Resolved", "Closed", "Removed"],
-        "Accepted": ["Active", "Removed"],
-        "Active": ["Resolved", "Blocked", "Removed"],
-        "Blocked": ["Active"],
-        "Resolved": ["Closed", "Active"],
-        "Closed": [], "Removed": []
+    wi_type: {
+        state: list(_ALL_STATES)
+        for state in _ALL_STATES
     }
+    for wi_type in ["User Story", "Technical Story", "Task", "Bug", "Testcase", "Epic", "Feature"]
 }
 
 ALLOWED_PROFILES = [
@@ -277,6 +233,18 @@ class HarnessManager:
             conn.commit()
             return {"success": True, "id": item_id, "previous_state": current_state, "new_state": target_state, "assigned_to": assigned_to, "storage": "sqlite"}
 
+    def delete_work_item(self, item_id: int) -> Dict[str, Any]:
+        """Delete a work item by ID."""
+        if self.backend == "floci":
+            self.floci_db.delete_work_item(item_id)
+            return {"success": True, "id": item_id, "storage": "floci"}
+
+        with self._get_sqlite_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM work_item WHERE id = ?", (item_id,))
+            conn.commit()
+            return {"success": True, "id": item_id, "storage": "sqlite"}
+
     def list_work_items(self, wi_type: Optional[str] = None, state: Optional[str] = None, source: Optional[str] = None, assigned_to_profile: Optional[str] = None, parent_id: Optional[int] = None) -> List[Dict[str, Any]]:
         if self.backend == "floci":
             return self.floci_db.list_work_items(wi_type=wi_type, state=state, source=source, assigned_to_profile=assigned_to_profile, parent_item_id=parent_id)
@@ -361,6 +329,10 @@ def main():
     p_get = subparsers.add_parser("get", help="Get a single work item by ID")
     p_get.add_argument("id", type=int, help="Work item ID")
 
+    # Subcommand: delete
+    p_del = subparsers.add_parser("delete", help="Delete a work item by ID")
+    p_del.add_argument("--id", type=int, required=True, help="Work item ID to delete")
+
     # Subcommand: stats
     subparsers.add_parser("stats", help="Get work item statistics")
 
@@ -416,6 +388,9 @@ def main():
                 print(f"Error: Work item #{args.id} not found.", file=sys.stderr)
                 sys.exit(1)
             print(json.dumps(item, indent=2, ensure_ascii=False))
+        elif args.command == "delete":
+            res = mgr.delete_work_item(args.id)
+            print(json.dumps(res, indent=2, ensure_ascii=False))
         elif args.command == "stats":
             stats = mgr.get_stats()
             print(json.dumps(stats, indent=2, ensure_ascii=False))
