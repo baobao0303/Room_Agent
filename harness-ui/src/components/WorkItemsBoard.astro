@@ -13,13 +13,27 @@
       <input
         type="search"
         id="wi-search"
-        placeholder="Tìm theo ID, tiêu đề, người phụ trách, vai trò, nguồn..."
+        placeholder="Tìm theo ID, loại (Bug/Task...), tiêu đề, người phụ trách, nguồn..."
         autocomplete="off"
         aria-label="Tìm kiếm công việc"
       />
     </div>
 
     <div class="filter-controls" id="wi-filter-controls">
+      <!-- Type Filter (Bug / Task / User Story / Testcase...) -->
+      <select id="wi-filter-type" aria-label="Lọc theo loại công việc">
+        <option value="">Tất cả loại (Type)</option>
+        <option value="Bug">🐞 Bug (Lỗi)</option>
+        <option value="Task">📋 Task (Nhiệm vụ)</option>
+        <option value="User Story">📘 User Story</option>
+        <option value="Testcase">🧪 Testcase (Kiểm thử)</option>
+        <option value="Technical Story">⚙️ Technical Story</option>
+        <option value="Feature">🚀 Feature</option>
+        <option value="Epic">🏛️ Epic</option>
+        <option value="Test Suite">📦 Test Suite</option>
+        <option value="Test Plan">🗺️ Test Plan</option>
+      </select>
+
       <!-- Status Filter -->
       <select id="wi-filter-status" aria-label="Lọc theo trạng thái">
         <option value="">Tất cả trạng thái</option>
@@ -36,7 +50,7 @@
       <select id="wi-filter-role" aria-label="Lọc theo vai trò SLPC">
         <option value="">Tất cả vai trò SLPC</option>
         <option value="supervisor">Supervisor (Scope Guard)</option>
-        <option value="lead">Lead (Architect & PM)</option>
+        <option value="lead">Lead (Architect &amp; PM)</option>
         <option value="peer">Peer (Dev Executor)</option>
         <option value="qc">QC (Test Architect)</option>
       </select>
@@ -53,7 +67,7 @@
       <!-- Source Filter -->
       <select id="wi-filter-source" aria-label="Lọc theo nguồn">
         <option value="">Tất cả nguồn</option>
-        <option value="local">Local Harness</option>
+        <option value="local">Local Harness (local/bot)</option>
         <option value="tfs">TFS Enterprise</option>
       </select>
 
@@ -82,11 +96,20 @@
     </div>
   </div>
 
-  <!-- Board Meta & Counter -->
+  <!-- Board Meta, Quick Type Chips & Counter -->
   <div class="board-meta-strip">
-    <div class="count-indicator">
-      Hiển thị: <strong id="wi-count-display">0 / 0 mục</strong>
-      <span id="wi-filter-active-tag" class="filter-active-pill" style="display: none;">Đang lọc</span>
+    <div class="meta-left-group">
+      <div class="count-indicator">
+        Hiển thị: <strong id="wi-count-display">0 / 0 mục</strong>
+        <span id="wi-filter-active-tag" class="filter-active-pill" style="display: none;">Đang lọc</span>
+      </div>
+      <div class="quick-type-chips" id="wi-quick-type-chips">
+        <button type="button" class="qtype-chip active" data-qtype="">Tất cả</button>
+        <button type="button" class="qtype-chip qtype-bug" data-qtype="Bug">🐞 Bug <span id="cnt-type-bug"></span></button>
+        <button type="button" class="qtype-chip" data-qtype="Task">📋 Task <span id="cnt-type-task"></span></button>
+        <button type="button" class="qtype-chip" data-qtype="User Story">📘 Story <span id="cnt-type-story"></span></button>
+        <button type="button" class="qtype-chip" data-qtype="Testcase">🧪 Testcase <span id="cnt-type-tc"></span></button>
+      </div>
     </div>
     <div class="quick-status-legend">
       <span class="legend-item"><span class="legend-dot st-New"></span>New</span>
@@ -433,6 +456,7 @@
     if (!tbody) return;
 
     const searchInput = document.getElementById('wi-search') as HTMLInputElement | null;
+    const filterType = document.getElementById('wi-filter-type') as HTMLSelectElement | null;
     const filterStatus = document.getElementById('wi-filter-status') as HTMLSelectElement | null;
     const filterRole = document.getElementById('wi-filter-role') as HTMLSelectElement | null;
     const filterPrio = document.getElementById('wi-filter-prio') as HTMLSelectElement | null;
@@ -440,30 +464,64 @@
     const filterSprint = document.getElementById('wi-filter-sprint') as HTMLSelectElement | null;
 
     const q = (searchInput?.value || '').trim().toLowerCase();
+    const typeVal = (filterType?.value || '').trim();
     const stVal = filterStatus?.value || '';
     const roleVal = (filterRole?.value || '').toLowerCase();
     const prioVal = filterPrio?.value || '';
     const srcVal = (filterSource?.value || '').toLowerCase();
     const sprintVal = filterSprint?.value || '';
 
-    const isFiltered = Boolean(q || stVal || roleVal || prioVal || srcVal || sprintVal);
+    // Update quick-type chip active state and counts
+    const bugCount = allWorkItems.filter((x) => (x.type || '').toLowerCase() === 'bug').length;
+    const taskCount = allWorkItems.filter((x) => (x.type || 'Task').toLowerCase() === 'task').length;
+    const storyCount = allWorkItems.filter((x) => (x.type || '').toLowerCase() === 'user story').length;
+    const tcCount = allWorkItems.filter((x) => (x.type || '').toLowerCase() === 'testcase').length;
+
+    const elCntBug = document.getElementById('cnt-type-bug');
+    const elCntTask = document.getElementById('cnt-type-task');
+    const elCntStory = document.getElementById('cnt-type-story');
+    const elCntTc = document.getElementById('cnt-type-tc');
+    if (elCntBug) elCntBug.textContent = `(${bugCount})`;
+    if (elCntTask) elCntTask.textContent = `(${taskCount})`;
+    if (elCntStory) elCntStory.textContent = `(${storyCount})`;
+    if (elCntTc) elCntTc.textContent = `(${tcCount})`;
+
+    document.querySelectorAll<HTMLButtonElement>('#wi-quick-type-chips .qtype-chip').forEach((chip) => {
+      const chipType = chip.dataset.qtype || '';
+      if (chipType === typeVal) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+
+    const isFiltered = Boolean(q || typeVal || stVal || roleVal || prioVal || srcVal || sprintVal);
     if (filterActiveTag) {
       filterActiveTag.style.display = isFiltered ? 'inline-block' : 'none';
     }
 
     // Filter items
     let filtered = allWorkItems.filter((item) => {
-      // Search text across ID, title, description, assignee, role, source
+      // Search text across ID, type, title, description, assignee, role, source
       if (q) {
-        const hay = `${item.id} ${item.title || ''} ${item.description || ''} ${item.assigned_to || ''} ${item.assigned_to_profile || ''} ${item.source || ''}`.toLowerCase();
+        const hay = `${item.id} ${item.type || 'Task'} ${item.title || ''} ${item.description || ''} ${item.assigned_to || ''} ${item.assigned_to_profile || ''} ${item.source || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
+      }
+
+      // Type (Bug, Task, User Story, Testcase, etc.)
+      if (typeVal) {
+        const itemType = (item.type || 'Task').toLowerCase();
+        if (itemType !== typeVal.toLowerCase()) return false;
       }
 
       // Status
       if (stVal && (item.state || 'New') !== stVal) return false;
 
-      // Role
-      if (roleVal && (item.assigned_to_profile || '').toLowerCase() !== roleVal) return false;
+      // Role (default null/empty to 'peer' just like the table renderer does)
+      if (roleVal) {
+        const itemRole = (item.assigned_to_profile || 'peer').toLowerCase();
+        if (!itemRole.includes(roleVal)) return false;
+      }
 
       // Priority
       if (prioVal) {
@@ -474,10 +532,14 @@
         if (prioVal === '4-Low' && norm.code !== 'P3') return false;
       }
 
-      // Source
+      // Source ('local' matches local/bot/floci; 'tfs' matches tfs)
       if (srcVal) {
         const itemSrc = (item.source || 'local').toLowerCase();
-        if (itemSrc !== srcVal) return false;
+        if (srcVal === 'local') {
+          if (itemSrc === 'tfs') return false;
+        } else if (itemSrc !== srcVal) {
+          return false;
+        }
       }
 
       // Sprint
@@ -534,12 +596,13 @@
       const assigneeLabel = hasDistinctAssignee ? escHtml(rawAssignee) : 'Tự động';
       const sprintLeaf = (item.iteration_path || '').split('\\').pop() || 'Paseo';
       const action = getNextActionLabel(state);
+      const itemTypeStr = item.type || 'Task';
 
       return `
         <tr class="wi-row" data-id="${item.id}">
           <td class="col-id"><span class="wi-id-badge">#${item.id}</span></td>
           <td class="col-source"><span class="src-tag src-${escHtml(src)}">${escHtml(src)}</span></td>
-          <td class="col-type"><span class="type-tag type-${escHtml(item.type || 'Task')}">${escHtml(item.type || 'Task')}</span></td>
+          <td class="col-type"><span class="type-tag type-${escHtml(itemTypeStr)} clickable-type-tag" data-type="${escHtml(itemTypeStr)}" title="Click để lọc riêng ${escHtml(itemTypeStr)}">${escHtml(itemTypeStr)}</span></td>
           <td class="col-prio"><span class="prio-tag prio-${prio.code}">${prio.label}</span></td>
           <td class="col-title" title="${escHtml(item.title)}">
             <div class="title-cell-text">${escHtml(item.title)}</div>
@@ -585,6 +648,19 @@
     });
 
     tbody.innerHTML = rows.join('');
+
+    // Clickable type badge on table row -> filter by that type
+    tbody.querySelectorAll<HTMLElement>('.clickable-type-tag').forEach((tag) => {
+      tag.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const t = tag.dataset.type || '';
+        const filterTypeEl = document.getElementById('wi-filter-type') as HTMLSelectElement | null;
+        if (filterTypeEl) {
+          filterTypeEl.value = filterTypeEl.value === t ? '' : t;
+          renderTable();
+        }
+      });
+    });
 
     // Attach row events
     tbody.querySelectorAll<HTMLTableRowElement>('.wi-row').forEach((tr) => {
@@ -863,14 +939,26 @@
     searchInput?.addEventListener('input', renderTable);
 
     // Dropdown filters
-    ['wi-filter-status', 'wi-filter-role', 'wi-filter-prio', 'wi-filter-source', 'wi-filter-sprint'].forEach((id) => {
+    ['wi-filter-type', 'wi-filter-status', 'wi-filter-role', 'wi-filter-prio', 'wi-filter-source', 'wi-filter-sprint'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', renderTable);
+    });
+
+    // Quick Type Chip buttons (All / Bug / Task / Story / Testcase)
+    document.querySelectorAll<HTMLButtonElement>('#wi-quick-type-chips .qtype-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const qtype = btn.dataset.qtype || '';
+        const filterType = document.getElementById('wi-filter-type') as HTMLSelectElement | null;
+        if (filterType) {
+          filterType.value = qtype;
+          renderTable();
+        }
+      });
     });
 
     // Reset button
     document.getElementById('btn-wi-reset')?.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
-      ['wi-filter-status', 'wi-filter-role', 'wi-filter-prio', 'wi-filter-source', 'wi-filter-sprint'].forEach((id) => {
+      ['wi-filter-type', 'wi-filter-status', 'wi-filter-role', 'wi-filter-prio', 'wi-filter-source', 'wi-filter-sprint'].forEach((id) => {
         const el = document.getElementById(id) as HTMLSelectElement | null;
         if (el) el.value = '';
       });
@@ -1218,10 +1306,68 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
     font-size: 12px;
     font-family: var(--font-mono);
     color: var(--text-muted, #8b949e);
     padding: 4px 2px;
+  }
+
+  .meta-left-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .quick-type-chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .qtype-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--code-bg, #161b22);
+    border: 1px solid var(--border-color, #30363d);
+    color: var(--text-muted, #8b949e);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+
+  .qtype-chip:hover {
+    border-color: var(--accent-green, #39d353);
+    color: var(--text-primary, #e6edf3);
+  }
+
+  .qtype-chip.active {
+    background: rgba(57, 211, 83, 0.16);
+    border-color: var(--accent-green, #39d353);
+    color: var(--accent-green, #39d353);
+    font-weight: 700;
+  }
+
+  .qtype-chip.qtype-bug.active {
+    background: rgba(248, 81, 73, 0.18);
+    border-color: #f85149;
+    color: #ff7b72;
+  }
+
+  .clickable-type-tag {
+    cursor: pointer;
+    transition: transform 120ms ease, filter 120ms ease;
+  }
+
+  .clickable-type-tag:hover {
+    filter: brightness(1.25);
   }
 
   .board-meta-strip strong {
