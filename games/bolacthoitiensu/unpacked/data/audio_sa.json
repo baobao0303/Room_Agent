@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "source_file": "sa",
+    "file_size": 26616,
+    "unparsed_bytes": 0,
+    "tracks_count": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "name": "Title Screen / Main Menu",
+      "offset": 0,
+      "length": 8014,
+      "filename": "track_00.mid",
+      "format_signature": "MThd"
+    },
+    {
+      "track_id": 1,
+      "name": "Peaceful Tribe Building & Day Gameplay",
+      "offset": 8014,
+      "length": 6315,
+      "filename": "track_01.mid",
+      "format_signature": "MThd"
+    },
+    {
+      "track_id": 2,
+      "name": "Exploration & Wilderness",
+      "offset": 14329,
+      "length": 5648,
+      "filename": "track_02.mid",
+      "format_signature": "MThd"
+    },
+    {
+      "track_id": 3,
+      "name": "Combat & Beast Attack",
+      "offset": 19977,
+      "length": 3405,
+      "filename": "track_03.mid",
+      "format_signature": "MThd"
+    },
+    {
+      "track_id": 4,
+      "name": "Victory & Quest Completion",
+      "offset": 23382,
+      "length": 3234,
+      "filename": "track_04.mid",
+      "format_signature": "MThd"
+    }
+  ]
+}

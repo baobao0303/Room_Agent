@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bộ Lạc Thời Tiền Sử (Prehistoric Tribes) - HTML5 Remake</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- TOP HUD BAR: RESOURCES & STATS -->
+        <header id="hud-top">
+            <div class="hud-brand">
+                <span class="tribe-title">BỘ LẠC TIỀN SỬ</span>
+                <span class="game-version">v0.1.28</span>
+            </div>
+
+            <div class="resource-group">
+                <div class="res-badge" id="res-food-badge" title="Thực phẩm">
+                    <span class="res-icon icon-food">🍖</span>
+                    <span class="res-label">Thực phẩm:</span>
+                    <span class="res-val" id="res-food">200</span>
+                </div>
+                <div class="res-badge" id="res-wood-badge" title="Gỗ">
+                    <span class="res-icon icon-wood">🪵</span>
+                    <span class="res-label">Gỗ:</span>
+                    <span class="res-val" id="res-wood">150</span>
+                </div>
+                <div class="res-badge" id="res-stone-badge" title="Đá">
+                    <span class="res-icon icon-stone">🪨</span>
+                    <span class="res-label">Đá:</span>
+                    <span class="res-val" id="res-stone">80</span>
+                </div>
+                <div class="res-badge" id="res-bone-badge" title="Xương thú">
+                    <span class="res-icon icon-bone">🦴</span>
+                    <span class="res-label">Xương:</span>
+                    <span class="res-val" id="res-bone">40</span>
+                </div>
+                <div class="res-badge" id="res-score-badge" title="Điểm bộ lạc">
+                    <span class="res-icon icon-score">⭐</span>
+                    <span class="res-label">Điểm:</span>
+                    <span class="res-val" id="res-score">100</span>
+                </div>
+                <div class="res-badge" id="res-pop-badge" title="Dân số bộ lạc">
+                    <span class="res-icon icon-pop">👥</span>
+                    <span class="res-label">Dân làng:</span>
+                    <span class="res-val" id="res-pop">6/12</span>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button id="btn-quest-log" class="hud-btn" title="Xem nhiệm vụ hiện tại">📜 Nhiệm vụ</button>
+                <button id="btn-save" class="hud-btn" title="Lưu tiến trình vào LocalStorage">💾 Lưu</button>
+                <button id="btn-load" class="hud-btn" title="Tải lại tiến trình đã lưu">📂 Tải</button>
+                <button id="btn-sound" class="hud-btn" title="Bật/Tắt âm thanh">🔊 Âm thanh</button>
+            </div>
+        </header>
+
+        <!-- MAIN VIEWPORT & CANVAS -->
+        <main id="viewport-wrapper">
+            <canvas id="gameCanvas" width="960" height="640"></canvas>
+
+            <!-- PLACEMENT HUD OVERLAY -->
+            <div id="placement-overlay" class="hidden">
+                <div class="placement-banner">
+                    <span>Đang đặt công trình: </span>
+                    <strong id="placement-building-name">Lều</strong>
+                    <span class="placement-hint"> (Nhấn chuột để đặt, ESC để hủy)</span>
+                    <button id="btn-cancel-placement" class="btn-small">Hủy</button>
+                </div>
+            </div>
+
+            <!-- NOTIFICATION TOAST -->
+            <div id="toast-container"></div>
+        </main>
+
+        <!-- BOTTOM HUD DOCK: BUILDINGS & INSPECTOR -->
+        <footer id="hud-bottom">
+            <!-- BUILD MENU PANEL -->
+            <div id="build-panel" class="hud-section">
+                <div class="section-header">
+                    <span class="section-title">🏛️ XÂY DỰNG CÔNG TRÌNH</span>
+                    <span class="section-sub">Chọn công trình để đặt vào bản đồ</span>
+                </div>
+                <div id="build-catalog" class="build-grid">
+                    <!-- Populated dynamically by building.js -->
+                </div>
+            </div>
+
+            <!-- ENTITY INSPECTOR PANEL -->
+            <div id="inspector-panel" class="hud-section">
+                <div class="section-header">
+                    <span class="section-title">🔍 THÔNG TIN ĐƠN VỊ</span>
+                    <span id="inspector-target-type" class="section-sub">Chưa chọn đơn vị nào</span>
+                </div>
+                <div id="inspector-content" class="inspector-body">
+                    <div class="empty-state">Nhấn vào dân làng hoặc công trình trên bản đồ để xem chi tiết và giao nhiệm vụ.</div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- QUEST & DIALOGUE MODAL OVERLAY -->
+        <div id="dialogue-modal" class="modal-overlay hidden">
+            <div class="dialogue-box">
+                <div class="dialogue-portrait-wrapper">
+                    <img id="dialogue-portrait" src="sprites/pi9_00.png" alt="Chân dung nhân vật">
+                    <div id="dialogue-speaker-name" class="speaker-name">Tù trưởng NK2KLove</div>
+                </div>
+                <div class="dialogue-content-wrapper">
+                    <div class="dialogue-badge">Kịch bản Bộ Lạc Tiền Sử</div>
+                    <p id="dialogue-text" class="dialogue-message">...</p>
+                    <div class="dialogue-actions">
+                        <button id="btn-dialogue-prev" class="dialogue-btn secondary">Quay lại</button>
+                        <button id="btn-dialogue-next" class="dialogue-btn primary">Tiếp tục ▸</button>
+                        <button id="btn-dialogue-close" class="dialogue-btn close">Đóng ✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUEST OBJECTIVES MODAL -->
+        <div id="quest-log-modal" class="modal-overlay hidden">
+            <div class="quest-log-box">
+                <div class="modal-header">
+                    <h2>📜 BẢNG NHIỆM VỤ CHIẾN DỊCH</h2>
+                    <button id="btn-quest-log-close" class="modal-close-btn">✕</button>
+                </div>
+                <div class="quest-log-body">
+                    <div class="quest-chapter" id="quest-chapter-title">Màn 1: Tan Băng (Thaw)</div>
+                    <p id="quest-objective-desc">Mùa đông băng giá đã chấm dứt! Hãy xây dựng Lều của Tù trưởng, dựng Lều cho dân làng và cử thợ đi đốn củi, thu hoạch thực phẩm để chuẩn bị cho kỷ nguyên mới.</p>
+                    <ul id="quest-tasks-list" class="quest-checklist">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-close-quest-log" class="dialogue-btn primary">Đồng ý</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
