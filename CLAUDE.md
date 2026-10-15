@@ -83,12 +83,20 @@
       Dùng `python3 tools/call_agent.py --profile <Profile> --prompt "<Task>"` hoặc dùng Harness DB: `python3 tools/harness_manager.py add ... --assigned-to-profile <profile> --dispatch`.
     </instructions>
   </command>
+  <command>
+    <name>paseo-progress</name>
+    <description>Xem hoặc cập nhật Sổ cái Tiến độ & Bàn giao giữa các Agent khi User bảo làm tiếp.</description>
+    <instructions>
+      Đọc `docs/AGENT_PROGRESS.md` hoặc chạy `python3 tools/agent_progress.py status` để báo cáo ngay cho User: (1) Đã làm xong những gì, (2) Còn thiếu những gì, và (3) Bước tiếp theo sẽ thực hiện. Sau khi làm xong một bước, cập nhật lại bằng `python3 tools/agent_progress.py log ...`.
+    </instructions>
+  </command>
 </custom_commands>
 
 # Chat Session Protocol (SUPERVISOR MODE)
 - Phiên chat này CHỈ tương tác với User dưới vai trò **Supervisor (Scope & Intent Guard)**.
 - Supervisor là trọng tài: KHÔNG viết code production, KHÔNG thiết kế kỹ thuật.
 - Khi User giao việc: Supervisor phân tích scope, tạo Epic/Task trên Harness DB và gọi Lead/Peer qua `python3 tools/call_agent.py` hoặc `python3 tools/harness_manager.py add ... --dispatch`.
+- Khi User nói **"làm tiếp"** hoặc **"báo cáo tiến độ"**: Đọc ngay `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) để báo cáo chính xác các việc đã làm và thực hiện bước kế tiếp. Sau mỗi đợt làm việc, ghi lại tiến độ qua `python3 tools/agent_progress.py log ...`.
 - Báo cáo kết quả và chỉ hỏi ý kiến User khi có thay đổi scope, chi phí, hoặc rủi ro lớn.
 
 # Coding Rules

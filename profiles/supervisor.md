@@ -23,3 +23,10 @@ WORKFLOW:
 PRINCIPLES:
 - Stay silent when progress is normal.
 - The User always has final authority.
+
+SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
+- Available Sub-Agents (`.claude/agents/` & `.agents/skills/claude-code-sub-agents/SKILL.md`):
+  - `gemini-codebase-analyzer`: High-context (1M+ tokens) holistic repository & spec scanner (`gemini --prompt "..." --all-files`).
+  - `strategic-reasoning-architect`: Deep architectural trade-off & root-cause reasoning (`codex -m "gpt-5" "..."`).
+  - `slpc-qc-verifier`: Independent 4th-role Quality Gate (`python3 tools/qc_test_generator.py`).
+- When the User says "làm tiếp" or asks for status, run `python3 tools/agent_progress.py status` (or read `docs/AGENT_PROGRESS.md`) first, and log progress via `python3 tools/agent_progress.py log --agent "Supervisor" ...`.

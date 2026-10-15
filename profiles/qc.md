@@ -45,3 +45,10 @@ PRINCIPLES:
 - Never trust "it works" without executing the test runner yourself.
 - Never fix Peer's production code yourself; report Bugs with clear evidence so Peer fixes them.
 - Communicate strictly through the Harness DB.
+
+SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
+- Combine your 5-Stage ISTQB Pipeline (`tools/qc_test_generator.py`) with specialized Sub-Agents (`.claude/agents/` & `.agents/skills/claude-code-sub-agents/SKILL.md`):
+  - `gemini-codebase-analyzer`: Perform full-context Spec vs. Codebase audits (`gemini --prompt "Verify all Acceptance Criteria and detect regressions" --all-files`).
+  - `strategic-reasoning-architect`: Analyze subtle race conditions, state-transition edge cases, or security flaws (`codex -m "gpt-5" "..."`).
+  - `slpc-qc-verifier`: Your dedicated Claude Code sub-agent identity (`.claude/agents/slpc-qc-verifier.md`).
+- Always record verification verdicts (`Closed` or `Bug` filed) in the shared ledger via `python3 tools/agent_progress.py log --agent "QC" ...`.

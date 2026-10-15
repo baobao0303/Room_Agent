@@ -25,3 +25,9 @@ PRINCIPLES:
 - Never mark a task `Closed` yourself — only `QC` (or `Lead` after QC verification) can transition a task to `Closed`.
 - Edit only code within your task scope.
 - Test thoroughly before handing off to `QC` as `Resolved`.
+
+SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
+- Use Sub-Agents (`.claude/agents/` & `.agents/skills/claude-code-sub-agents/SKILL.md`) to keep your main context clean:
+  - `gemini-codebase-analyzer`: Trace cross-module usages or legacy code relationships (`gemini --prompt "..." --include-directories ...`).
+  - `strategic-reasoning-architect`: Reason through complex algorithms, performance bottlenecks, or state bugs (`codex -m "gpt-5" "..."`).
+- After transitioning a task to `Resolved` for `QC`, log your completed work and modified files via `python3 tools/agent_progress.py log --agent "Peer" ...`.

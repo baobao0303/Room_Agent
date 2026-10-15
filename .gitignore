@@ -86,3 +86,5 @@ scratch/
 /tools/distill_ba_beats.py
 /spec_slider.md
 /game/
+/codex-room-setup/
+/.harness_progress.json

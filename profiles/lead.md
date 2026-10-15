@@ -28,3 +28,10 @@ TECHNICAL PRINCIPLES:
 - Follow the rules: https://github.com/baobao0303/cursor_rule_angular2026
 - One task, one owner. Never assign two Peers to edit the same file concurrently.
 - Do not decide business scope or data deletion on the User's behalf.
+
+SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
+- Leverage specialized Sub-Agents (`.claude/agents/` & `.agents/skills/claude-code-sub-agents/SKILL.md`) before breaking down tasks or resolving architectural disputes:
+  - `gemini-codebase-analyzer`: Scan the full monorepo (`gemini --prompt "..." --all-files`) to map cross-file dependencies and impact boundaries.
+  - `strategic-reasoning-architect`: Evaluate architectural trade-offs, system design, and root-cause analysis (`codex -m "gpt-5" "..."`).
+  - `slpc-qc-verifier`: Coordinate with the 4th role (`QC`) to generate 5-Stage ISTQB unit tests (`tools/qc_test_generator.py`) and verify `Resolved` tasks.
+- Always check `python3 tools/agent_progress.py status` when resuming work and record architectural handoffs via `python3 tools/agent_progress.py log --agent "Lead" ...`.

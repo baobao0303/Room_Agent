@@ -70,6 +70,12 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
 - **`ui-lib-figma`**: Token lookup qua `ui-token-lookup.js`, chuyển đổi Figma sang Angular UI Lib.
 - **`ui-lib-usage`**: Danh mục gần 80 components UI Lib, recipes, troubleshooting.
 
+### E. Agent Progress & Handoff Ledger (`tools/agent_progress.py` & `docs/AGENT_PROGRESS.md`)
+- **Mục đích**: Nơi lưu trữ tập trung toàn bộ những gì các Agent đã làm, những hạng mục còn thiếu, và bước tiếp theo cần thực hiện để khi User yêu cầu **"làm tiếp"** / **"báo cáo tiến độ"**, bất kỳ Agent nào vào cũng nắm bắt và báo cáo được ngay.
+- **Lệnh thực thi**:
+  - Xem nhanh trạng thái để báo cáo User khi được yêu cầu *"làm tiếp"*: `python3 tools/agent_progress.py status` (hoặc đọc `docs/AGENT_PROGRESS.md`)
+  - Ghi nhận công việc sau khi hoàn thành một bước: `python3 tools/agent_progress.py log --agent "<Role>" --summary "<Tóm tắt>" --done "<Việc đã xong>" --missing "<Việc còn thiếu>" --next "<Bước kế tiếp>" --files "<File đã sửa>"`
+
 ---
 
 ## 4. Coding & Operation Rules
@@ -82,3 +88,6 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
    - Mã nguồn FE luôn trỏ về `/home/baoltb/Desktop/Paseo_Project/projects/crm-fe`.
 3. **No Raw HTML in Data**:
    - Dữ liệu bóc tách từ REMOTE hoặc nạp vào DynamoDB/Harness bắt buộc phải được làm sạch qua `clean_html()` để loại bỏ thẻ HTML.
+4. **Session Continuity & Handoff Rule**:
+   - Khi User yêu cầu *"làm tiếp"* hoặc *"báo cáo những gì đã làm"*, Agent bắt buộc đọc `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) trước tiên.
+   - Trước khi kết thúc phiên hoặc dừng chờ User, Agent bắt buộc cập nhật tiến độ vào `docs/AGENT_PROGRESS.md` qua `python3 tools/agent_progress.py log ...`.

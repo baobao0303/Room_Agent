@@ -30,7 +30,10 @@ except ImportError:
         from boto3.dynamodb.conditions import Key, Attr
         from botocore.exceptions import ClientError
     except ImportError:
-        raise RuntimeError("boto3 is required for Floci integration. Please install boto3.")
+        boto3 = None  # type: ignore
+        Key = None  # type: ignore
+        Attr = None  # type: ignore
+        ClientError = Exception  # type: ignore
 
 # Load .env configuration
 def load_env():
@@ -134,39 +137,46 @@ class FlociHarnessDB:
         self.aws_secret_access_key = aws_secret_access_key
         self.s3_bucket = s3_bucket
 
-        from botocore.config import Config
-        boto_cfg = Config(
-            connect_timeout=1.5,
-            read_timeout=10,
-            retries={"max_attempts": 1, "mode": "standard"}
-        )
+        if boto3 is not None:
+            from botocore.config import Config
+            boto_cfg = Config(
+                connect_timeout=1.5,
+                read_timeout=10,
+                retries={"max_attempts": 1, "mode": "standard"}
+            )
 
-        self.ddb_resource = boto3.resource(
-            "dynamodb",
-            endpoint_url=self.endpoint_url,
-            region_name=self.region_name,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            config=boto_cfg
-        )
-        self.ddb_client = boto3.client(
-            "dynamodb",
-            endpoint_url=self.endpoint_url,
-            region_name=self.region_name,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            config=boto_cfg
-        )
-        self.s3_client = boto3.client(
-            "s3",
-            endpoint_url=self.endpoint_url,
-            region_name=self.region_name,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            config=boto_cfg
-        )
+            self.ddb_resource = boto3.resource(
+                "dynamodb",
+                endpoint_url=self.endpoint_url,
+                region_name=self.region_name,
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                config=boto_cfg
+            )
+            self.ddb_client = boto3.client(
+                "dynamodb",
+                endpoint_url=self.endpoint_url,
+                region_name=self.region_name,
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                config=boto_cfg
+            )
+            self.s3_client = boto3.client(
+                "s3",
+                endpoint_url=self.endpoint_url,
+                region_name=self.region_name,
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                config=boto_cfg
+            )
+        else:
+            self.ddb_resource = None
+            self.ddb_client = None
+            self.s3_client = None
 
     def _is_online(self) -> bool:
+        if boto3 is None:
+            return False
         return _check_endpoint_reachable(self.endpoint_url)
 
     def init_schema(self) -> Dict[str, Any]:
