@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Normalize repository owner & name for GHCR
         id: repo
@@ -40,7 +40,7 @@ jobs:
 
       - name: Log in to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
@@ -48,7 +48,7 @@ jobs:
 
       - name: Extract Docker metadata (tags & labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ env.GHCR_REGISTRY }}/${{ steps.repo.outputs.repo }}/${{ env.IMAGE_NAME }}
@@ -59,7 +59,7 @@ jobs:
             type=sha,prefix=sha-
 
       - name: Build and push Docker image to GHCR
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./harness-ui
           file: ./harness-ui/Dockerfile
@@ -79,7 +79,7 @@ jobs:
           tar -czf harness-ui-dist.tar.gz -C ./dist-export .
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: harness-ui-build
           path: |
@@ -89,7 +89,7 @@ jobs:
 
       - name: Publish rolling Release (harness-ui-latest) for Jenkins direct pull
         if: github.event_name != 'pull_request'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: harness-ui-latest
           name: "Harness UI Latest Build (Docker & Static)"
