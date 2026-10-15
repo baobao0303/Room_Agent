@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-15 15:09:54 +0700`
-- **Agent cập nhật gần nhất**: `Paseo/Agent`
-- **Trọng tâm hiện tại**: Task #1535: Typography tab Du lieu tho & Mapping du lieu sang tds-body-2 font-semibold icon 14px
+- **Cập nhật lần cuối**: `2026-10-15 16:00:58 +0700`
+- **Agent cập nhật gần nhất**: `Supervisor (via profile_research_gen)`
+- **Trọng tâm hiện tại**: [Supervisor] SLPC Heartbeat kiem tra tien do va trang thai agent
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Theo doi subagent Peer Dev thuc thi Task #1535 va kiem tra ket qua test
+  > QC nghiệm thu trên Harness DB
 
 ---
 
@@ -182,20 +182,1191 @@
 - [x] Tao Task #1535 tren Harness DB
 - [x] Dispatch agent Peer Dev 0235d109 qua Paseo
 - [x] Chay profile_research_gen cho Task #1535
+- [x] SLPC Heartbeat: Kiem tra paseo ls va agent_progress status
+- [x] xac nhan 3 sub-agents Peer (0235d10), QC (bbdbe9d), Peer Dev (0527405) dang chay on dinh tren Paseo daemon
+- [x] Thiết lập tài liệu đặc tả test case 5-Stage ISTQB US-customer-360-profile-testcases.md, sinh và đồng bộ 160 Testcase work items vào Harness DB cho Epic #1461, chạy 4 test suites Jest đạt 53/53 tests pass 100%
+- [x] SLPC Heartbeat: Kiểm tra trạng thái agent qua paseo ls và agent_progress status
+- [x] xác nhận 3 sub-agents Peer (0235d10), QC (bbdbe9d), Peer Dev (0527405) đang chạy bình thường
+- [x] Cập nhật typography 2 tab sang tds-body-2 font-semibold
+- [x] Cập nhật icon kích thước text-[14px]
+- [x] Mock MockRawDataMappingComponent và bổ sung 2 unit test BDD
+- [x] 25/25 unit tests pass 100%
+- [x] Đã bỏ class hover:font-semibold tại customerTpl (contact-list.component.html), cập nhật spec test contact-list.component.spec.ts và chạy pass 24/24 unit tests.
+- [x] SLPC Heartbeat: Kiểm tra trạng thái paseo ls và agent_progress status
+- [x] Xác nhận QC agent 9475b80 và Peer Dev 0527405 đang chạy trên Paseo daemon
+- [x] Tao Task #1696 tren Harness DB
+- [x] Dispatch agent Peer Dev 0392cdd3 qua Paseo
+- [x] Chay profile_research_gen cho Task #1696
+- [x] Cài đặt Customer360Store với Angular 18 Signals và mock data chuẩn spec
+- [x] Cài đặt Customer360ProfileComponent khung Dashboard 3 cột
+- [x] Cài đặt CustomerSummaryCardComponent và CustomerOrganizationsCardComponent (Cột 1)
+- [x] Cài đặt CustomerPurchaseInfoComponent Hero cam TDS và Grid 4 gói dịch vụ (Cột 2 trên)
+- [x] Cài đặt CustomerActivityHeatmapComponent ma trận 4 kênh và timeline event log (Cột 2 dưới)
+- [x] Cài đặt CustomerUpcomingAppointmentsComponent và CustomerNotesFeedComponent (Cột 3)
+- [x] Cấu hình route customers/:id và customer-360/:id trong entry.routes.ts
+- [x] Chạy 65/65 unit/integration tests customer-360 pass 100%
+- [x] Chạy 185/185 unit tests toàn mfe-cdp pass 100%
+- [x] Build thành công mfe-cdp và app-shell 0 lỗi
+- [x] Cập nhật Harness DB chuyển cả 7 tasks sang Resolved giao cho QC
+- [x] Chay 5-stage ISTQB pipeline sinh 12 testcases
+- [x] Chay suite test npx nx test mfe-cdp --testFile=raw-event-list.component.spec.ts pass 100% (25/25 tests)
+- [x] Dong 12 child testcases (1697-1708)
+- [x] Chuyen Task #1535 sang Closed ban giao Lead
+- [x] Ghi nhận QC hoàn tất nghiệm thu Task #1535 (Closed, pass 25/25 tests, đóng 12 testcases #1697-#1708)
+- [x] Giám sát Peer agent 0392cdd đang thực thi Task #1696 (tds-tabset card)
+- [x] Xác nhận 7 Tasks C360 (#1466, #1471..#1476) đã Resolved sẵn sàng cho QC nghiệm thu
+- [x] 1. Đã kết nối hàm onRowClick trong contact-list.component.ts với Router navigate tới route Customer 360 Profile (/customers/:id). 2. Đã bỏ hover:font-semibold tại cột Khách hàng tránh giật chữ khi hover. 3. 24/24 unit tests contact-list và 65/65 tests customer-360 đều pass 100%.
+- [x] 1. Peer Dev đã hoàn thành 7 Tasks Customer 360, chạy 65/65 unit tests pass 100% và chuyển state sang Resolved bàn giao QC. 2. Supervisor đã kích hoạt agent QC (01535d5) chạy kiểm thử độc lập 5-Stage ISTQB để nghiệm thu và đóng các Tasks.
+- [x] Chuyển thanh tab trên cùng (Dữ liệu thô | Mapping dữ liệu) từ button custom sang tds-tabset tdsType='card'
+- [x] Thêm getter selectedMainTabIdx và handler onMainTabChange trong raw-event-list.component.ts
+- [x] Cập nhật và verify 26 unit tests BDD pass 100%
+- [x] Sinh 18 ISTQB testcases và đồng bộ lên Harness DB
+- [x] Bàn giao task #1696 cho QC kiểm thử độc lập
+- [x] 1. QC (agent 01535d5) đã nghiệm thu độc lập 5-Stage ISTQB, kiểm tra 65/65 unit tests pass 100% và đóng Closed 7 Tasks (#1466, #1471..#1476). 2. Supervisor đã cập nhật trạng thái đóng Closed cho 4 User Stories (#1462..#1465) và Epic #1461 trên Harness DB.
+- [x] Chạy 65/65 unit tests Jest pass 100% (5 suites)
+- [x] Xác thực 100% AC-1..AC-6 theo docs/spec/customer-360-profile-spec.md
+- [x] Đóng 160 Testcase (#1536-#1695) sang Closed
+- [x] Đóng 7 Tasks (#1466, #1471, #1472, #1473, #1474, #1475, #1476) và Epic #1461 sang Closed
+- [x] Kiem tra trang thai Paseo daemon: Peer 4c69584 dang fix style tabset va QC 4cf407b dang kiem thu Task #1696
+- [x] 1. Nghiệm thu đóng hoàn toàn Epic #1461 và 11 work items Hồ sơ Khách hàng 360 (pass 65/65 tests). 2. Nghiệm thu đóng Task #1535 và Task #1696 (pass 26/26 tests raw-event-list). 3. Bỏ hover:font-semibold và kết nối Router điều hướng mở màn hình Customer 360 khi click cột khách hàng (pass 24/24 tests). 4. Toàn bộ 84 local work items trên Harness DB đã đạt trạng thái Closed.
+- [x] Chay 5-Stage ISTQB QC test generator xac nhan 100% REQ va 18/18 Coverage Items
+- [x] Chay 26/26 unit tests raw-event-list.component.spec.ts pass 100%
+- [x] Dong 18 Testcases (#1709..#1726) tren Harness DB
+- [x] Chuyen Task #1696 sang Closed va ban giao Lead
+- [x] Fix [tabBarGutter]='0' tab sat nhau
+- [x] Fix let-active mau cam E05206 font-semibold
+- [x] Them px-4 py-1.5 padding 2 ben tab
+- [x] Căn margin-bottom: -1px cho tab card sat duong vien day
+- [x] Chay pass 26/26 unit tests mfe-cdp
+- [x] Them [tabBarGutter]='0' tren tds-tabset
+- [x] ng-template let-active='active' mau cam active va xam inactive
+- [x] px-4 py-1.5 tren tab div
+- [x] -mb-px flush border day
+- [x] unit test pass 100%
+- [x] Nghiệm thu và đóng Task #1696 trên Harness DB
+- [x] 26/26 unit tests raw-event-list pass 100%
+- [x] Toàn bộ 85 local work items trên Harness DB đã Closed
+- [x] SLPC Heartbeat: Kiểm tra paseo ls và agent_progress status. Giám sát Peer f041763 & QC eec83cc đang xử lý tinh chỉnh tab raw-event-list. Toàn bộ 85 local work items trên Harness DB đang Closed.
+- [x] Chay pipeline QC 5-Stage ISTQB voi 18 coverage items dat 100% REQ va 100% CI
+- [x] Chay toan bo test suite raw-event-list.component.spec.ts pass 26/26 testcases (va 96/96 data-raw)
+- [x] Dong toan bo 18 child testcases (#1728-#1745)
+- [x] Chuyen Task #1696 sang Closed va ban giao cho Lead
+- [x] SLPC Heartbeat: Kiem tra paseo ls va agent_progress status. Agent 7c91e57 va f041763 (Peer) dang running, QC eec83cc idle. Work item #1727 dang Active (Peer xu ly layout C360).
+- [x] Ap dung [tdsSize]='small' tren tds-tabset
+- [x] Giam padding xuong px-3.5 py-1 (~32px chieu cao chuan TDS)
+- [x] Inactive tab nen xam #f8fafc vien #e2e8f0
+- [x] Active tab nen trang #ffffff vien day border-b-white xoa duong cat duoi
+- [x] Pass 26/26 unit tests
+- [x] Them [tdsSize]='small' tren tds-tabset va px-3.5 py-1 tren tab title
+- [x] Thiet lap css .top-level-card-tabs cho inactive va active border-bottom-color flush
+- [x] Cap nhat spec va chay 26/26 unit tests pass 100%
+- [x] 1. Đã tạo và giải quyết đóng Closed Bug #1727 trên Harness DB. 2. Đã bỏ thanh Top Action Bar & Breadcrumbs ở đầu trang Customer 360 Profile. 3. Đã chỉnh padding và gap của khung 3 cột dashboard về chuẩn 8px (p-2 gap-2). 4. Cập nhật Họ tên chuẩn Figma: text-[20px] leading-[28px] font-semibold kèm icon tdsi-female-fill (nữ, 20x20 tds-color-pink-400) hoặc tdsi-male-fill (nam, 20x20 tds-color-blue-400). 5. Mã khách hàng dùng icon tdsi-input-number-fill 20x20 và text tds-body-2 font-semibold tds-color-text-interactive. 6. Avatar tròn 120px kèm badge Đã định danh chồng ở dưới chân avatar chuẩn Hình 4. 7. Test suites: 67/67 tests customer-360 và 24/24 tests contact-list đều pass 100%.
+- [x] Review vi pham font-size theo DESIGN.md
+- [x] Tao Task #1746 tren Harness DB
+- [x] Dispatch Peer Dev thuc hien
+- [x] Kiểm tra tiến độ agent_progress status
+- [x] Kiểm tra trạng thái running của Paseo qua paseo ls
+- [x] Chạy agent_progress.py status kiểm tra sổ cái
+- [x] Chạy paseo ls xác định 19 agents (5 running: Peer #1746, Peer #1696, QC #1696, Heartbeat, task phụ)
+- [x] Sinh research & brief artifact cho Supervisor
+- [x] 1. Phát hiện nguyên nhân mất 3 cột: Commit trước đó đã set tdsChecked: false cho primaryEmail (Email), identityType (Loại KH) và lastActivityAt (Ngày HĐ cuối). 2. Đã sửa lại tdsChecked: true cho cả 3 cột trong tableColumns (contact-list.component.ts). 3. Cập nhật spec test và verify toàn bộ 24/24 tests contact-list pass 100%.
+- [x] Chạy agent_progress status và paseo ls xác nhận 19 agents (5 running: Peer #1746, Peer #1696, QC #1696, Heartbeat, task UI)
+- [x] Them [tabBarGutter]='4' tach roi 2 tab card co khoang ho chuan TDS
+- [x] Giam padding xuong px-2.5 py-0.5 gon gang
+- [x] Pass 23/23 unit tests
+- [x] Chuyển Stepper 4 bước ra thanh trên cùng có line nối và badge màu
+- [x] Đặt layout 2 Pane vào Bước 1
+- [x] Bổ sung sub-header định vị kênh cho Bước 2, 3, 4
+- [x] Cập nhật bộ unit test 19/19 pass
+- [x] Chuyển Bug #1534 sang Resolved bàn giao QC
+- [x] Doi [tabBarGutter]='4' tao khoang cach ro rang giua 2 tab card
+- [x] Giam padding tab title xuong px-2.5 py-0.5 cho tab gon nho
+- [x] Cap nhat spec va chay unit tests pass 23/23 100%
+- [x] Them tds-body-2 tds-color-text-primary tren top wrapper
+- [x] Chuan hoa typography font-semibold tds-caption-1 font-mono tren channel-connector-list va general-mapping-config
+- [x] Xoa 2 template html thua
+- [x] Pass 72/72 unit tests
+- [x] Chuyen Task #1746 sang Resolved va handoff cho QC
+- [x] Kiểm tra toàn diện AC Task #1696 và git diff của Peer Dev
+- [x] Thực thi test runner npx jest apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts pass 23/23 tests (100%)
+- [x] Verify đầy đủ sync query params (?tab=raw-data|mapping) và render tds-tabset card chuẩn TDS
+- [x] Chuyển trạng thái Task #1696 sang Closed trên Harness DB và bàn giao cho Lead
+- [x] Kiem tra tien do qua agent_progress status
+- [x] Kiem tra trang thai Paseo agents qua paseo ls
+- [x] Xac nhan Task #1696 da Closed hoan tat
+- [x] Task #1746 da Resolved va QC agent 641d72b dang thuc thi verify
+- [x] Executed npx jest apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts (23/23 pass)
+- [x] Verified 18 child Testcase items (1728-1745) Closed
+- [x] Verified Task #1696 Closed and handed to lead
+- [x] Xac nhan vi tri isAllTenants
+- [x] Tao Task #1819
+- [x] Dispatch Peer Dev thuc thi
+- [x] Kiem tra agent_progress status
+- [x] Kiem tra paseo ls xac dinh agents running (Peer #1819, QC #1746)
+- [x] Task #1696 da Closed
+- [x] Task #1746 Resolved dang duoc QC verify
+- [x] Task #1819 dang duoc Peer dev thuc thi
+- [x] Kiem dinh 7 Acceptance Criteria Task #1746
+- [x] Phan tich template 3 components
+- [x] Chay test suite 6 specs 96 tests pass
+- [x] Tao Bug #1972 va Reopen Task #1746 ve Active
+- [x] Cập nhật isAllTenants = true trong raw-event-list.component.ts
+- [x] Cập nhật comment aria và nhãn mặc định trong raw-event-list.component.html
+- [x] Cập nhật unit tests trong raw-event-list.component.spec.ts và chạy test pass 23/23
+- [x] Chuyển task #1819 sang Resolved và bàn giao cho QC
+- [x] Chay 5-Stage ISTQB pipeline tao 152 Testcase items tren Harness DB
+- [x] Tham dinh chi tiet 7 AC tren raw-data-mapping, channel-connector-list va general-mapping-config
+- [x] Chay 6 test suites voi 96 tests deu pass
+- [x] Phat hien 5 vi pham AC (AC 2, 3, 4, 5, 6)
+- [x] Mo Bug #1972 gan vao Task #1746
+- [x] Chuyen Task #1746 ve Active giao Peer Dev
+- [x] Kiem tra danh sach agents qua paseo ls
+- [x] Xac nhan Task #1819 Resolved dang duoc QC verify (agent bf1a47d)
+- [x] Xac nhan Task #1746 Active giao Peer xu ly Bug #1972
+- [x] Xac nhan vi tri icon va scss .tds-tabs-tab-btn
+- [x] Tao Task #1973 tren Harness DB
+- [x] Chay 5-stage ISTQB pipeline cho raw-event-list.component.ts (18 TCs)
+- [x] Chay unit test suite (23/23 tests pass 100%)
+- [x] Dong 18 child Testcases #1974-#1991
+- [x] Dong Task #1819 va ban giao lead
+- [x] Cap nhat customer-360-profile.component.ts: grid-cols-[402px_minmax(0,1fr)_380px] va w-full lg:w-[402px] lg:min-w-[402px] lg:max-w-[402px] shrink-0
+- [x] Bo sung unit test assertion kiem tra width 402px
+- [x] Pass 67/67 tests customer-360
+- [x] Cập nhật GeneralMappingConfigComponent: Bổ sung Thông tin connector (Nguồn dữ liệu, Tên connector, URL/Endpoint disabled)
+- [x] Bổ sung Alert box xanh nhạt hướng dẫn
+- [x] Chuẩn hóa tiêu đề '1. Thông tin kết nối & ánh xạ dữ liệu' và 'Xem trước dữ liệu JSON (mẫu)'
+- [x] Syntax highlighter có số dòng
+- [x] Chạy 5 test suites đạt 73/73 tests pass 100%
 
 ---
 
 ## 3. Những Mục Còn Thiếu / Đang Chờ Thực Hiện (Missing & Pending Items)
 
-- [ ] **[M1]** Push code lên GitHub để kích hoạt workflow
-- [ ] **[M2]** Không còn
-- [ ] **[M3]** Peer Dev sửa layout Stepper và scope Bước 1
-- [ ] **[M4]** QC nghiệm thu
-- [ ] **[M5]** Giám sát Lead Dev, Peer Dev và QC hoàn thành code & kiểm thử nghiệm thu.
+- [ ] **[M1]** Không còn
+- [ ] **[M2]** QC chạy verify suite nghiệm thu #1696
+- [ ] **[M3]** Đợi Peer hoàn thành task #1746 và #1696
+- [ ] **[M4]** QC nghiệm thu kết quả và testcase
+- [ ] **[M5]** QC kiểm thử độc lập và nghiệm thu Bug #1534
+- [ ] **[M6]** Peer can bo toan bo text-[10px] text-[11px]
+- [ ] **[M7]** Peer can gan dung tds-heading-5, tds-body-1, tds-body-2 vao tieu de va wizard
+- [ ] **[M8]** Peer can chuan hoa thead/tbody bang 12 cot theo TDS token
+- [ ] **[M9]** Peer Dev can bo text-[10px], text-[11px], ap dung tds-heading-5, tds-body-1, tds-body-2 va typography thead/tbody bang 12 cot theo dung TDS
+- [ ] **[M10]** Chờ QC kiểm thử độc lập
 
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #327 — `2026-10-15 16:00:48 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat kiem tra tien do va trang thai agent
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md và tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md.
+
+### Phiên #326 — `2026-10-15 16:00:30 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC nghiệm thu trên Harness DB
+
+### Phiên #325 — `2026-10-15 16:00:09 +0700` | **Peer Dev**
+- **Tóm tắt**: Đã bổ sung đầy đủ khối 'Thông tin connector (đã có sẵn)' (Nguồn dữ liệu, Tên connector, URL / Endpoint) và Hộp Alert hướng dẫn màu xanh nhạt vào Cột Trái của Bước 1 (1. Thông tin kết nối & ánh xạ dữ liệu) khớp 100% Mockup Image 2. Cột Phải hiển thị JSON mẫu kèm số dòng và highlight. Toàn bộ 5 test suites (73/73 tests) pass 100%.
+- **Đã thực hiện**:
+  - Cập nhật GeneralMappingConfigComponent: Bổ sung Thông tin connector (Nguồn dữ liệu, Tên connector, URL/Endpoint disabled)
+  - Bổ sung Alert box xanh nhạt hướng dẫn
+  - Chuẩn hóa tiêu đề '1. Thông tin kết nối & ánh xạ dữ liệu' và 'Xem trước dữ liệu JSON (mẫu)'
+  - Syntax highlighter có số dòng
+  - Chạy 5 test suites đạt 73/73 tests pass 100%
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/components/general-mapping-config/general-mapping-config.component.ts`
+- **Bàn giao bước tiếp theo**: QC nghiệm thu trên Harness DB
+
+### Phiên #324 — `2026-10-15 15:59:35 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser man Customer 360
+
+### Phiên #323 — `2026-10-15 15:59:25 +0700` | **Supervisor**
+- **Tóm tắt**: Set width cot 1 Ho so ca nhan & Doanh nghiep lien ket co dinh 402px tren Customer 360
+- **Đã thực hiện**:
+  - Cap nhat customer-360-profile.component.ts: grid-cols-[402px_minmax(0,1fr)_380px] va w-full lg:w-[402px] lg:min-w-[402px] lg:max-w-[402px] shrink-0
+  - Bo sung unit test assertion kiem tra width 402px
+  - Pass 67/67 tests customer-360
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser man Customer 360
+
+### Phiên #322 — `2026-10-15 15:58:53 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead tong hop va dong Epic/Story lien quan
+
+### Phiên #321 — `2026-10-15 15:58:49 +0700` | **QC**
+- **Tóm tắt**: Nghiem thu va dong Task #1819 ([UI/Data-Raw]: Mac dinh chon Tat ca (isAllTenants = true))
+- **Đã thực hiện**:
+  - Chay 5-stage ISTQB pipeline cho raw-event-list.component.ts (18 TCs)
+  - Chay unit test suite (23/23 tests pass 100%)
+  - Dong 18 child Testcases #1974-#1991
+  - Dong Task #1819 va ban giao lead
+- **File đã tạo/cập nhật**: `docs/spec/wicx-crm-fe/testcases/raw-event-list-task-1819.json`
+- **Bàn giao bước tiếp theo**: Lead tong hop va dong Epic/Story lien quan
+
+### Phiên #320 — `2026-10-15 15:58:30 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Kiem tra Peer Dev hoan thanh Task #1973 va review UI
+
+### Phiên #319 — `2026-10-15 15:58:20 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Kiem tra Peer Dev hoan thanh Task #1973 va review UI
+
+### Phiên #318 — `2026-10-15 15:58:15 +0700` | **Supervisor**
+- **Tóm tắt**: Tao Task #1973 bo icon top tab va chinh padding-x=0 cho .tds-tabs-tab-btn tren raw-event-list
+- **Đã thực hiện**:
+  - Xac nhan vi tri icon va scss .tds-tabs-tab-btn
+  - Tao Task #1973 tren Harness DB
+  - Dispatch Peer Dev thuc hien
+- **Bàn giao bước tiếp theo**: Kiem tra Peer Dev hoan thanh Task #1973 va review UI
+
+### Phiên #317 — `2026-10-15 15:58:10 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Work Item #1973 [Task]: [UI/Data-Raw]: Bo icon tai top tabs va chinh padding-x ve 0 cho tds-tabs-tab-btn
+Xoa icon o top tabs Du lieu tho / Mapping du lieu va set padding-left/right = 0 cho .tds-tabs-tab-btn theo yeu cau UI cua user.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_work_item_1973_task_ui_data_raw.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_work_item_1973_task_ui_data_raw.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_work_item_1973_task_ui_data_raw.md`, `tools/research/gen_brief_peer_work_item_1973_task_ui_data_raw.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_work_item_1973_task_ui_data_raw.md và tools/research/gen_brief_peer_work_item_1973_task_ui_data_raw.md.
+
+### Phiên #316 — `2026-10-15 15:57:45 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Doi QC hoan thanh verify Task #1819 va Peer Dev cap nhat typography cho Bug #1972 tren Task #1746
+
+### Phiên #315 — `2026-10-15 15:57:42 +0700` | **Supervisor**
+- **Tóm tắt**: Heartbeat check: kiem tra trang thai agent Paseo va Harness DB
+- **Đã thực hiện**:
+  - Kiem tra tien do qua agent_progress status
+  - Kiem tra danh sach agents qua paseo ls
+  - Xac nhan Task #1819 Resolved dang duoc QC verify (agent bf1a47d)
+  - Xac nhan Task #1746 Active giao Peer xu ly Bug #1972
+- **Bàn giao bước tiếp theo**: Doi QC hoan thanh verify Task #1819 va Peer Dev cap nhat typography cho Bug #1972 tren Task #1746
+
+### Phiên #314 — `2026-10-15 15:57:23 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Bo icon tab va padding-x ve 0 cho tds-tabs-tab-btn tren raw-event-list
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_bo_icon_tab_va_padding_x_.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_bo_icon_tab_va_padding_x_.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_bo_icon_tab_va_padding_x_.md`, `tools/research/gen_brief_supervisor_bo_icon_tab_va_padding_x_.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_bo_icon_tab_va_padding_x_.md và tools/research/gen_brief_supervisor_bo_icon_tab_va_padding_x_.md.
+
+### Phiên #313 — `2026-10-15 15:57:14 +0700` | **Peer Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer Dev: Bo sung day du Thong tin connector va Alert box tren cot trai GeneralMappingConfig theo mockup
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_dev_bo_sung_day_du_thong_tin_co.md
+  - Generated 5-Stage ISTQB Unit Test Suite -> projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/components/general-mapping-config/general-mapping-config.component.spec.ts
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_dev_bo_sung_day_du_thong_tin_co.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_dev_bo_sung_day_du_thong_tin_co.md`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/components/general-mapping-config/general-mapping-config.component.spec.ts`, `tools/research/gen_brief_peer_dev_bo_sung_day_du_thong_tin_co.md`
+- **Bàn giao bước tiếp theo**: Profile Peer Dev tiếp tục hoàn thiện task dựa trên tools/research/research_peer_dev_bo_sung_day_du_thong_tin_co.md và tools/research/gen_brief_peer_dev_bo_sung_day_du_thong_tin_co.md.
+
+### Phiên #312 — `2026-10-15 15:56:44 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Peer Dev sua code theo Bug #1972 va chuyen lai sang Resolved de QC tiep tuc nghiem thu
+
+### Phiên #311 — `2026-10-15 15:56:38 +0700` | **QC**
+- **Tóm tắt**: Xac minh doc lap Task #1746 theo 7 AC. Phat hien vi pham hardcode text-[10px], text-[11px] va sai typography tokens. Da tao Bug #1972 va mo lai Task #1746 ve Active cho Peer Dev.
+- **Đã thực hiện**:
+  - Chay 5-Stage ISTQB pipeline tao 152 Testcase items tren Harness DB
+  - Tham dinh chi tiet 7 AC tren raw-data-mapping, channel-connector-list va general-mapping-config
+  - Chay 6 test suites voi 96 tests deu pass
+  - Phat hien 5 vi pham AC (AC 2, 3, 4, 5, 6)
+  - Mo Bug #1972 gan vao Task #1746
+  - Chuyen Task #1746 ve Active giao Peer Dev
+- **File đã tạo/cập nhật**: `docs/spec/wicx-crm-fe/testcases/raw-data-mapping-task-1746.json`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Peer Dev sua code theo Bug #1972 va chuyen lai sang Resolved de QC tiep tuc nghiem thu
+
+### Phiên #310 — `2026-10-15 15:56:36 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC chạy verify và suite test cho Task #1819 trước khi đóng
+
+### Phiên #309 — `2026-10-15 15:56:33 +0700` | **Peer**
+- **Tóm tắt**: Hoàn thành Task #1819: Đặt mặc định isAllTenants = true tại tab Dữ liệu thô
+- **Đã thực hiện**:
+  - Cập nhật isAllTenants = true trong raw-event-list.component.ts
+  - Cập nhật comment aria và nhãn mặc định trong raw-event-list.component.html
+  - Cập nhật unit tests trong raw-event-list.component.spec.ts và chạy test pass 23/23
+  - Chuyển task #1819 sang Resolved và bàn giao cho QC
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC chạy verify và suite test cho Task #1819 trước khi đóng
+
+### Phiên #308 — `2026-10-15 15:56:26 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1819 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1819_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1819_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1819_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1819_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1819_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1819_and_run.md.
+
+### Phiên #307 — `2026-10-15 15:56:13 +0700` | **QC**
+- **Tóm tắt**: Kiem dinh Task #1746 Typography TDS tren Raw Data Mapping
+- **Đã thực hiện**:
+  - Kiem dinh 7 Acceptance Criteria Task #1746
+  - Phan tich template 3 components
+  - Chay test suite 6 specs 96 tests pass
+  - Tao Bug #1972 va Reopen Task #1746 ve Active
+- **Bàn giao bước tiếp theo**: Peer nhan task #1746 de sua Typography theo Bug #1972
+
+### Phiên #306 — `2026-10-15 15:55:46 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giam sat Peer 78f6ad7 hoan tat Task #1819 va QC 641d72b nghiem thu Task #1746
+
+### Phiên #305 — `2026-10-15 15:55:38 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giam sat Peer 78f6ad7 hoan tat Task #1819 va QC 641d72b nghiem thu Task #1746
+
+### Phiên #304 — `2026-10-15 15:55:34 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Kiem tra tien do va trang thai Paseo agents
+- **Đã thực hiện**:
+  - Kiem tra agent_progress status
+  - Kiem tra paseo ls xac dinh agents running (Peer #1819, QC #1746)
+  - Task #1696 da Closed
+  - Task #1746 Resolved dang duoc QC verify
+  - Task #1819 dang duoc Peer dev thuc thi
+- **Bàn giao bước tiếp theo**: Giam sat Peer 78f6ad7 hoan tat Task #1819 va QC 641d72b nghiem thu Task #1746
+
+### Phiên #303 — `2026-10-15 15:54:43 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC heartbeat kiem tra tien do va trang thai agent
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md và tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md.
+
+### Phiên #302 — `2026-10-15 15:53:55 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo doi Peer Dev hoan thanh Task #1819 va verify unit test
+
+### Phiên #301 — `2026-10-15 15:53:52 +0700` | **Supervisor**
+- **Tóm tắt**: Tao Task #1819 mac dinh chon Tat ca (isAllTenants = true) va dispatch Peer Dev
+- **Đã thực hiện**:
+  - Xac nhan vi tri isAllTenants
+  - Tao Task #1819
+  - Dispatch Peer Dev thuc thi
+- **Bàn giao bước tiếp theo**: Theo doi Peer Dev hoan thanh Task #1819 va verify unit test
+
+### Phiên #300 — `2026-10-15 15:53:45 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Work Item #1819 [Task]: [UI/Data-Raw]: Mac dinh chon Tat ca (isAllTenants = true) tai tab Du lieu tho
+Chuyen gia tri mac dinh cua isAllTenants tu false sang true de khi vao URL /customers/data-raw he thong mac dinh hien thi Tat ca du lieu.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_work_item_1819_task_ui_data_raw.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_work_item_1819_task_ui_data_raw.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_work_item_1819_task_ui_data_raw.md`, `tools/research/gen_brief_peer_work_item_1819_task_ui_data_raw.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_work_item_1819_task_ui_data_raw.md và tools/research/gen_brief_peer_work_item_1819_task_ui_data_raw.md.
+
+### Phiên #299 — `2026-10-15 15:53:37 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Verify next resolved task in queue (#1746)
+
+### Phiên #298 — `2026-10-15 15:53:35 +0700` | **QC**
+- **Tóm tắt**: Verify & execute unit test suite for Task #1696
+- **Đã thực hiện**:
+  - Executed npx jest apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts (23/23 pass)
+  - Verified 18 child Testcase items (1728-1745) Closed
+  - Verified Task #1696 Closed and handed to lead
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`, `docs/spec/wicx-crm-fe/testcases/raw-event-list-task-1696.json`
+- **Bàn giao bước tiếp theo**: Verify next resolved task in queue (#1746)
+
+### Phiên #297 — `2026-10-15 15:53:02 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Mac dinh chon Tat ca (isAllTenants = true) tai tab du lieu tho raw-event-list
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_mac_dinh_chon_tat_ca_isal.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_mac_dinh_chon_tat_ca_isal.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_mac_dinh_chon_tat_ca_isal.md`, `tools/research/gen_brief_supervisor_mac_dinh_chon_tat_ca_isal.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_mac_dinh_chon_tat_ca_isal.md và tools/research/gen_brief_supervisor_mac_dinh_chon_tat_ca_isal.md.
+
+### Phiên #296 — `2026-10-15 15:52:38 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC hoan tat nghiem thu Task #1746, Lead Dev tong ket nghiem thu va ra soat cac backlog con lai
+
+### Phiên #295 — `2026-10-15 15:52:34 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC hoan tat nghiem thu Task #1746, Lead Dev tong ket nghiem thu va ra soat cac backlog con lai
+
+### Phiên #294 — `2026-10-15 15:52:34 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Kiem tra Paseo daemon, Task #1696 da Closed, Task #1746 da Resolved dang duoc QC verify
+- **Đã thực hiện**:
+  - Kiem tra tien do qua agent_progress status
+  - Kiem tra trang thai Paseo agents qua paseo ls
+  - Xac nhan Task #1696 da Closed hoan tat
+  - Task #1746 da Resolved va QC agent 641d72b dang thuc thi verify
+- **Bàn giao bước tiếp theo**: QC hoan tat nghiem thu Task #1746, Lead Dev tong ket nghiem thu va ra soat cac backlog con lai
+
+### Phiên #293 — `2026-10-15 15:52:19 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead Dev kiểm tra tổng thể và đóng Epic/các task phụ thuộc liên quan đến Data-Raw
+
+### Phiên #292 — `2026-10-15 15:52:12 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1696 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1696_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1696_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1696_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md.
+
+### Phiên #291 — `2026-10-15 15:51:51 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead Dev kiểm tra tổng thể và đóng Epic/các task phụ thuộc liên quan đến Data-Raw
+
+### Phiên #290 — `2026-10-15 15:51:45 +0700` | **QC**
+- **Tóm tắt**: Nghiệm thu độc lập Task #1696: Chuyển top tabs Dữ liệu thô & Mapping dữ liệu sang tds-tabset card chuẩn TDS. 23/23 unit tests pass 100%, đóng Task #1696 chuyển Lead
+- **Đã thực hiện**:
+  - Kiểm tra toàn diện AC Task #1696 và git diff của Peer Dev
+  - Thực thi test runner npx jest apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts pass 23/23 tests (100%)
+  - Verify đầy đủ sync query params (?tab=raw-data|mapping) và render tds-tabset card chuẩn TDS
+  - Chuyển trạng thái Task #1696 sang Closed trên Harness DB và bàn giao cho Lead
+- **File đã tạo/cập nhật**: `apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`, `tools/research/research_qc_verify_resolved_task_1696_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md`
+- **Bàn giao bước tiếp theo**: Lead Dev kiểm tra tổng thể và đóng Epic/các task phụ thuộc liên quan đến Data-Raw
+
+### Phiên #289 — `2026-10-15 15:51:43 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC heartbeat kiem tra tien do va trang thai agent
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md và tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md.
+
+### Phiên #288 — `2026-10-15 15:51:42 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC chay test suite va nghiem thu Task #1746 de dong Closed tren Harness DB
+
+### Phiên #287 — `2026-10-15 15:51:35 +0700` | **Peer**
+- **Tóm tắt**: Chuan hoa font-size va typography tren raw-data-mapping, channel-connector-list, general-mapping-config theo TDS UI DESIGN.md (Task #1746)
+- **Đã thực hiện**:
+  - Them tds-body-2 tds-color-text-primary tren top wrapper
+  - Chuan hoa typography font-semibold tds-caption-1 font-mono tren channel-connector-list va general-mapping-config
+  - Xoa 2 template html thua
+  - Pass 72/72 unit tests
+  - Chuyen Task #1746 sang Resolved va handoff cho QC
+- **File đã tạo/cập nhật**: `apps/mfe-cdp/src/app/pages/data-raw/raw-data-mapping.component.ts`, `apps/mfe-cdp/src/app/pages/data-raw/components/channel-connector-list/channel-connector-list.component.ts`, `apps/mfe-cdp/src/app/pages/data-raw/components/general-mapping-config/general-mapping-config.component.ts`, `apps/mfe-cdp/src/app/pages/data-raw/raw-data-mapping.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC chay test suite va nghiem thu Task #1746 de dong Closed tren Harness DB
+
+### Phiên #286 — `2026-10-15 15:51:33 +0700` | **Peer**
+- **Tóm tắt**: [Task #1696] Dieu chinh [tabBarGutter]='4' va giam padding tab title xuong px-2.5 py-0.5 tren raw-event-list.component.html
+- **Đã thực hiện**:
+  - Doi [tabBarGutter]='4' tao khoang cach ro rang giua 2 tab card
+  - Giam padding tab title xuong px-2.5 py-0.5 cho tab gon nho
+  - Cap nhat spec va chay unit tests pass 23/23 100%
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC kiem thu doc lap va dong Task #1696
+
+### Phiên #285 — `2026-10-15 15:51:29 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC nghiệm thu Bug #1534 trên Harness DB
+
+### Phiên #284 — `2026-10-15 15:51:27 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC nghiệm thu Bug #1534 trên Harness DB
+
+### Phiên #283 — `2026-10-15 15:51:25 +0700` | **Peer Dev**
+- **Tóm tắt**: Đã đưa Stepper 4 bước có line nối ra ngoài trên cùng màn hình Raw Data Mapping. Thu gọn layout 2 Pane (danh sách kênh + chi tiết cấu hình) vào Bước 1. Các bước 2, 3, 4 chuyển đổi toàn màn hình theo activeStepIndex. 19/19 tests pass 100%.
+- **Đã thực hiện**:
+  - Chuyển Stepper 4 bước ra thanh trên cùng có line nối và badge màu
+  - Đặt layout 2 Pane vào Bước 1
+  - Bổ sung sub-header định vị kênh cho Bước 2, 3, 4
+  - Cập nhật bộ unit test 19/19 pass
+  - Chuyển Bug #1534 sang Resolved bàn giao QC
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-data-mapping.component.ts`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-data-mapping.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC nghiệm thu Bug #1534 trên Harness DB
+
+### Phiên #282 — `2026-10-15 15:51:23 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1746 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1746_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1746_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1746_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1746_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1746_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1746_and_run.md.
+
+### Phiên #281 — `2026-10-15 15:51:21 +0700` | **Supervisor**
+- **Tóm tắt**: Cap nhat tab card: [tabBarGutter]='4' tao gap giua 2 tab, giam padding px-2.5 py-0.5 nho gon, pass 23/23 tests
+- **Đã thực hiện**:
+  - Them [tabBarGutter]='4' tach roi 2 tab card co khoang ho chuan TDS
+  - Giam padding xuong px-2.5 py-0.5 gon gang
+  - Pass 23/23 unit tests
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser
+
+### Phiên #280 — `2026-10-15 15:49:58 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Chờ Peer hoàn tất Task #1746 và QC nghiệm thu xong Task #1696
+
+### Phiên #279 — `2026-10-15 15:47:31 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Chờ Peer hoàn tất Task #1746 và QC nghiệm thu xong Task #1696
+
+### Phiên #278 — `2026-10-15 15:47:28 +0700` | **Supervisor**
+- **Tóm tắt**: Heartbeat: Kiểm tra trạng thái Paseo agents qua paseo ls và cập nhật sổ cái tiến độ
+- **Đã thực hiện**:
+  - Chạy agent_progress status và paseo ls xác nhận 19 agents (5 running: Peer #1746, Peer #1696, QC #1696, Heartbeat, task UI)
+- **Bàn giao bước tiếp theo**: Chờ Peer hoàn tất Task #1746 và QC nghiệm thu xong Task #1696
+
+### Phiên #277 — `2026-10-15 15:47:14 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi các tiến trình Peer/QC đang chạy, tiếp tục verify các work item khi hoàn tất
+
+### Phiên #276 — `2026-10-15 15:46:53 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat kiem tra tien do va trang thai Paseo agent
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md và tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md.
+
+### Phiên #275 — `2026-10-15 15:46:32 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi các tiến trình Peer/QC đang chạy, tiếp tục verify các work item khi hoàn tất
+
+### Phiên #274 — `2026-10-15 15:46:13 +0700` | **Supervisor**
+- **Tóm tắt**: Khôi phục đầy đủ 12 cột hiển thị mặc định trên tab Tất cả (contact-list)
+- **Đã thực hiện**:
+  - 1. Phát hiện nguyên nhân mất 3 cột: Commit trước đó đã set tdsChecked: false cho primaryEmail (Email), identityType (Loại KH) và lastActivityAt (Ngày HĐ cuối). 2. Đã sửa lại tdsChecked: true cho cả 3 cột trong tableColumns (contact-list.component.ts). 3. Cập nhật spec test và verify toàn bộ 24/24 tests contact-list pass 100%.
+- **Bàn giao bước tiếp theo**: Theo dõi các tiến trình Peer/QC đang chạy, tiếp tục verify các work item khi hoàn tất
+
+### Phiên #273 — `2026-10-15 15:45:54 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi các tiến trình Peer/QC đang chạy, tiếp tục verify các work item khi hoàn tất
+
+### Phiên #272 — `2026-10-15 15:45:49 +0700` | **Supervisor**
+- **Tóm tắt**: Quét trạng thái agent qua paseo ls và ghi nhận tiến độ điều phối
+- **Đã thực hiện**:
+  - Chạy agent_progress.py status kiểm tra sổ cái
+  - Chạy paseo ls xác định 19 agents (5 running: Peer #1746, Peer #1696, QC #1696, Heartbeat, task phụ)
+  - Sinh research & brief artifact cho Supervisor
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md`
+- **Bàn giao bước tiếp theo**: Theo dõi các tiến trình Peer/QC đang chạy, tiếp tục verify các work item khi hoàn tất
+
+### Phiên #271 — `2026-10-15 15:45:45 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat kiem tra trang thai agent Paseo va cap nhat tien do
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_kiem_tra_t.md và tools/research/gen_brief_supervisor_slpc_heartbeat_kiem_tra_t.md.
+
+### Phiên #270 — `2026-10-15 15:39:59 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify kết quả unit test và đóng nghiệm thu Task #1696 trên Harness DB
+
+### Phiên #269 — `2026-10-15 15:39:58 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify kết quả unit test và đóng nghiệm thu Task #1696 trên Harness DB
+
+### Phiên #268 — `2026-10-15 15:39:46 +0700` | **Supervisor**
+- **Tóm tắt**: Đã chạy status và paseo ls. 4 agent đang active: Peer (#1696), QC (#1696), review font-size và check layout task.
+- **Đã thực hiện**:
+  - Kiểm tra tiến độ agent_progress status
+  - Kiểm tra trạng thái running của Paseo qua paseo ls
+- **Bàn giao bước tiếp theo**: QC verify kết quả unit test và đóng nghiệm thu Task #1696 trên Harness DB
+
+### Phiên #267 — `2026-10-15 15:39:45 +0700` | **Supervisor**
+- **Tóm tắt**: Tao Task #1746 chuan hoa font-size typography TDS UI va dispatch Peer Dev
+- **Đã thực hiện**:
+  - Review vi pham font-size theo DESIGN.md
+  - Tao Task #1746 tren Harness DB
+  - Dispatch Peer Dev thuc hien
+- **Bàn giao bước tiếp theo**: Theo doi Peer Dev hoan thanh Task #1746 va chuyen giao QC nghiem thu
+
+### Phiên #266 — `2026-10-15 15:39:34 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Work Item #1746 [Task]: [UI/Data-Raw]: Chuan hoa font-size va typography theo TDS UI DESIGN.md
+Refactor typography va font-size tren raw-data-mapping, channel-connector-list, general-mapping-config tuan thu TDS UI DESIGN.md va tds-ui-usage.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_work_item_1746_task_ui_data_raw.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_work_item_1746_task_ui_data_raw.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_work_item_1746_task_ui_data_raw.md`, `tools/research/gen_brief_peer_work_item_1746_task_ui_data_raw.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_work_item_1746_task_ui_data_raw.md và tools/research/gen_brief_peer_work_item_1746_task_ui_data_raw.md.
+
+### Phiên #265 — `2026-10-15 15:39:20 +0700` | **Peer Dev (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer Dev: Fix Bug 1534: Stepper 4 buoc nam ngoai tren cung va layout 2-pane nam trong Step 1
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_dev_fix_bug_1534_stepper_4_buoc.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_dev_fix_bug_1534_stepper_4_buoc.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_dev_fix_bug_1534_stepper_4_buoc.md`, `tools/research/gen_brief_peer_dev_fix_bug_1534_stepper_4_buoc.md`
+- **Bàn giao bước tiếp theo**: Profile Peer Dev tiếp tục hoàn thiện task dựa trên tools/research/research_peer_dev_fix_bug_1534_stepper_4_buoc.md và tools/research/gen_brief_peer_dev_fix_bug_1534_stepper_4_buoc.md.
+
+### Phiên #264 — `2026-10-15 15:38:57 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Dieu chinh tab card theo feedback user:
+1. Doi [tabBarGutter]='4' tren tds-tabset de tao khoang cach (gap) ro rang giua 2 tab, khong de dinh lien.
+2. Giam padding the div ben trong tab title xuong px-2.5 py-0.5 de tab gon nho vua van hon.
+3. Chay test pass 100%.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_dieu_chinh_tab_card_theo_feedba.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_dieu_chinh_tab_card_theo_feedba.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_dieu_chinh_tab_card_theo_feedba.md`, `tools/research/gen_brief_peer_dieu_chinh_tab_card_theo_feedba.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_dieu_chinh_tab_card_theo_feedba.md và tools/research/gen_brief_peer_dieu_chinh_tab_card_theo_feedba.md.
+
+### Phiên #263 — `2026-10-15 15:38:48 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Chuan hoa font-size typography tds-ui tren trang raw-data-mapping
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_chuan_hoa_font_size_typog.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_chuan_hoa_font_size_typog.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_chuan_hoa_font_size_typog.md`, `tools/research/gen_brief_supervisor_chuan_hoa_font_size_typog.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_chuan_hoa_font_size_typog.md và tools/research/gen_brief_supervisor_chuan_hoa_font_size_typog.md.
+
+### Phiên #262 — `2026-10-15 15:38:21 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify va chay unit test suite
+
+### Phiên #261 — `2026-10-15 15:37:42 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify va chay unit test suite
+
+### Phiên #260 — `2026-10-15 15:37:35 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1696 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1696_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1696_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1696_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md.
+
+### Phiên #259 — `2026-10-15 15:37:32 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify va chay unit test suite
+
+### Phiên #258 — `2026-10-15 15:37:06 +0700` | **Supervisor**
+- **Tóm tắt**: Fix Bug #1727: Bỏ top bar, chỉnh padding 8px, họ tên 20px semibold + icon giới tính, mã KH tdsi-input-number-fill, Avatar 120px có badge
+- **Đã thực hiện**:
+  - 1. Đã tạo và giải quyết đóng Closed Bug #1727 trên Harness DB. 2. Đã bỏ thanh Top Action Bar & Breadcrumbs ở đầu trang Customer 360 Profile. 3. Đã chỉnh padding và gap của khung 3 cột dashboard về chuẩn 8px (p-2 gap-2). 4. Cập nhật Họ tên chuẩn Figma: text-[20px] leading-[28px] font-semibold kèm icon tdsi-female-fill (nữ, 20x20 tds-color-pink-400) hoặc tdsi-male-fill (nam, 20x20 tds-color-blue-400). 5. Mã khách hàng dùng icon tdsi-input-number-fill 20x20 và text tds-body-2 font-semibold tds-color-text-interactive. 6. Avatar tròn 120px kèm badge Đã định danh chồng ở dưới chân avatar chuẩn Hình 4. 7. Test suites: 67/67 tests customer-360 và 24/24 tests contact-list đều pass 100%.
+- **Bàn giao bước tiếp theo**: QC verify va chay unit test suite
+
+### Phiên #257 — `2026-10-15 15:36:58 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify va chay unit test suite
+
+### Phiên #256 — `2026-10-15 15:36:52 +0700` | **Peer**
+- **Tóm tắt**: Dieu chinh tham my tab card tren raw-event-list (Task #1696)
+- **Đã thực hiện**:
+  - Them [tdsSize]='small' tren tds-tabset va px-3.5 py-1 tren tab title
+  - Thiet lap css .top-level-card-tabs cho inactive va active border-bottom-color flush
+  - Cap nhat spec va chay 26/26 unit tests pass 100%
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.scss`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC verify va chay unit test suite
+
+### Phiên #255 — `2026-10-15 15:36:38 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser
+
+### Phiên #254 — `2026-10-15 15:36:33 +0700` | **Supervisor**
+- **Tóm tắt**: Hoan thien tham my tab card Du lieu tho: [tdsSize]='small', inactive tab background #f8fafc border #e2e8f0, active tab #ffffff border-b-transparent noi lien mach xuong duoi, giam padding px-3.5 py-1 gon gang
+- **Đã thực hiện**:
+  - Ap dung [tdsSize]='small' tren tds-tabset
+  - Giam padding xuong px-3.5 py-1 (~32px chieu cao chuan TDS)
+  - Inactive tab nen xam #f8fafc vien #e2e8f0
+  - Active tab nen trang #ffffff vien day border-b-white xoa duong cat duoi
+  - Pass 26/26 unit tests
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser
+
+### Phiên #253 — `2026-10-15 15:34:33 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giam sat Peer hoan thanh Task #1727 ban giao QC nghiem thu
+
+### Phiên #252 — `2026-10-15 15:34:25 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Giam sat Peer va QC tren Paseo daemon
+- **Đã thực hiện**:
+  - SLPC Heartbeat: Kiem tra paseo ls va agent_progress status. Agent 7c91e57 va f041763 (Peer) dang running, QC eec83cc idle. Work item #1727 dang Active (Peer xu ly layout C360).
+- **Bàn giao bước tiếp theo**: Giam sat Peer hoan thanh Task #1727 ban giao QC nghiem thu
+
+### Phiên #251 — `2026-10-15 15:33:42 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead tong ket nghiem thu va cap nhat roadmap
+
+### Phiên #250 — `2026-10-15 15:33:38 +0700` | **QC**
+- **Tóm tắt**: Nghiem thu va dong Task #1696 sau khi chay test suite thanh cong 100%
+- **Đã thực hiện**:
+  - Chay pipeline QC 5-Stage ISTQB voi 18 coverage items dat 100% REQ va 100% CI
+  - Chay toan bo test suite raw-event-list.component.spec.ts pass 26/26 testcases (va 96/96 data-raw)
+  - Dong toan bo 18 child testcases (#1728-#1745)
+  - Chuyen Task #1696 sang Closed va ban giao cho Lead
+- **File đã tạo/cập nhật**: `docs/spec/wicx-crm-fe/testcases/raw-event-list-task-1696.json`
+- **Bàn giao bước tiếp theo**: Lead tong ket nghiem thu va cap nhat roadmap
+
+### Phiên #249 — `2026-10-15 15:33:34 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Chờ Peer f041763 và QC eec83cc hoàn tất hoặc nhận lệnh mới từ User
+
+### Phiên #248 — `2026-10-15 15:33:31 +0700` | **Supervisor**
+- **Tóm tắt**: Heartbeat kiểm tra trạng thái Paseo daemon và sổ cái
+- **Đã thực hiện**:
+  - SLPC Heartbeat: Kiểm tra paseo ls và agent_progress status. Giám sát Peer f041763 & QC eec83cc đang xử lý tinh chỉnh tab raw-event-list. Toàn bộ 85 local work items trên Harness DB đang Closed.
+- **Bàn giao bước tiếp theo**: Chờ Peer f041763 và QC eec83cc hoàn tất hoặc nhận lệnh mới từ User
+
+### Phiên #247 — `2026-10-15 15:32:57 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Dieu chinh tham my tab card tren raw-event-list:
+1. Them [tdsSize]="'small'" tren tds-tabset va giam padding the div xuong px-3.5 py-1 de tab gon gang (~32px chieu cao chuan TDS), khong bi qua cao tho.
+2. Trong raw-event-list.component.scss cho .top-level-card-tabs:
+   - Tab inactive: background-color: #f8fafc, border-color: #e2e8f0, hover doi background sang #f1f5f9.
+   - Tab active (.tds-tabs-tab-active): background-color: #ffffff !important, border-bottom-color: #ffffff !important de day tab chim vao duong vien duoi, khong bi vien xam chan day.
+3. Chay test pass 100%.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_dieu_chinh_tham_my_tab_card_tre.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_dieu_chinh_tham_my_tab_card_tre.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_dieu_chinh_tham_my_tab_card_tre.md`, `tools/research/gen_brief_peer_dieu_chinh_tham_my_tab_card_tre.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_dieu_chinh_tham_my_tab_card_tre.md và tools/research/gen_brief_peer_dieu_chinh_tham_my_tab_card_tre.md.
+
+### Phiên #246 — `2026-10-15 15:31:53 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận nhiệm vụ tiếp theo từ User hoặc triển khai backlog TFS
+
+### Phiên #245 — `2026-10-15 15:31:44 +0700` | **Supervisor**
+- **Tóm tắt**: Nghiệm thu đóng Task #1696 sau khi 26/26 unit tests pass 100%
+- **Đã thực hiện**:
+  - Nghiệm thu và đóng Task #1696 trên Harness DB
+  - 26/26 unit tests raw-event-list pass 100%
+  - Toàn bộ 85 local work items trên Harness DB đã Closed
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts`
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận nhiệm vụ tiếp theo từ User hoặc triển khai backlog TFS
+
+### Phiên #244 — `2026-10-15 15:30:29 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC verify Task #1696 va chay bo unit test
+
+### Phiên #243 — `2026-10-15 15:30:25 +0700` | **Peer**
+- **Tóm tắt**: Fix UI Task #1696 tren raw-event-list.component.html theo user feedback
+- **Đã thực hiện**:
+  - Them [tabBarGutter]='0' tren tds-tabset
+  - ng-template let-active='active' mau cam active va xam inactive
+  - px-4 py-1.5 tren tab div
+  - -mb-px flush border day
+  - unit test pass 100%
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.scss`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC verify Task #1696 va chay bo unit test
+
+### Phiên #242 — `2026-10-15 15:30:15 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1696 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1696_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1696_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1696_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md.
+
+### Phiên #241 — `2026-10-15 15:29:18 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser
+
+### Phiên #240 — `2026-10-15 15:29:12 +0700` | **Supervisor**
+- **Tóm tắt**: Hoan thanh fix Task #1696: [tabBarGutter]='0', let-active='active' cam E05206, padding px-4 py-1.5 va can le border bottom sat day
+- **Đã thực hiện**:
+  - Fix [tabBarGutter]='0' tab sat nhau
+  - Fix let-active mau cam E05206 font-semibold
+  - Them px-4 py-1.5 padding 2 ben tab
+  - Căn margin-bottom: -1px cho tab card sat duong vien day
+  - Chay pass 26/26 unit tests mfe-cdp
+- **Bàn giao bước tiếp theo**: User kiem tra lai giao dien browser
+
+### Phiên #239 — `2026-10-15 15:29:10 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead Dev tiep tuc ra soat va dieu phoi cac tasks tiep theo tren Harness DB
+
+### Phiên #238 — `2026-10-15 15:28:28 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead Dev tiep tuc ra soat va dieu phoi cac tasks tiep theo tren Harness DB
+
+### Phiên #237 — `2026-10-15 15:28:18 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead Dev tiep tuc ra soat va dieu phoi cac tasks tiep theo tren Harness DB
+
+### Phiên #236 — `2026-10-15 15:28:15 +0700` | **QC**
+- **Tóm tắt**: Nghiem thu doc lap Task #1696: Chuyen top tabs Du lieu tho sang tds-tabset card chuan TDS
+- **Đã thực hiện**:
+  - Chay 5-Stage ISTQB QC test generator xac nhan 100% REQ va 18/18 Coverage Items
+  - Chay 26/26 unit tests raw-event-list.component.spec.ts pass 100%
+  - Dong 18 Testcases (#1709..#1726) tren Harness DB
+  - Chuyen Task #1696 sang Closed va ban giao Lead
+- **File đã tạo/cập nhật**: `docs/spec/wicx-crm-fe/testcases/raw-event-list-task-1696.json`
+- **Bàn giao bước tiếp theo**: Lead Dev tiep tuc ra soat va dieu phoi cac tasks tiep theo tren Harness DB
+
+### Phiên #235 — `2026-10-15 15:27:02 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận Epic hoặc User Story mới từ User.
+
+### Phiên #234 — `2026-10-15 15:26:53 +0700` | **Supervisor**
+- **Tóm tắt**: Nghiệm thu đóng Closed 100% work items trên Harness DB (Epic #1461, #1535, #1696)
+- **Đã thực hiện**:
+  - 1. Nghiệm thu đóng hoàn toàn Epic #1461 và 11 work items Hồ sơ Khách hàng 360 (pass 65/65 tests). 2. Nghiệm thu đóng Task #1535 và Task #1696 (pass 26/26 tests raw-event-list). 3. Bỏ hover:font-semibold và kết nối Router điều hướng mở màn hình Customer 360 khi click cột khách hàng (pass 24/24 tests). 4. Toàn bộ 84 local work items trên Harness DB đã đạt trạng thái Closed.
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận Epic hoặc User Story mới từ User.
+
+### Phiên #233 — `2026-10-15 15:26:34 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Supervisor & Lead tiếp tục điều phối các work items tiếp theo trên Harness DB
+
+### Phiên #232 — `2026-10-15 15:26:30 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Epic #1461 va 7 Tasks C360 da Closed boi QC; Peer 4c69584 va QC 4cf407b dang xu ly Task #1696
+- **Đã thực hiện**:
+  - Kiem tra trang thai Paseo daemon: Peer 4c69584 dang fix style tabset va QC 4cf407b dang kiem thu Task #1696
+- **Bàn giao bước tiếp theo**: Supervisor & Lead tiếp tục điều phối các work items tiếp theo trên Harness DB
+
+### Phiên #231 — `2026-10-15 15:25:49 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Supervisor & Lead tiếp tục điều phối các work items tiếp theo trên Harness DB
+
+### Phiên #230 — `2026-10-15 15:25:41 +0700` | **QC**
+- **Tóm tắt**: Nghiệm thu thành công 7 Tasks Resolved (#1466, #1471..#1476) và Epic #1461 Customer 360
+- **Đã thực hiện**:
+  - Chạy 65/65 unit tests Jest pass 100% (5 suites)
+  - Xác thực 100% AC-1..AC-6 theo docs/spec/customer-360-profile-spec.md
+  - Đóng 160 Testcase (#1536-#1695) sang Closed
+  - Đóng 7 Tasks (#1466, #1471, #1472, #1473, #1474, #1475, #1476) và Epic #1461 sang Closed
+- **Bàn giao bước tiếp theo**: Supervisor & Lead tiếp tục điều phối các work items tiếp theo trên Harness DB
+
+### Phiên #229 — `2026-10-15 15:25:26 +0700` | **Supervisor**
+- **Tóm tắt**: Nghiệm thu đóng Closed hoàn toàn Epic #1461 và 11 work items C360
+- **Đã thực hiện**:
+  - 1. QC (agent 01535d5) đã nghiệm thu độc lập 5-Stage ISTQB, kiểm tra 65/65 unit tests pass 100% và đóng Closed 7 Tasks (#1466, #1471..#1476). 2. Supervisor đã cập nhật trạng thái đóng Closed cho 4 User Stories (#1462..#1465) và Epic #1461 trên Harness DB.
+- **Bàn giao bước tiếp theo**: Giám sát Peer hoàn tất Task #1696.
+
+### Phiên #228 — `2026-10-15 15:25:03 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC thực hiện kiểm thử độc lập và nghiệm thu Task #1696
+
+### Phiên #227 — `2026-10-15 15:24:56 +0700` | **Peer**
+- **Tóm tắt**: Hoàn thành Task #1696: Chuyển top tabs Dữ liệu thô & Mapping dữ liệu sang tds-tabset card chuẩn TDS
+- **Đã thực hiện**:
+  - Chuyển thanh tab trên cùng (Dữ liệu thô | Mapping dữ liệu) từ button custom sang tds-tabset tdsType='card'
+  - Thêm getter selectedMainTabIdx và handler onMainTabChange trong raw-event-list.component.ts
+  - Cập nhật và verify 26 unit tests BDD pass 100%
+  - Sinh 18 ISTQB testcases và đồng bộ lên Harness DB
+  - Bàn giao task #1696 cho QC kiểm thử độc lập
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC thực hiện kiểm thử độc lập và nghiệm thu Task #1696
+
+### Phiên #226 — `2026-10-15 15:24:45 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1696 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1696_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1696_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1696_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1696_and_run.md.
+
+### Phiên #225 — `2026-10-15 15:23:57 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Fix Task #1696 tren raw-event-list.component.html theo feedback user:
+1. Them [tabBarGutter]='0' tren tds-tabset de 2 tab dinh sat nhau khong bi ho.
+2. Dung ng-template let-active='active': khi active = true thi text va icon co mau cam tds-color-text-brand-primary (text-[#E05206]) font-semibold; khi inactive thi mau xam text-gray-500 font-normal.
+3. Them px-4 py-1.5 vao the div ben trong tab title de co padding 2 ben day dan.
+4. Dam bao border bottom cua tab card dinh sat voi duong vien day.
+5. Chay unit test pass 100%.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_fix_task_1696_tren_raw_event_li.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_fix_task_1696_tren_raw_event_li.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_fix_task_1696_tren_raw_event_li.md`, `tools/research/gen_brief_peer_fix_task_1696_tren_raw_event_li.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_fix_task_1696_tren_raw_event_li.md và tools/research/gen_brief_peer_fix_task_1696_tren_raw_event_li.md.
+
+### Phiên #224 — `2026-10-15 15:23:13 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giám sát QC hoàn thành nghiệm thu đóng Closed 7 Tasks và Epic #1461.
+
+### Phiên #223 — `2026-10-15 15:22:06 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giám sát QC hoàn thành nghiệm thu đóng Closed 7 Tasks và Epic #1461.
+
+### Phiên #222 — `2026-10-15 15:21:52 +0700` | **Supervisor**
+- **Tóm tắt**: Dispatch QC nghiệm thu 7 Tasks Resolved (#1466, #1471..#1476) của Epic #1461
+- **Đã thực hiện**:
+  - 1. Peer Dev đã hoàn thành 7 Tasks Customer 360, chạy 65/65 unit tests pass 100% và chuyển state sang Resolved bàn giao QC. 2. Supervisor đã kích hoạt agent QC (01535d5) chạy kiểm thử độc lập 5-Stage ISTQB để nghiệm thu và đóng các Tasks.
+- **Bàn giao bước tiếp theo**: Giám sát QC hoàn thành nghiệm thu đóng Closed 7 Tasks và Epic #1461.
+
+### Phiên #221 — `2026-10-15 15:21:40 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Nghiệm thu 7 Tasks Resolved #1466, #1471, #1472, #1473, #1474, #1475, #1476 của Epic #1461 Hồ sơ Khách hàng 360. Chạy bộ 65 unit tests, xác thực 100% AC theo docs/spec/customer-360-profile-spec.md và cập nhật Harness DB sang Closed.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_nghi_m_thu_7_tasks_resolved_1466_.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_nghi_m_thu_7_tasks_resolved_1466_.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_nghi_m_thu_7_tasks_resolved_1466_.md`, `tools/research/gen_brief_qc_nghi_m_thu_7_tasks_resolved_1466_.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_nghi_m_thu_7_tasks_resolved_1466_.md và tools/research/gen_brief_qc_nghi_m_thu_7_tasks_resolved_1466_.md.
+
+### Phiên #220 — `2026-10-15 15:21:38 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi Peer hoàn tất Task #1696 và điều phối QC nghiệm thu 7 Tasks C360
+
+### Phiên #219 — `2026-10-15 15:20:37 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi Peer hoàn tất Task #1696 và điều phối QC nghiệm thu 7 Tasks C360
+
+### Phiên #218 — `2026-10-15 15:20:32 +0700` | **Supervisor**
+- **Tóm tắt**: Kích hoạt click mở màn hình Customer 360 Profile (docs/spec/customer-360-profile-spec.md) từ cột Khách hàng
+- **Đã thực hiện**:
+  - 1. Đã kết nối hàm onRowClick trong contact-list.component.ts với Router navigate tới route Customer 360 Profile (/customers/:id). 2. Đã bỏ hover:font-semibold tại cột Khách hàng tránh giật chữ khi hover. 3. 24/24 unit tests contact-list và 65/65 tests customer-360 đều pass 100%.
+- **Bàn giao bước tiếp theo**: Theo dõi Peer hoàn tất Task #1696 và điều phối QC nghiệm thu 7 Tasks C360
+
+### Phiên #217 — `2026-10-15 15:20:10 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi Peer hoàn tất Task #1696 và điều phối QC nghiệm thu 7 Tasks C360
+
+### Phiên #216 — `2026-10-15 15:19:26 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo dõi Peer hoàn tất Task #1696 và điều phối QC nghiệm thu 7 Tasks C360
+
+### Phiên #215 — `2026-10-15 15:19:20 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Ghi nhận Task #1535 Closed, giám sát Peer #1696 và 7 Tasks C360
+- **Đã thực hiện**:
+  - Ghi nhận QC hoàn tất nghiệm thu Task #1535 (Closed, pass 25/25 tests, đóng 12 testcases #1697-#1708)
+  - Giám sát Peer agent 0392cdd đang thực thi Task #1696 (tds-tabset card)
+  - Xác nhận 7 Tasks C360 (#1466, #1471..#1476) đã Resolved sẵn sàng cho QC nghiệm thu
+- **Bàn giao bước tiếp theo**: Theo dõi Peer hoàn tất Task #1696 và điều phối QC nghiệm thu 7 Tasks C360
+
+### Phiên #214 — `2026-10-15 15:18:18 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Lead tiep tuc dieu phoi cac task tiep theo trong epic
+
+### Phiên #213 — `2026-10-15 15:18:09 +0700` | **QC**
+- **Tóm tắt**: Nghiem thu Task #1535: Typography tab Du lieu tho & Mapping du lieu
+- **Đã thực hiện**:
+  - Chay 5-stage ISTQB pipeline sinh 12 testcases
+  - Chay suite test npx nx test mfe-cdp --testFile=raw-event-list.component.spec.ts pass 100% (25/25 tests)
+  - Dong 12 child testcases (1697-1708)
+  - Chuyen Task #1535 sang Closed ban giao Lead
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: Lead tiep tuc dieu phoi cac task tiep theo trong epic
+
+### Phiên #212 — `2026-10-15 15:17:21 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC thực hiện kiểm thử độc lập và nghiệm thu chuyển Closed
+
+### Phiên #211 — `2026-10-15 15:17:15 +0700` | **Peer Dev**
+- **Tóm tắt**: Triển khai hoàn tất Task #1466, #1471, #1472, #1473, #1474, #1475, #1476: Customer360Store, Dashboard 3 cột và 6 subcomponents con theo docs/spec/customer-360-profile-spec.md
+- **Đã thực hiện**:
+  - Cài đặt Customer360Store với Angular 18 Signals và mock data chuẩn spec
+  - Cài đặt Customer360ProfileComponent khung Dashboard 3 cột
+  - Cài đặt CustomerSummaryCardComponent và CustomerOrganizationsCardComponent (Cột 1)
+  - Cài đặt CustomerPurchaseInfoComponent Hero cam TDS và Grid 4 gói dịch vụ (Cột 2 trên)
+  - Cài đặt CustomerActivityHeatmapComponent ma trận 4 kênh và timeline event log (Cột 2 dưới)
+  - Cài đặt CustomerUpcomingAppointmentsComponent và CustomerNotesFeedComponent (Cột 3)
+  - Cấu hình route customers/:id và customer-360/:id trong entry.routes.ts
+  - Chạy 65/65 unit/integration tests customer-360 pass 100%
+  - Chạy 185/185 unit tests toàn mfe-cdp pass 100%
+  - Build thành công mfe-cdp và app-shell 0 lỗi
+  - Cập nhật Harness DB chuyển cả 7 tasks sang Resolved giao cho QC
+- **File đã tạo/cập nhật**: `apps/mfe-cdp/src/app/pages/customer-360/customer-360.store.ts`, `apps/mfe-cdp/src/app/pages/customer-360/customer-360-profile.component.ts`, `apps/mfe-cdp/src/app/pages/customer-360/customer-360-profile.component.spec.ts`, `apps/mfe-cdp/src/app/pages/customer-360/components/customer-summary-card/customer-summary-card.component.ts`, `apps/mfe-cdp/src/app/pages/customer-360/components/customer-organizations-card/customer-organizations-card.component.ts`, `apps/mfe-cdp/src/app/pages/customer-360/components/customer-purchase-info/customer-purchase-info.component.ts`, `apps/mfe-cdp/src/app/pages/customer-360/components/customer-activity-heatmap/customer-activity-heatmap.component.ts`, `apps/mfe-cdp/src/app/pages/customer-360/components/customer-upcoming-appointments/customer-upcoming-appointments.component.ts`, `apps/mfe-cdp/src/app/pages/customer-360/components/customer-notes-feed/customer-notes-feed.component.ts`, `apps/mfe-cdp/src/app/remote-entry/entry.routes.ts`
+- **Bàn giao bước tiếp theo**: QC thực hiện kiểm thử độc lập và nghiệm thu chuyển Closed
+
+### Phiên #210 — `2026-10-15 15:16:40 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo doi subagent Peer Dev thuc thi Task #1696 va kiem tra ket qua unit test
+
+### Phiên #209 — `2026-10-15 15:16:36 +0700` | **Supervisor**
+- **Tóm tắt**: Tao Task #1696 tren Harness DB va dispatch Peer Dev chuyen top tabs Du lieu tho sang tds-tabset card chuan TDS
+- **Đã thực hiện**:
+  - Tao Task #1696 tren Harness DB
+  - Dispatch agent Peer Dev 0392cdd3 qua Paseo
+  - Chay profile_research_gen cho Task #1696
+- **Bàn giao bước tiếp theo**: Theo doi subagent Peer Dev thuc thi Task #1696 va kiem tra ket qua unit test
+
+### Phiên #208 — `2026-10-15 15:16:29 +0700` | **Peer (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Work Item #1696 [Task]: [UI/Data-Raw]: Chuyen top tabs Du lieu tho & Mapping du lieu sang tds-tabset card chuan TDS
+Chuyen thanh tab tren cung (Du lieu tho | Mapping du lieu) tu custom button sang tds-tabset voi tdsType='card' theo chuan component TDS UI.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_work_item_1696_task_ui_data_raw.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_peer_work_item_1696_task_ui_data_raw.md
+- **File đã tạo/cập nhật**: `tools/research/research_peer_work_item_1696_task_ui_data_raw.md`, `tools/research/gen_brief_peer_work_item_1696_task_ui_data_raw.md`
+- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_work_item_1696_task_ui_data_raw.md và tools/research/gen_brief_peer_work_item_1696_task_ui_data_raw.md.
+
+### Phiên #207 — `2026-10-15 15:16:28 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC hoàn tất nghiệm thu và đóng Task #1535; Peer Dev hoàn thành UI Task #1471..#1476
+
+### Phiên #206 — `2026-10-15 15:16:24 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Kiểm tra paseo ls và cập nhật tiến độ sub-agents
+- **Đã thực hiện**:
+  - SLPC Heartbeat: Kiểm tra trạng thái paseo ls và agent_progress status
+  - Xác nhận QC agent 9475b80 và Peer Dev 0527405 đang chạy trên Paseo daemon
+- **Bàn giao bước tiếp theo**: QC hoàn tất nghiệm thu và đóng Task #1535; Peer Dev hoàn thành UI Task #1471..#1476
+
+### Phiên #205 — `2026-10-15 15:16:13 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm thử độc lập và nghiệm thu Task #1535
+
+### Phiên #204 — `2026-10-15 15:15:54 +0700` | **Supervisor**
+- **Tóm tắt**: Xóa hover:font-semibold tại cột Khách hàng tránh phóng to text khi hover
+- **Đã thực hiện**:
+  - Đã bỏ class hover:font-semibold tại customerTpl (contact-list.component.html), cập nhật spec test contact-list.component.spec.ts và chạy pass 24/24 unit tests.
+- **Bàn giao bước tiếp theo**: QC kiểm thử độc lập và nghiệm thu Task #1535
+
+### Phiên #203 — `2026-10-15 15:14:59 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm thử độc lập và nghiệm thu Task #1535
+
+### Phiên #202 — `2026-10-15 15:14:28 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: QC kiểm thử độc lập và nghiệm thu Task #1535
+
+### Phiên #201 — `2026-10-15 15:14:18 +0700` | **Peer**
+- **Tóm tắt**: Hoàn thành Task #1535: Cập nhật tab Dữ liệu thô & Mapping dữ liệu sang tds-body-2 font-semibold và icon text-[14px]
+- **Đã thực hiện**:
+  - Cập nhật typography 2 tab sang tds-body-2 font-semibold
+  - Cập nhật icon kích thước text-[14px]
+  - Mock MockRawDataMappingComponent và bổ sung 2 unit test BDD
+  - 25/25 unit tests pass 100%
+- **File đã tạo/cập nhật**: `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.html`, `projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: QC kiểm thử độc lập và nghiệm thu Task #1535
+
+### Phiên #200 — `2026-10-15 15:14:03 +0700` | **QC (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile QC: Verify Resolved Task #1535 and run unit test suite
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_qc_verify_resolved_task_1535_and_run.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_qc_verify_resolved_task_1535_and_run.md
+- **File đã tạo/cập nhật**: `tools/research/research_qc_verify_resolved_task_1535_and_run.md`, `tools/research/gen_brief_qc_verify_resolved_task_1535_and_run.md`
+- **Bàn giao bước tiếp theo**: Profile QC tiếp tục hoàn thiện task dựa trên tools/research/research_qc_verify_resolved_task_1535_and_run.md và tools/research/gen_brief_qc_verify_resolved_task_1535_and_run.md.
+
+### Phiên #199 — `2026-10-15 15:12:58 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giám sát Peer Dev hoàn thành UI/Store để nghiệm thu đóng Epic #1461
+
+### Phiên #198 — `2026-10-15 15:12:22 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giám sát Peer Dev hoàn thành UI/Store để nghiệm thu đóng Epic #1461
+
+### Phiên #197 — `2026-10-15 15:12:18 +0700` | **Supervisor**
+- **Tóm tắt**: Heartbeat: Kiểm tra tiến độ 3 agent đang chạy (Peer 0235d10, QC bbdbe9d, Peer Dev 0527405)
+- **Đã thực hiện**:
+  - SLPC Heartbeat: Kiểm tra trạng thái agent qua paseo ls và agent_progress status
+  - xác nhận 3 sub-agents Peer (0235d10), QC (bbdbe9d), Peer Dev (0527405) đang chạy bình thường
+- **Bàn giao bước tiếp theo**: Giám sát Peer Dev hoàn thành UI/Store để nghiệm thu đóng Epic #1461
+
+### Phiên #196 — `2026-10-15 15:12:11 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giám sát Peer Dev hoàn thành UI/Store để nghiệm thu đóng Epic #1461
+
+### Phiên #195 — `2026-10-15 15:12:04 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Giám sát Peer Dev hoàn thành UI/Store để nghiệm thu đóng Epic #1461
+
+### Phiên #194 — `2026-10-15 15:12:03 +0700` | **QC**
+- **Tóm tắt**: Thiết lập kịch bản kiểm thử 5-Stage ISTQB và sinh unit test cases cho Epic #1461 Hồ Sơ Khách Hàng 360
+- **Đã thực hiện**:
+  - Thiết lập tài liệu đặc tả test case 5-Stage ISTQB US-customer-360-profile-testcases.md, sinh và đồng bộ 160 Testcase work items vào Harness DB cho Epic #1461, chạy 4 test suites Jest đạt 53/53 tests pass 100%
+- **Bàn giao bước tiếp theo**: Giám sát Peer Dev hoàn thành UI/Store để nghiệm thu đóng Epic #1461
+
+### Phiên #193 — `2026-10-15 15:10:21 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Theo doi subagent Peer (0235d10) hoan thanh Task #1535 va kiem tra ket qua test
+
+### Phiên #192 — `2026-10-15 15:10:16 +0700` | **Supervisor**
+- **Tóm tắt**: SLPC Heartbeat: Kiem tra tien do va trang thai Paseo agents
+- **Đã thực hiện**:
+  - SLPC Heartbeat: Kiem tra paseo ls va agent_progress status
+  - xac nhan 3 sub-agents Peer (0235d10), QC (bbdbe9d), Peer Dev (0527405) dang chay on dinh tren Paseo daemon
+- **Bàn giao bước tiếp theo**: Theo doi subagent Peer (0235d10) hoan thanh Task #1535 va kiem tra ket qua test
 
 ### Phiên #191 — `2026-10-15 15:09:07 +0700` | **Paseo/Agent**
 - **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session

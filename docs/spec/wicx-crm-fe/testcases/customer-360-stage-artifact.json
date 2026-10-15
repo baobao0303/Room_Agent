@@ -14582,13 +14582,807 @@
     "quality_issues": []
   },
   "generated_spec_file": null,
-  "harness_synced_testcases": [],
-  "execution_result": {
-    "passed": true,
-    "exit_code": 0,
-    "elapsed_seconds": 16.55,
-    "command": "npx jest apps/mfe-cdp/src/app/pages/customer-360/",
-    "cwd": "/home/baoltb/Desktop/Paseo_Project/projects/wicx-crm-fe",
-    "output_tail": "   import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';\n      \n          setupZoneTestEnv();\n\n      117 |     },\n      118 | };\n    > 119 | import 'jest-preset-angular/setup-jest';\n          | ^\n      120 |\n\n      at Object.<anonymous> (../../node_modules/jest-preset-angular/setup-jest.js:1:111)\n      at Object.<anonymous> (src/test-setup.ts:119:1)\n\nPASS mfe-cdp apps/mfe-cdp/src/app/pages/customer-360/col2-purchase-info.spec.ts (7.135 s)\n  ● Console\n\n    console.warn\n      \n          Importing \"setup-jest.js\" directly is deprecated. The file \"setup-jest.js\" will be removed in the future.\n          Please use \"setupZoneTestEnv\" function instead. Example:\n      \n          // setup-jest.ts\n          import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';\n      \n          setupZoneTestEnv();\n\n      117 |     },\n      118 | };\n    > 119 | import 'jest-preset-angular/setup-jest';\n          | ^\n      120 |\n\n      at Object.<anonymous> (../../node_modules/jest-preset-angular/setup-jest.js:1:111)\n      at Object.<anonymous> (src/test-setup.ts:119:1)\n\nPASS mfe-cdp apps/mfe-cdp/src/app/pages/customer-360/col3-appointments-notes.spec.ts (7 s)\n  ● Console\n\n    console.warn\n      \n          Importing \"setup-jest.js\" directly is deprecated. The file \"setup-jest.js\" will be removed in the future.\n          Please use \"setupZoneTestEnv\" function instead. Example:\n      \n          // setup-jest.ts\n          import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';\n      \n          setupZoneTestEnv();\n\n      117 |     },\n      118 | };\n    > 119 | import 'jest-preset-angular/setup-jest';\n          | ^\n      120 |\n\n      at Object.<anonymous> (../../node_modules/jest-preset-angular/setup-jest.js:1:111)\n      at Object.<anonymous> (src/test-setup.ts:119:1)\n\n\nTest Suites: 4 passed, 4 total\nTests:       53 passed, 53 total\nSnapshots:   0 total\nTime:        10.434 s\nRan all test suites matching /apps\\/mfe-cdp\\/src\\/app\\/pages\\/customer-360\\//i."
-  }
+  "harness_synced_testcases": [
+    {
+      "tc_id": "TC-TP001-01",
+      "harness_id": 1536,
+      "title": "[customer-360.models]: Functional contract of formatCustomerCode() (state_transition #1) when valid input is provided to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP001-02",
+      "harness_id": 1537,
+      "title": "[customer-360.models]: Functional contract of formatCustomerCode() (state_transition #2) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP001-03",
+      "harness_id": 1538,
+      "title": "[customer-360.models]: Functional contract of formatCustomerCode() (boundary_value #3) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP001-04",
+      "harness_id": 1539,
+      "title": "[customer-360.models]: Functional contract of formatCustomerCode() (boundary_value #4) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP002-01",
+      "harness_id": 1540,
+      "title": "[customer-360.models]: Exception & boundary handling in formatCustomerCode() (decision_table #1) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP002-02",
+      "harness_id": 1541,
+      "title": "[customer-360.models]: Exception & boundary handling in formatCustomerCode() (decision_table #2) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP002-03",
+      "harness_id": 1542,
+      "title": "[customer-360.models]: Exception & boundary handling in formatCustomerCode() (boundary_value #3) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP002-04",
+      "harness_id": 1543,
+      "title": "[customer-360.models]: Exception & boundary handling in formatCustomerCode() (boundary_value #4) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP003-01",
+      "harness_id": 1544,
+      "title": "[customer-360.models]: Functional contract of getGenderMetadata() (state_transition #1) when valid input is provided to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP003-02",
+      "harness_id": 1545,
+      "title": "[customer-360.models]: Functional contract of getGenderMetadata() (state_transition #2) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP003-03",
+      "harness_id": 1546,
+      "title": "[customer-360.models]: Functional contract of getGenderMetadata() (boundary_value #3) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP003-04",
+      "harness_id": 1547,
+      "title": "[customer-360.models]: Functional contract of getGenderMetadata() (boundary_value #4) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP004-01",
+      "harness_id": 1548,
+      "title": "[customer-360.models]: Exception & boundary handling in getGenderMetadata() (decision_table #1) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP004-02",
+      "harness_id": 1549,
+      "title": "[customer-360.models]: Exception & boundary handling in getGenderMetadata() (decision_table #2) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP004-03",
+      "harness_id": 1550,
+      "title": "[customer-360.models]: Exception & boundary handling in getGenderMetadata() (boundary_value #3) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP004-04",
+      "harness_id": 1551,
+      "title": "[customer-360.models]: Exception & boundary handling in getGenderMetadata() (boundary_value #4) when invalid/edge input or boundary violation is passed to getGenderMetadata"
+    },
+    {
+      "tc_id": "TC-TP005-01",
+      "harness_id": 1552,
+      "title": "[customer-360.models]: Functional contract of filterOrganizations() (state_transition #1) when valid input is provided to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP005-02",
+      "harness_id": 1553,
+      "title": "[customer-360.models]: Functional contract of filterOrganizations() (state_transition #2) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP005-03",
+      "harness_id": 1554,
+      "title": "[customer-360.models]: Functional contract of filterOrganizations() (boundary_value #3) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP005-04",
+      "harness_id": 1555,
+      "title": "[customer-360.models]: Functional contract of filterOrganizations() (boundary_value #4) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP006-01",
+      "harness_id": 1556,
+      "title": "[customer-360.models]: Exception & boundary handling in filterOrganizations() (decision_table #1) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP006-02",
+      "harness_id": 1557,
+      "title": "[customer-360.models]: Exception & boundary handling in filterOrganizations() (decision_table #2) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP006-03",
+      "harness_id": 1558,
+      "title": "[customer-360.models]: Exception & boundary handling in filterOrganizations() (boundary_value #3) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP006-04",
+      "harness_id": 1559,
+      "title": "[customer-360.models]: Exception & boundary handling in filterOrganizations() (boundary_value #4) when invalid/edge input or boundary violation is passed to filterOrganizations"
+    },
+    {
+      "tc_id": "TC-TP007-01",
+      "harness_id": 1560,
+      "title": "[customer-360.models]: Functional contract of calculateTotalPurchaseAmount() (state_transition #1) when valid input is provided to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP007-02",
+      "harness_id": 1561,
+      "title": "[customer-360.models]: Functional contract of calculateTotalPurchaseAmount() (state_transition #2) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP007-03",
+      "harness_id": 1562,
+      "title": "[customer-360.models]: Functional contract of calculateTotalPurchaseAmount() (boundary_value #3) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP007-04",
+      "harness_id": 1563,
+      "title": "[customer-360.models]: Functional contract of calculateTotalPurchaseAmount() (boundary_value #4) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP008-01",
+      "harness_id": 1564,
+      "title": "[customer-360.models]: Exception & boundary handling in calculateTotalPurchaseAmount() (decision_table #1) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP008-02",
+      "harness_id": 1565,
+      "title": "[customer-360.models]: Exception & boundary handling in calculateTotalPurchaseAmount() (decision_table #2) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP008-03",
+      "harness_id": 1566,
+      "title": "[customer-360.models]: Exception & boundary handling in calculateTotalPurchaseAmount() (boundary_value #3) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP008-04",
+      "harness_id": 1567,
+      "title": "[customer-360.models]: Exception & boundary handling in calculateTotalPurchaseAmount() (boundary_value #4) when invalid/edge input or boundary violation is passed to calculateTotalPurchaseAmount"
+    },
+    {
+      "tc_id": "TC-TP009-01",
+      "harness_id": 1568,
+      "title": "[customer-360.models]: Functional contract of formatVndCurrency() (state_transition #1) when valid input is provided to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP009-02",
+      "harness_id": 1569,
+      "title": "[customer-360.models]: Functional contract of formatVndCurrency() (state_transition #2) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP009-03",
+      "harness_id": 1570,
+      "title": "[customer-360.models]: Functional contract of formatVndCurrency() (boundary_value #3) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP009-04",
+      "harness_id": 1571,
+      "title": "[customer-360.models]: Functional contract of formatVndCurrency() (boundary_value #4) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP010-01",
+      "harness_id": 1572,
+      "title": "[customer-360.models]: Exception & boundary handling in formatVndCurrency() (decision_table #1) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP010-02",
+      "harness_id": 1573,
+      "title": "[customer-360.models]: Exception & boundary handling in formatVndCurrency() (decision_table #2) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP010-03",
+      "harness_id": 1574,
+      "title": "[customer-360.models]: Exception & boundary handling in formatVndCurrency() (boundary_value #3) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP010-04",
+      "harness_id": 1575,
+      "title": "[customer-360.models]: Exception & boundary handling in formatVndCurrency() (boundary_value #4) when invalid/edge input or boundary violation is passed to formatVndCurrency"
+    },
+    {
+      "tc_id": "TC-TP011-01",
+      "harness_id": 1576,
+      "title": "[customer-360.models]: Functional contract of calculateRemainingDays() (state_transition #1) when valid input is provided to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP011-02",
+      "harness_id": 1577,
+      "title": "[customer-360.models]: Functional contract of calculateRemainingDays() (state_transition #2) when invalid/edge input or boundary violation is passed to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP011-03",
+      "harness_id": 1578,
+      "title": "[customer-360.models]: Functional contract of calculateRemainingDays() (boundary_value #3) when invalid/edge input or boundary violation is passed to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP011-04",
+      "harness_id": 1579,
+      "title": "[customer-360.models]: Functional contract of calculateRemainingDays() (boundary_value #4) when invalid/edge input or boundary violation is passed to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP012-01",
+      "harness_id": 1580,
+      "title": "[customer-360.models]: Functional contract of getPackageExpiryStatus() (state_transition #1) when valid input is provided to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP012-02",
+      "harness_id": 1581,
+      "title": "[customer-360.models]: Functional contract of getPackageExpiryStatus() (state_transition #2) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP012-03",
+      "harness_id": 1582,
+      "title": "[customer-360.models]: Functional contract of getPackageExpiryStatus() (boundary_value #3) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP012-04",
+      "harness_id": 1583,
+      "title": "[customer-360.models]: Functional contract of getPackageExpiryStatus() (boundary_value #4) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP013-01",
+      "harness_id": 1584,
+      "title": "[customer-360.models]: Exception & boundary handling in getPackageExpiryStatus() (state_transition #1) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP013-02",
+      "harness_id": 1585,
+      "title": "[customer-360.models]: Exception & boundary handling in getPackageExpiryStatus() (state_transition #2) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP013-03",
+      "harness_id": 1586,
+      "title": "[customer-360.models]: Exception & boundary handling in getPackageExpiryStatus() (boundary_value #3) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP013-04",
+      "harness_id": 1587,
+      "title": "[customer-360.models]: Exception & boundary handling in getPackageExpiryStatus() (boundary_value #4) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP014-01",
+      "harness_id": 1588,
+      "title": "[customer-360.models]: Functional contract of countExpiredPackages() (state_transition #1) when valid input is provided to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP014-02",
+      "harness_id": 1589,
+      "title": "[customer-360.models]: Functional contract of countExpiredPackages() (state_transition #2) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP014-03",
+      "harness_id": 1590,
+      "title": "[customer-360.models]: Functional contract of countExpiredPackages() (boundary_value #3) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP014-04",
+      "harness_id": 1591,
+      "title": "[customer-360.models]: Functional contract of countExpiredPackages() (boundary_value #4) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP015-01",
+      "harness_id": 1592,
+      "title": "[customer-360.models]: Exception & boundary handling in countExpiredPackages() (state_transition #1) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP015-02",
+      "harness_id": 1593,
+      "title": "[customer-360.models]: Exception & boundary handling in countExpiredPackages() (state_transition #2) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP015-03",
+      "harness_id": 1594,
+      "title": "[customer-360.models]: Exception & boundary handling in countExpiredPackages() (boundary_value #3) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP015-04",
+      "harness_id": 1595,
+      "title": "[customer-360.models]: Exception & boundary handling in countExpiredPackages() (boundary_value #4) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP016-01",
+      "harness_id": 1596,
+      "title": "[customer-360.models]: Functional contract of formatHeatmapTooltip() (state_transition #1) when valid input is provided to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP016-02",
+      "harness_id": 1597,
+      "title": "[customer-360.models]: Functional contract of formatHeatmapTooltip() (state_transition #2) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP016-03",
+      "harness_id": 1598,
+      "title": "[customer-360.models]: Functional contract of formatHeatmapTooltip() (boundary_value #3) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP016-04",
+      "harness_id": 1599,
+      "title": "[customer-360.models]: Functional contract of formatHeatmapTooltip() (boundary_value #4) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP017-01",
+      "harness_id": 1600,
+      "title": "[customer-360.models]: Exception & boundary handling in formatHeatmapTooltip() (decision_table #1) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP017-02",
+      "harness_id": 1601,
+      "title": "[customer-360.models]: Exception & boundary handling in formatHeatmapTooltip() (decision_table #2) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP017-03",
+      "harness_id": 1602,
+      "title": "[customer-360.models]: Exception & boundary handling in formatHeatmapTooltip() (boundary_value #3) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP017-04",
+      "harness_id": 1603,
+      "title": "[customer-360.models]: Exception & boundary handling in formatHeatmapTooltip() (boundary_value #4) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP018-01",
+      "harness_id": 1604,
+      "title": "[customer-360.models]: Functional contract of filterEventsForCell() (state_transition #1) when valid input is provided to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP018-02",
+      "harness_id": 1605,
+      "title": "[customer-360.models]: Functional contract of filterEventsForCell() (state_transition #2) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP018-03",
+      "harness_id": 1606,
+      "title": "[customer-360.models]: Functional contract of filterEventsForCell() (boundary_value #3) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP018-04",
+      "harness_id": 1607,
+      "title": "[customer-360.models]: Functional contract of filterEventsForCell() (boundary_value #4) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP019-01",
+      "harness_id": 1608,
+      "title": "[customer-360.models]: Exception & boundary handling in filterEventsForCell() (decision_table #1) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP019-02",
+      "harness_id": 1609,
+      "title": "[customer-360.models]: Exception & boundary handling in filterEventsForCell() (decision_table #2) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP019-03",
+      "harness_id": 1610,
+      "title": "[customer-360.models]: Exception & boundary handling in filterEventsForCell() (boundary_value #3) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP019-04",
+      "harness_id": 1611,
+      "title": "[customer-360.models]: Exception & boundary handling in filterEventsForCell() (boundary_value #4) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP020-01",
+      "harness_id": 1612,
+      "title": "[customer-360.models]: Functional contract of getPriorityTagMeta() (state_transition #1) when valid input is provided to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP020-02",
+      "harness_id": 1613,
+      "title": "[customer-360.models]: Functional contract of getPriorityTagMeta() (state_transition #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP020-03",
+      "harness_id": 1614,
+      "title": "[customer-360.models]: Functional contract of getPriorityTagMeta() (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP020-04",
+      "harness_id": 1615,
+      "title": "[customer-360.models]: Functional contract of getPriorityTagMeta() (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP021-01",
+      "harness_id": 1616,
+      "title": "[customer-360.models]: Exception & boundary handling in getPriorityTagMeta() (decision_table #1) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP021-02",
+      "harness_id": 1617,
+      "title": "[customer-360.models]: Exception & boundary handling in getPriorityTagMeta() (decision_table #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP021-03",
+      "harness_id": 1618,
+      "title": "[customer-360.models]: Exception & boundary handling in getPriorityTagMeta() (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP021-04",
+      "harness_id": 1619,
+      "title": "[customer-360.models]: Exception & boundary handling in getPriorityTagMeta() (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP022-01",
+      "harness_id": 1620,
+      "title": "[customer-360.models]: Functional contract of sortAppointmentsByPriority() (state_transition #1) when valid input is provided to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP022-02",
+      "harness_id": 1621,
+      "title": "[customer-360.models]: Functional contract of sortAppointmentsByPriority() (state_transition #2) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP022-03",
+      "harness_id": 1622,
+      "title": "[customer-360.models]: Functional contract of sortAppointmentsByPriority() (boundary_value #3) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP022-04",
+      "harness_id": 1623,
+      "title": "[customer-360.models]: Functional contract of sortAppointmentsByPriority() (boundary_value #4) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP023-01",
+      "harness_id": 1624,
+      "title": "[customer-360.models]: Exception & boundary handling in sortAppointmentsByPriority() (decision_table #1) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP023-02",
+      "harness_id": 1625,
+      "title": "[customer-360.models]: Exception & boundary handling in sortAppointmentsByPriority() (decision_table #2) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP023-03",
+      "harness_id": 1626,
+      "title": "[customer-360.models]: Exception & boundary handling in sortAppointmentsByPriority() (boundary_value #3) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP023-04",
+      "harness_id": 1627,
+      "title": "[customer-360.models]: Exception & boundary handling in sortAppointmentsByPriority() (boundary_value #4) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP024-01",
+      "harness_id": 1628,
+      "title": "[customer-360.models]: Functional contract of validateNoteContent() (state_transition #1) when valid input is provided to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP024-02",
+      "harness_id": 1629,
+      "title": "[customer-360.models]: Functional contract of validateNoteContent() (state_transition #2) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP024-03",
+      "harness_id": 1630,
+      "title": "[customer-360.models]: Functional contract of validateNoteContent() (boundary_value #3) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP024-04",
+      "harness_id": 1631,
+      "title": "[customer-360.models]: Functional contract of validateNoteContent() (boundary_value #4) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP025-01",
+      "harness_id": 1632,
+      "title": "[customer-360.models]: Exception & boundary handling in validateNoteContent() (decision_table #1) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP025-02",
+      "harness_id": 1633,
+      "title": "[customer-360.models]: Exception & boundary handling in validateNoteContent() (decision_table #2) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP025-03",
+      "harness_id": 1634,
+      "title": "[customer-360.models]: Exception & boundary handling in validateNoteContent() (boundary_value #3) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP025-04",
+      "harness_id": 1635,
+      "title": "[customer-360.models]: Exception & boundary handling in validateNoteContent() (boundary_value #4) when invalid/edge input or boundary violation is passed to validateNoteContent"
+    },
+    {
+      "tc_id": "TC-TP026-01",
+      "harness_id": 1636,
+      "title": "[customer-360.models]: **TDS Components & Directives:** (decision_table #1) when valid input is provided to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP026-02",
+      "harness_id": 1637,
+      "title": "[customer-360.models]: **TDS Components & Directives:** (decision_table #2) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP026-03",
+      "harness_id": 1638,
+      "title": "[customer-360.models]: **TDS Components & Directives:** (boundary_value #3) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP026-04",
+      "harness_id": 1639,
+      "title": "[customer-360.models]: **TDS Components & Directives:** (boundary_value #4) when invalid/edge input or boundary violation is passed to formatCustomerCode"
+    },
+    {
+      "tc_id": "TC-TP027-01",
+      "harness_id": 1640,
+      "title": "[customer-360.models]: `tds-card` hoặc container `rounded-xl border tds-color-border-sec (decision_table #1) when valid input is provided to validateCustomerProfile"
+    },
+    {
+      "tc_id": "TC-TP027-02",
+      "harness_id": 1641,
+      "title": "[customer-360.models]: `tds-card` hoặc container `rounded-xl border tds-color-border-sec (decision_table #2) when invalid/edge input or boundary violation is passed to validateCustomerProfile"
+    },
+    {
+      "tc_id": "TC-TP027-03",
+      "harness_id": 1642,
+      "title": "[customer-360.models]: `tds-card` hoặc container `rounded-xl border tds-color-border-sec (boundary_value #3) when invalid/edge input or boundary violation is passed to validateCustomerProfile"
+    },
+    {
+      "tc_id": "TC-TP027-04",
+      "harness_id": 1643,
+      "title": "[customer-360.models]: `tds-card` hoặc container `rounded-xl border tds-color-border-sec (boundary_value #4) when invalid/edge input or boundary violation is passed to validateCustomerProfile"
+    },
+    {
+      "tc_id": "TC-TP028-01",
+      "harness_id": 1644,
+      "title": "[customer-360.models]: `TDSAvatarModule` (`tds-avatar`): Ảnh đại diện tròn `size-20` (80 (decision_table #1) when valid input is provided to formatPhoneNumber"
+    },
+    {
+      "tc_id": "TC-TP028-02",
+      "harness_id": 1645,
+      "title": "[customer-360.models]: `TDSAvatarModule` (`tds-avatar`): Ảnh đại diện tròn `size-20` (80 (decision_table #2) when invalid/edge input or boundary violation is passed to formatPhoneNumber"
+    },
+    {
+      "tc_id": "TC-TP028-03",
+      "harness_id": 1646,
+      "title": "[customer-360.models]: `TDSAvatarModule` (`tds-avatar`): Ảnh đại diện tròn `size-20` (80 (boundary_value #3) when invalid/edge input or boundary violation is passed to formatPhoneNumber"
+    },
+    {
+      "tc_id": "TC-TP028-04",
+      "harness_id": 1647,
+      "title": "[customer-360.models]: `TDSAvatarModule` (`tds-avatar`): Ảnh đại diện tròn `size-20` (80 (boundary_value #4) when invalid/edge input or boundary violation is passed to formatPhoneNumber"
+    },
+    {
+      "tc_id": "TC-TP029-01",
+      "harness_id": 1648,
+      "title": "[customer-360.models]: `TDSTagModule` (`tds-tag`): (decision_table #1) when valid input is provided to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP029-02",
+      "harness_id": 1649,
+      "title": "[customer-360.models]: `TDSTagModule` (`tds-tag`): (decision_table #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP029-03",
+      "harness_id": 1650,
+      "title": "[customer-360.models]: `TDSTagModule` (`tds-tag`): (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP029-04",
+      "harness_id": 1651,
+      "title": "[customer-360.models]: `TDSTagModule` (`tds-tag`): (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP030-01",
+      "harness_id": 1652,
+      "title": "[customer-360.models]: Tag định danh: `color=\"success\"` (`tds-tag-success`), icon `tdsi- (decision_table #1) when valid input is provided to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP030-02",
+      "harness_id": 1653,
+      "title": "[customer-360.models]: Tag định danh: `color=\"success\"` (`tds-tag-success`), icon `tdsi- (decision_table #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP030-03",
+      "harness_id": 1654,
+      "title": "[customer-360.models]: Tag định danh: `color=\"success\"` (`tds-tag-success`), icon `tdsi- (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP030-04",
+      "harness_id": 1655,
+      "title": "[customer-360.models]: Tag định danh: `color=\"success\"` (`tds-tag-success`), icon `tdsi- (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP031-01",
+      "harness_id": 1656,
+      "title": "[customer-360.models]: Tag trạng thái: `color=\"success\"` variant minimalist (`bg-[#E8F8F (state_transition #1) when valid input is provided to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP031-02",
+      "harness_id": 1657,
+      "title": "[customer-360.models]: Tag trạng thái: `color=\"success\"` variant minimalist (`bg-[#E8F8F (state_transition #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP031-03",
+      "harness_id": 1658,
+      "title": "[customer-360.models]: Tag trạng thái: `color=\"success\"` variant minimalist (`bg-[#E8F8F (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP031-04",
+      "harness_id": 1659,
+      "title": "[customer-360.models]: Tag trạng thái: `color=\"success\"` variant minimalist (`bg-[#E8F8F (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP032-01",
+      "harness_id": 1660,
+      "title": "[customer-360.models]: Tag kênh nguồn: `color=\"secondary\"` (`WiPix`, `Facebook`). (decision_table #1) when valid input is provided to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP032-02",
+      "harness_id": 1661,
+      "title": "[customer-360.models]: Tag kênh nguồn: `color=\"secondary\"` (`WiPix`, `Facebook`). (decision_table #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP032-03",
+      "harness_id": 1662,
+      "title": "[customer-360.models]: Tag kênh nguồn: `color=\"secondary\"` (`WiPix`, `Facebook`). (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP032-04",
+      "harness_id": 1663,
+      "title": "[customer-360.models]: Tag kênh nguồn: `color=\"secondary\"` (`WiPix`, `Facebook`). (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP033-01",
+      "harness_id": 1664,
+      "title": "[customer-360.models]: `TDSButtonModule`: (decision_table #1) when valid input is provided to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP033-02",
+      "harness_id": 1665,
+      "title": "[customer-360.models]: `TDSButtonModule`: (decision_table #2) when invalid/edge input or boundary violation is passed to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP033-03",
+      "harness_id": 1666,
+      "title": "[customer-360.models]: `TDSButtonModule`: (boundary_value #3) when invalid/edge input or boundary violation is passed to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP033-04",
+      "harness_id": 1667,
+      "title": "[customer-360.models]: `TDSButtonModule`: (boundary_value #4) when invalid/edge input or boundary violation is passed to calculateRemainingDays"
+    },
+    {
+      "tc_id": "TC-TP034-01",
+      "harness_id": 1668,
+      "title": "[customer-360.models]: Nút Chỉnh sửa: `button[tds-button-outline]` `color=\"secondary\"` ` (state_transition #1) when valid input is provided to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP034-02",
+      "harness_id": 1669,
+      "title": "[customer-360.models]: Nút Chỉnh sửa: `button[tds-button-outline]` `color=\"secondary\"` ` (state_transition #2) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP034-03",
+      "harness_id": 1670,
+      "title": "[customer-360.models]: Nút Chỉnh sửa: `button[tds-button-outline]` `color=\"secondary\"` ` (boundary_value #3) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP034-04",
+      "harness_id": 1671,
+      "title": "[customer-360.models]: Nút Chỉnh sửa: `button[tds-button-outline]` `color=\"secondary\"` ` (boundary_value #4) when invalid/edge input or boundary violation is passed to getPackageExpiryStatus"
+    },
+    {
+      "tc_id": "TC-TP035-01",
+      "harness_id": 1672,
+      "title": "[customer-360.models]: Nút Xóa: `button[tds-button-outline]` `color=\"error\"` `size=\"sm\"` (state_transition #1) when valid input is provided to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP035-02",
+      "harness_id": 1673,
+      "title": "[customer-360.models]: Nút Xóa: `button[tds-button-outline]` `color=\"error\"` `size=\"sm\"` (state_transition #2) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP035-03",
+      "harness_id": 1674,
+      "title": "[customer-360.models]: Nút Xóa: `button[tds-button-outline]` `color=\"error\"` `size=\"sm\"` (boundary_value #3) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP035-04",
+      "harness_id": 1675,
+      "title": "[customer-360.models]: Nút Xóa: `button[tds-button-outline]` `color=\"error\"` `size=\"sm\"` (boundary_value #4) when invalid/edge input or boundary violation is passed to countExpiredPackages"
+    },
+    {
+      "tc_id": "TC-TP036-01",
+      "harness_id": 1676,
+      "title": "[customer-360.models]: **Thông tin hiển thị:** (decision_table #1) when valid input is provided to getChannelMeta"
+    },
+    {
+      "tc_id": "TC-TP036-02",
+      "harness_id": 1677,
+      "title": "[customer-360.models]: **Thông tin hiển thị:** (decision_table #2) when invalid/edge input or boundary violation is passed to getChannelMeta"
+    },
+    {
+      "tc_id": "TC-TP036-03",
+      "harness_id": 1678,
+      "title": "[customer-360.models]: **Thông tin hiển thị:** (boundary_value #3) when invalid/edge input or boundary violation is passed to getChannelMeta"
+    },
+    {
+      "tc_id": "TC-TP036-04",
+      "harness_id": 1679,
+      "title": "[customer-360.models]: **Thông tin hiển thị:** (boundary_value #4) when invalid/edge input or boundary violation is passed to getChannelMeta"
+    },
+    {
+      "tc_id": "TC-TP037-01",
+      "harness_id": 1680,
+      "title": "[customer-360.models]: Tên khách hàng: `tds-heading-5 font-bold tds-color-text-primary`  (decision_table #1) when valid input is provided to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP037-02",
+      "harness_id": 1681,
+      "title": "[customer-360.models]: Tên khách hàng: `tds-heading-5 font-bold tds-color-text-primary`  (decision_table #2) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP037-03",
+      "harness_id": 1682,
+      "title": "[customer-360.models]: Tên khách hàng: `tds-heading-5 font-bold tds-color-text-primary`  (boundary_value #3) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP037-04",
+      "harness_id": 1683,
+      "title": "[customer-360.models]: Tên khách hàng: `tds-heading-5 font-bold tds-color-text-primary`  (boundary_value #4) when invalid/edge input or boundary violation is passed to formatHeatmapTooltip"
+    },
+    {
+      "tc_id": "TC-TP038-01",
+      "harness_id": 1684,
+      "title": "[customer-360.models]: Mã khách hàng: Badge font mono `tds-caption-1 font-semibold tds-c (state_transition #1) when valid input is provided to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP038-02",
+      "harness_id": 1685,
+      "title": "[customer-360.models]: Mã khách hàng: Badge font mono `tds-caption-1 font-semibold tds-c (state_transition #2) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP038-03",
+      "harness_id": 1686,
+      "title": "[customer-360.models]: Mã khách hàng: Badge font mono `tds-caption-1 font-semibold tds-c (boundary_value #3) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP038-04",
+      "harness_id": 1687,
+      "title": "[customer-360.models]: Mã khách hàng: Badge font mono `tds-caption-1 font-semibold tds-c (boundary_value #4) when invalid/edge input or boundary violation is passed to filterEventsForCell"
+    },
+    {
+      "tc_id": "TC-TP039-01",
+      "harness_id": 1688,
+      "title": "[customer-360.models]: Danh sách trường chi tiết (Label `tds-body-2 tds-color-text-secon (decision_table #1) when valid input is provided to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP039-02",
+      "harness_id": 1689,
+      "title": "[customer-360.models]: Danh sách trường chi tiết (Label `tds-body-2 tds-color-text-secon (decision_table #2) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP039-03",
+      "harness_id": 1690,
+      "title": "[customer-360.models]: Danh sách trường chi tiết (Label `tds-body-2 tds-color-text-secon (boundary_value #3) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP039-04",
+      "harness_id": 1691,
+      "title": "[customer-360.models]: Danh sách trường chi tiết (Label `tds-body-2 tds-color-text-secon (boundary_value #4) when invalid/edge input or boundary violation is passed to getPriorityTagMeta"
+    },
+    {
+      "tc_id": "TC-TP040-01",
+      "harness_id": 1692,
+      "title": "[customer-360.models]: Người phụ trách: Avatar chữ tròn mini 20px (Màu hồng `Đ`) + text  (decision_table #1) when valid input is provided to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP040-02",
+      "harness_id": 1693,
+      "title": "[customer-360.models]: Người phụ trách: Avatar chữ tròn mini 20px (Màu hồng `Đ`) + text  (decision_table #2) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP040-03",
+      "harness_id": 1694,
+      "title": "[customer-360.models]: Người phụ trách: Avatar chữ tròn mini 20px (Màu hồng `Đ`) + text  (boundary_value #3) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    },
+    {
+      "tc_id": "TC-TP040-04",
+      "harness_id": 1695,
+      "title": "[customer-360.models]: Người phụ trách: Avatar chữ tròn mini 20px (Màu hồng `Đ`) + text  (boundary_value #4) when invalid/edge input or boundary violation is passed to sortAppointmentsByPriority"
+    }
+  ],
+  "execution_result": null
 }

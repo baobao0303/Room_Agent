@@ -1,0 +1,1815 @@
+{
+  "stage1_requirement_analysis": {
+    "module": "RawEventListComponent",
+    "summary": "[UI/Data-Raw]: Bo icon tai top tabs va chinh padding-x ve 0 cho tds-tabs-tab-btn",
+    "scope": [
+      "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-eve"
+    ],
+    "roles": [
+      "User"
+    ],
+    "functional_requirements": [
+      {
+        "id": "REQ-001",
+        "title": "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-eve",
+        "description": "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      }
+    ],
+    "business_rules": [],
+    "constraints": [],
+    "preconditions": [],
+    "acceptance_criteria": [
+      "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+    ],
+    "risks": [],
+    "assumptions": []
+  },
+  "stage1_code_context": {
+    "file_path": "/home/baoltb/Desktop/Paseo_Project/projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts",
+    "module_name": "RawEventListComponent",
+    "language": "typescript",
+    "framework": "jest",
+    "is_angular_component": true,
+    "is_angular_service": false,
+    "has_signals": true,
+    "classes": [
+      "RawEventListComponent"
+    ],
+    "symbols": [
+      {
+        "name": "RawEventListComponent.onMainTabChange",
+        "method_name": "onMainTabChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "index",
+            "type": "number",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.ngOnInit",
+        "method_name": "ngOnInit",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.setMainTab",
+        "method_name": "setMainTab",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tab",
+            "type": "'raw-data' | 'mapping'",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onAllTenantsChange",
+        "method_name": "onAllTenantsChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "checked",
+            "type": "boolean",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.fetchEventSources",
+        "method_name": "fetchEventSources",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tenantId",
+            "type": "string",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.fetchEvents",
+        "method_name": "fetchEvents",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tenantId",
+            "type": "string",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.updateSourceTabsFromEvents",
+        "method_name": "updateSourceTabsFromEvents",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "items",
+            "type": "RawEventItem[]",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.enhanceEventItem",
+        "method_name": "enhanceEventItem",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "item",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "requestedSource",
+            "type": "string | null",
+            "optional": true
+          }
+        ],
+        "return_type": "RawEventItem",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onSourceTabChange",
+        "method_name": "onSourceTabChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tabIdx",
+            "type": "number | undefined",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onSearchChange",
+        "method_name": "onSearchChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "kw",
+            "type": "string",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.toggleSortDirection",
+        "method_name": "toggleSortDirection",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onPageIndexChange",
+        "method_name": "onPageIndexChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "page",
+            "type": "number",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onPageSizeChange",
+        "method_name": "onPageSizeChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "size",
+            "type": "number",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onSelectionChange",
+        "method_name": "onSelectionChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "selectedKeys",
+            "type": "string[]",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.clearSelection",
+        "method_name": "clearSelection",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onExpandChange",
+        "method_name": "onExpandChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "dataRow",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "expanded",
+            "type": "boolean",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.toggleRowInline",
+        "method_name": "toggleRowInline",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "dataRow",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "event",
+            "type": "MouseEvent",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": true,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.getPayloadSize",
+        "method_name": "getPayloadSize",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "payload",
+            "type": "object | string",
+            "optional": true
+          }
+        ],
+        "return_type": "string",
+        "has_branches": true,
+        "has_throws": true,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.openDrawer",
+        "method_name": "openDrawer",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "item",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "event",
+            "type": "MouseEvent",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": true,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.closeDrawer",
+        "method_name": "closeDrawer",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.openCompareModal",
+        "method_name": "openCompareModal",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.closeCompareModal",
+        "method_name": "closeCompareModal",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.copyToClipboard",
+        "method_name": "copyToClipboard",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "text",
+            "type": "object | string | null | undefined",
+            "optional": false
+          },
+          {
+            "name": "msgKeyOrText",
+            "type": "string",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.getSourceDotColor",
+        "method_name": "getSourceDotColor",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "source",
+            "type": "string | undefined",
+            "optional": false
+          }
+        ],
+        "return_type": "string",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.getEventTypeTagColor",
+        "method_name": "getEventTypeTagColor",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "type",
+            "type": "string | undefined",
+            "optional": false
+          }
+        ],
+        "return_type": "'primary' | 'success' | 'warning' | 'info' | 'default'",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.selectedIds",
+        "method_name": "selectedIds",
+        "class_name": "RawEventListComponent",
+        "kind": "signal:signal",
+        "params": [],
+        "return_type": "string[]",
+        "has_branches": false,
+        "has_throws": false,
+        "is_async": false
+      }
+    ]
+  },
+  "stage2_test_point_set": {
+    "test_points": [
+      {
+        "id": "TP-001",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange()",
+        "description": "Verify input/output behavior and state transitions of RawEventListComponent.onMainTabChange",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "onMainTabChange",
+        "dimension": "flow",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Exported codebase symbol RawEventListComponent.onMainTabChange requires unit test coverage"
+      },
+      {
+        "id": "TP-002",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()",
+        "description": "Verify RawEventListComponent.onMainTabChange handles null/invalid parameters and boundary limits safely",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "onMainTabChange",
+        "dimension": "boundary",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Parameter/error path detected in symbol RawEventListComponent.onMainTabChange"
+      },
+      {
+        "id": "TP-003",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()",
+        "description": "Verify input/output behavior and state transitions of RawEventListComponent.updateSourceTabsFromEvents",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "updateSourceTabsFromEvents",
+        "dimension": "flow",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Exported codebase symbol RawEventListComponent.updateSourceTabsFromEvents requires unit test coverage"
+      },
+      {
+        "id": "TP-004",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()",
+        "description": "Verify RawEventListComponent.updateSourceTabsFromEvents handles null/invalid parameters and boundary limits safely",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "updateSourceTabsFromEvents",
+        "dimension": "boundary",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Parameter/error path detected in symbol RawEventListComponent.updateSourceTabsFromEvents"
+      },
+      {
+        "id": "TP-005",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal()",
+        "description": "Verify input/output behavior and state transitions of RawEventListComponent.openCompareModal",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "openCompareModal",
+        "dimension": "flow",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Exported codebase symbol RawEventListComponent.openCompareModal requires unit test coverage"
+      },
+      {
+        "id": "TP-006",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()",
+        "description": "Verify RawEventListComponent.getEventTypeTagColor handles null/invalid parameters and boundary limits safely",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "getEventTypeTagColor",
+        "dimension": "boundary",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Parameter/error path detected in symbol RawEventListComponent.getEventTypeTagColor"
+      }
+    ],
+    "dropped_test_points": [
+      {
+        "id": "TP-003",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-004",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.setMainTab()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-005",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.setMainTab()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-006",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-007",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-008",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.fetchEventSources()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-009",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-010",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.fetchEvents()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-011",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEvents()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-014",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.enhanceEventItem()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-015",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.enhanceEventItem()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-016",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onSourceTabChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-017",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onSourceTabChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-018",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onSearchChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-019",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onSearchChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-020",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.toggleSortDirection()",
+        "reason": "Semantically duplicate with TP-012"
+      },
+      {
+        "id": "TP-021",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onPageIndexChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-022",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onPageIndexChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-023",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onPageSizeChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-024",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onPageSizeChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-025",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onSelectionChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-026",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onSelectionChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-027",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.clearSelection()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-028",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onExpandChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-029",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onExpandChange()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-030",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.toggleRowInline()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-031",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.toggleRowInline()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-032",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.getPayloadSize()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-033",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getPayloadSize()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-034",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.openDrawer()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-035",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.openDrawer()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-036",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.closeDrawer()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-038",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.closeCompareModal()",
+        "reason": "Semantically duplicate with TP-037"
+      },
+      {
+        "id": "TP-039",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.copyToClipboard()",
+        "reason": "Semantically duplicate with TP-037"
+      },
+      {
+        "id": "TP-040",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.copyToClipboard()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-041",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.getSourceDotColor()",
+        "reason": "Semantically duplicate with TP-012"
+      },
+      {
+        "id": "TP-042",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getSourceDotColor()",
+        "reason": "Semantically duplicate with TP-002"
+      },
+      {
+        "id": "TP-043",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.getEventTypeTagColor()",
+        "reason": "Semantically duplicate with TP-037"
+      },
+      {
+        "id": "TP-045",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.selectedIds()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-046",
+        "title": "[RawEventListComponent] Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-lev",
+        "reason": "Exceeded dynamic limit 6"
+      }
+    ],
+    "validation_issues": [
+      "Trimmed 1 test points exceeding budget 6"
+    ],
+    "coverage_target": "Cover 1 requirements and 26 codebase symbols across ISTQB dimensions"
+  },
+  "stage3_test_design_plan": {
+    "items": [
+      {
+        "test_point_id": "TP-001",
+        "techniques": [
+          "state_transition"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP001-01",
+            "test_point_id": "TP-001",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange(): Valid state transition path",
+            "data_hint": "Trigger allowed state mutation from valid initial state"
+          },
+          {
+            "id": "CI-TP001-02",
+            "test_point_id": "TP-001",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange(): Invalid/guarded state transition",
+            "data_hint": "Trigger action from disallowed or locked state"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'flow' -> state_transition"
+      },
+      {
+        "test_point_id": "TP-002",
+        "techniques": [
+          "boundary_value",
+          "equivalence_partitioning"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP002-01",
+            "test_point_id": "TP-002",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Lower boundary and below-min edge",
+            "data_hint": "Test at minimum allowed value and (min - 1) / empty"
+          },
+          {
+            "id": "CI-TP002-02",
+            "test_point_id": "TP-002",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Upper boundary and above-max edge",
+            "data_hint": "Test at maximum allowed value and (max + 1) / overflow"
+          },
+          {
+            "id": "CI-TP002-03",
+            "test_point_id": "TP-002",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Valid equivalence partition input",
+            "data_hint": "Provide typical valid inputs within allowed spec/type domain"
+          },
+          {
+            "id": "CI-TP002-04",
+            "test_point_id": "TP-002",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Invalid equivalence partition input",
+            "data_hint": "Provide malformed, null/undefined, or disallowed inputs"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'boundary' -> boundary_value, equivalence_partitioning"
+      },
+      {
+        "test_point_id": "TP-003",
+        "techniques": [
+          "state_transition"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP003-01",
+            "test_point_id": "TP-003",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Valid state transition path",
+            "data_hint": "Trigger allowed state mutation from valid initial state"
+          },
+          {
+            "id": "CI-TP003-02",
+            "test_point_id": "TP-003",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Invalid/guarded state transition",
+            "data_hint": "Trigger action from disallowed or locked state"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'flow' -> state_transition"
+      },
+      {
+        "test_point_id": "TP-004",
+        "techniques": [
+          "boundary_value",
+          "equivalence_partitioning"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP004-01",
+            "test_point_id": "TP-004",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Lower boundary and below-min edge",
+            "data_hint": "Test at minimum allowed value and (min - 1) / empty"
+          },
+          {
+            "id": "CI-TP004-02",
+            "test_point_id": "TP-004",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Upper boundary and above-max edge",
+            "data_hint": "Test at maximum allowed value and (max + 1) / overflow"
+          },
+          {
+            "id": "CI-TP004-03",
+            "test_point_id": "TP-004",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Valid equivalence partition input",
+            "data_hint": "Provide typical valid inputs within allowed spec/type domain"
+          },
+          {
+            "id": "CI-TP004-04",
+            "test_point_id": "TP-004",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Invalid equivalence partition input",
+            "data_hint": "Provide malformed, null/undefined, or disallowed inputs"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'boundary' -> boundary_value, equivalence_partitioning"
+      },
+      {
+        "test_point_id": "TP-005",
+        "techniques": [
+          "state_transition"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP005-01",
+            "test_point_id": "TP-005",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal(): Valid state transition path",
+            "data_hint": "Trigger allowed state mutation from valid initial state"
+          },
+          {
+            "id": "CI-TP005-02",
+            "test_point_id": "TP-005",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal(): Invalid/guarded state transition",
+            "data_hint": "Trigger action from disallowed or locked state"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'flow' -> state_transition"
+      },
+      {
+        "test_point_id": "TP-006",
+        "techniques": [
+          "boundary_value",
+          "equivalence_partitioning"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP006-01",
+            "test_point_id": "TP-006",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Lower boundary and below-min edge",
+            "data_hint": "Test at minimum allowed value and (min - 1) / empty"
+          },
+          {
+            "id": "CI-TP006-02",
+            "test_point_id": "TP-006",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Upper boundary and above-max edge",
+            "data_hint": "Test at maximum allowed value and (max + 1) / overflow"
+          },
+          {
+            "id": "CI-TP006-03",
+            "test_point_id": "TP-006",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Valid equivalence partition input",
+            "data_hint": "Provide typical valid inputs within allowed spec/type domain"
+          },
+          {
+            "id": "CI-TP006-04",
+            "test_point_id": "TP-006",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Invalid equivalence partition input",
+            "data_hint": "Provide malformed, null/undefined, or disallowed inputs"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'boundary' -> boundary_value, equivalence_partitioning"
+      }
+    ],
+    "total_budget": 12,
+    "technique_summary": {
+      "boundary_value": 3,
+      "equivalence_partitioning": 3,
+      "state_transition": 3
+    }
+  },
+  "stage4_test_cases": [
+    {
+      "id": "TC-TP001-01",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onMainTabChange() (state_transition #1) when valid input is provided to RawEventListComponent.onMainTabChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (index=10)",
+        "When invoking RawEventListComponent.onMainTabChange under condition: [RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange(): Valid state transition path",
+        "Then verify succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange()"
+      ],
+      "test_data": "index=10",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-001"
+      ],
+      "covered_items": [
+        "CI-TP001-01"
+      ],
+      "symbol_ref": "onMainTabChange",
+      "is_negative": false,
+      "rationale": "Covers CI-TP001-01 (state_transition) for TP-001"
+    },
+    {
+      "id": "TC-TP001-02",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onMainTabChange() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (index=-1)",
+        "When invoking RawEventListComponent.onMainTabChange under condition: [RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange(): Invalid/guarded state transition",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange()"
+      ],
+      "test_data": "index=-1",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.onMainTabChange()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-001"
+      ],
+      "covered_items": [
+        "CI-TP001-02"
+      ],
+      "symbol_ref": "onMainTabChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP001-02 (state_transition) for TP-001"
+    },
+    {
+      "id": "TC-TP002-01",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (index=-1)",
+        "When invoking RawEventListComponent.onMainTabChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Lower boundary and below-min edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "test_data": "index=-1",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-002"
+      ],
+      "covered_items": [
+        "CI-TP002-01"
+      ],
+      "symbol_ref": "onMainTabChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP002-01 (boundary_value) for TP-002"
+    },
+    {
+      "id": "TC-TP002-02",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (index=-1)",
+        "When invoking RawEventListComponent.onMainTabChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Upper boundary and above-max edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "test_data": "index=-1",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-002"
+      ],
+      "covered_items": [
+        "CI-TP002-02"
+      ],
+      "symbol_ref": "onMainTabChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP002-02 (boundary_value) for TP-002"
+    },
+    {
+      "id": "TC-TP002-03",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (index=-1)",
+        "When invoking RawEventListComponent.onMainTabChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Valid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "test_data": "index=-1",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-002"
+      ],
+      "covered_items": [
+        "CI-TP002-03"
+      ],
+      "symbol_ref": "onMainTabChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP002-03 (equivalence_partitioning) for TP-002"
+    },
+    {
+      "id": "TC-TP002-04",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (index=-1)",
+        "When invoking RawEventListComponent.onMainTabChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange(): Invalid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "test_data": "index=-1",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onMainTabChange()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-002"
+      ],
+      "covered_items": [
+        "CI-TP002-04"
+      ],
+      "symbol_ref": "onMainTabChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP002-04 (equivalence_partitioning) for TP-002"
+    },
+    {
+      "id": "TC-TP003-01",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #1) when valid input is provided to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[{ id: '1' }])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Valid state transition path",
+        "Then verify succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[{ id: '1' }]",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-003"
+      ],
+      "covered_items": [
+        "CI-TP003-01"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": false,
+      "rationale": "Covers CI-TP003-01 (state_transition) for TP-003"
+    },
+    {
+      "id": "TC-TP003-02",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Invalid/guarded state transition",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-003"
+      ],
+      "covered_items": [
+        "CI-TP003-02"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP003-02 (state_transition) for TP-003"
+    },
+    {
+      "id": "TC-TP004-01",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Lower boundary and below-min edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-01"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-01 (boundary_value) for TP-004"
+    },
+    {
+      "id": "TC-TP004-02",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Upper boundary and above-max edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-02"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-02 (boundary_value) for TP-004"
+    },
+    {
+      "id": "TC-TP004-03",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Valid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-03"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-03 (equivalence_partitioning) for TP-004"
+    },
+    {
+      "id": "TC-TP004-04",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents(): Invalid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-04"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-04 (equivalence_partitioning) for TP-004"
+    },
+    {
+      "id": "TC-TP005-01",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.openCompareModal() (state_transition #1) when valid input is provided to RawEventListComponent.openCompareModal",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (validPayload = { id: '1' })",
+        "When invoking RawEventListComponent.openCompareModal under condition: [RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal(): Valid state transition path",
+        "Then verify succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal()"
+      ],
+      "test_data": "validPayload = { id: '1' }",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-005"
+      ],
+      "covered_items": [
+        "CI-TP005-01"
+      ],
+      "symbol_ref": "openCompareModal",
+      "is_negative": false,
+      "rationale": "Covers CI-TP005-01 (state_transition) for TP-005"
+    },
+    {
+      "id": "TC-TP005-02",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.openCompareModal() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.openCompareModal",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (invalidPayload = null)",
+        "When invoking RawEventListComponent.openCompareModal under condition: [RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal(): Invalid/guarded state transition",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal()"
+      ],
+      "test_data": "invalidPayload = null",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-005"
+      ],
+      "covered_items": [
+        "CI-TP005-02"
+      ],
+      "symbol_ref": "openCompareModal",
+      "is_negative": true,
+      "rationale": "Covers CI-TP005-02 (state_transition) for TP-005"
+    },
+    {
+      "id": "TC-TP006-01",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (type='')",
+        "When invoking RawEventListComponent.getEventTypeTagColor under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Lower boundary and below-min edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "test_data": "type=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-01"
+      ],
+      "symbol_ref": "getEventTypeTagColor",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-01 (boundary_value) for TP-006"
+    },
+    {
+      "id": "TC-TP006-02",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (type='')",
+        "When invoking RawEventListComponent.getEventTypeTagColor under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Upper boundary and above-max edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "test_data": "type=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-02"
+      ],
+      "symbol_ref": "getEventTypeTagColor",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-02 (boundary_value) for TP-006"
+    },
+    {
+      "id": "TC-TP006-03",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (type='')",
+        "When invoking RawEventListComponent.getEventTypeTagColor under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Valid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "test_data": "type=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-03"
+      ],
+      "symbol_ref": "getEventTypeTagColor",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-03 (equivalence_partitioning) for TP-006"
+    },
+    {
+      "id": "TC-TP006-04",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (type='')",
+        "When invoking RawEventListComponent.getEventTypeTagColor under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor(): Invalid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "test_data": "type=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()"
+      ],
+      "acceptance_criteria": [
+        "Bo icon tdsi-database-line va tdsi-git-merge-line o 2 tab top-level tren raw-event-list.component.html. 2) Chinh padding-x ve 0 cho .tds-tabs-tab-btn trong .top-level-card-tabs (raw-event-list.component.scss). 3) Tab labels can doi, UI tab card chuan TDS. 4) Tests pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-04"
+      ],
+      "symbol_ref": "getEventTypeTagColor",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-04 (equivalence_partitioning) for TP-006"
+    }
+  ],
+  "stage5_coverage_report": {
+    "total_cases": 18,
+    "total_test_points": 6,
+    "total_coverage_items": 18,
+    "requirement_coverage_pct": 100.0,
+    "coverage_item_pct": 100.0,
+    "symbol_coverage_pct": 15.4,
+    "covered_requirements": [
+      "REQ-001"
+    ],
+    "uncovered_requirements": [],
+    "covered_test_points": [
+      "TP-001",
+      "TP-002",
+      "TP-003",
+      "TP-004",
+      "TP-005",
+      "TP-006"
+    ],
+    "uncovered_test_points": [],
+    "uncovered_coverage_items": [],
+    "covered_symbols": [
+      "getEventTypeTagColor",
+      "onMainTabChange",
+      "openCompareModal",
+      "updateSourceTabsFromEvents"
+    ],
+    "uncovered_symbols": [
+      "clearSelection",
+      "closeCompareModal",
+      "closeDrawer",
+      "copyToClipboard",
+      "enhanceEventItem",
+      "fetchEventSources",
+      "fetchEvents",
+      "getPayloadSize",
+      "getSourceDotColor",
+      "ngOnInit",
+      "onAllTenantsChange",
+      "onExpandChange",
+      "onPageIndexChange",
+      "onPageSizeChange",
+      "onSearchChange",
+      "onSelectionChange",
+      "onSourceTabChange",
+      "openDrawer",
+      "selectedIds",
+      "setMainTab",
+      "toggleRowInline",
+      "toggleSortDirection"
+    ],
+    "dimension_summary": {
+      "boundary": 3,
+      "flow": 3
+    },
+    "priority_summary": {
+      "P0": 18
+    },
+    "duplicates": [
+      {
+        "case_a": "TC-TP001-01",
+        "case_b": "TC-TP001-02",
+        "similarity": 0.85
+      },
+      {
+        "case_a": "TC-TP001-01",
+        "case_b": "TC-TP005-01",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP001-02",
+        "case_b": "TC-TP003-02",
+        "similarity": 0.85
+      },
+      {
+        "case_a": "TC-TP001-02",
+        "case_b": "TC-TP005-02",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP002-01",
+        "case_b": "TC-TP002-02",
+        "similarity": 0.96
+      },
+      {
+        "case_a": "TC-TP002-01",
+        "case_b": "TC-TP002-03",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP002-01",
+        "case_b": "TC-TP002-04",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP002-02",
+        "case_b": "TC-TP002-03",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP002-02",
+        "case_b": "TC-TP002-04",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP002-03",
+        "case_b": "TC-TP002-04",
+        "similarity": 1.0
+      },
+      {
+        "case_a": "TC-TP004-01",
+        "case_b": "TC-TP004-02",
+        "similarity": 0.96
+      },
+      {
+        "case_a": "TC-TP004-01",
+        "case_b": "TC-TP004-03",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP004-01",
+        "case_b": "TC-TP004-04",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP004-02",
+        "case_b": "TC-TP004-03",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP004-02",
+        "case_b": "TC-TP004-04",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP004-03",
+        "case_b": "TC-TP004-04",
+        "similarity": 1.0
+      },
+      {
+        "case_a": "TC-TP006-01",
+        "case_b": "TC-TP006-02",
+        "similarity": 0.99
+      },
+      {
+        "case_a": "TC-TP006-01",
+        "case_b": "TC-TP006-03",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP006-01",
+        "case_b": "TC-TP006-04",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP006-02",
+        "case_b": "TC-TP006-03",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP006-02",
+        "case_b": "TC-TP006-04",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP006-03",
+        "case_b": "TC-TP006-04",
+        "similarity": 1.0
+      }
+    ],
+    "quality_issues": []
+  },
+  "generated_spec_file": null,
+  "harness_synced_testcases": [
+    {
+      "tc_id": "TC-TP001-01",
+      "harness_id": 1992,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onMainTabChange() (state_transition #1) when valid input is provided to RawEventListComponent.onMainTabChange"
+    },
+    {
+      "tc_id": "TC-TP001-02",
+      "harness_id": 1993,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onMainTabChange() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange"
+    },
+    {
+      "tc_id": "TC-TP002-01",
+      "harness_id": 1994,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange"
+    },
+    {
+      "tc_id": "TC-TP002-02",
+      "harness_id": 1995,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange"
+    },
+    {
+      "tc_id": "TC-TP002-03",
+      "harness_id": 1996,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange"
+    },
+    {
+      "tc_id": "TC-TP002-04",
+      "harness_id": 1997,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onMainTabChange() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.onMainTabChange"
+    },
+    {
+      "tc_id": "TC-TP003-01",
+      "harness_id": 1998,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #1) when valid input is provided to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP003-02",
+      "harness_id": 1999,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP004-01",
+      "harness_id": 2000,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP004-02",
+      "harness_id": 2001,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP004-03",
+      "harness_id": 2002,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP004-04",
+      "harness_id": 2003,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP005-01",
+      "harness_id": 2004,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.openCompareModal() (state_transition #1) when valid input is provided to RawEventListComponent.openCompareModal"
+    },
+    {
+      "tc_id": "TC-TP005-02",
+      "harness_id": 2005,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.openCompareModal() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.openCompareModal"
+    },
+    {
+      "tc_id": "TC-TP006-01",
+      "harness_id": 2006,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor"
+    },
+    {
+      "tc_id": "TC-TP006-02",
+      "harness_id": 2007,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor"
+    },
+    {
+      "tc_id": "TC-TP006-03",
+      "harness_id": 2008,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor"
+    },
+    {
+      "tc_id": "TC-TP006-04",
+      "harness_id": 2009,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.getEventTypeTagColor() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.getEventTypeTagColor"
+    }
+  ],
+  "execution_result": null
+}
