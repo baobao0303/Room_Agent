@@ -168,7 +168,8 @@ def _synthesize_testcase_spec(row: dict) -> dict:
 
 
 def _infer_slpc_profile(row: dict) -> dict:
-    if not row.get("assigned_to_profile"):
+    raw_prof = str(row.get("assigned_to_profile") or "").strip()
+    if not raw_prof:
         wtype = (row.get("type") or "").strip().lower()
         if wtype == "epic":
             row["assigned_to_profile"] = "supervisor"
@@ -178,6 +179,26 @@ def _infer_slpc_profile(row: dict) -> dict:
             row["assigned_to_profile"] = "qc"
         else:
             row["assigned_to_profile"] = "peer"
+    else:
+        p_low = raw_prof.lower()
+        if p_low.startswith("peer"):
+            if p_low != "peer" and not row.get("assigned_to"):
+                row["assigned_to"] = raw_prof
+            row["assigned_to_profile"] = "peer"
+        elif p_low.startswith("lead"):
+            if p_low != "lead" and not row.get("assigned_to"):
+                row["assigned_to"] = raw_prof
+            row["assigned_to_profile"] = "lead"
+        elif p_low.startswith("sup"):
+            row["assigned_to_profile"] = "supervisor"
+        elif p_low.startswith("qc") or p_low.startswith("qa"):
+            row["assigned_to_profile"] = "qc"
+        else:
+            row["assigned_to_profile"] = p_low
+
+    raw_src = str(row.get("source") or "local").strip().lower()
+    if raw_src in ("bot", "local", "floci", ""):
+        row["source"] = "local"
     return _synthesize_testcase_spec(row)
 
 
