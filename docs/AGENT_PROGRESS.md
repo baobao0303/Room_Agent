@@ -8,7 +8,7 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-16 17:49:37 +0700`
+- **Cập nhật lần cuối**: `2026-10-16 17:55:43 +0700`
 - **Agent cập nhật gần nhất**: `Paseo/Agent`
 - **Trọng tâm hiện tại**: [Supervisor] SLPC Heartbeat Monitor doc tien do kiem tra agent
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
@@ -47,6 +47,7 @@
 - [x] patched ~/.paseo/config.json.
 - [x] Đặc tả chi tiết 5 Cổng: (1) Neo ngữ cảnh nguồn (URL/Figma/DTO), (2) Giao việc chuẩn 3 phần (Goal/Constraints/Suggested Path), (3) Lead Code Review (OnPush & TDS Tokens), (4) QC 5-Stage ISTQB Tests (100% Pass), và (5) Tự động dọn phòng khi Closed.
 - [x] 1. paseo_hooks.py: bổ sung clean_closed_task_rooms và subcommand clean-rooms, tự động quét point-lookup task closed trên Floci DB và xóa biên bản cũ. 2. Kích hoạt hook tự động trên agent.closed, agent.turn_ended, Stop và SessionEnd.
+- [x] Commit a1ff17e: bmad/rooms, 5 Cổng rào cản Req Guardrails, tools/lead_code_review.py, skill /lead-review, và hook dọn phòng tự động khi task Closed.
 
 ---
 
@@ -63,7 +64,33 @@
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
 
-> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 62 phiên được lưu trong `.harness_progress.json`).
+> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 66 phiên được lưu trong `.harness_progress.json`).
+
+### Phiên #66 — `2026-10-16 17:55:43 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Awaiting next task from User.
+
+### Phiên #65 — `2026-10-16 17:55:10 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat Monitor doc tien do kiem tra agent
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_monitor_do.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_monitor_do.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_monitor_do.md và tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md.
+
+### Phiên #64 — `2026-10-16 17:54:33 +0700` | **Paseo/Agent**
+- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
+- **Đã thực hiện**:
+  - Turn N/A ended with outcome=unknown (agentId=None)
+- **Bàn giao bước tiếp theo**: Awaiting next task from User.
+
+### Phiên #63 — `2026-10-16 17:54:20 +0700` | **Supervisor**
+- **Tóm tắt**: Commit hoàn tất toàn bộ code và đặc tả BMAD multi-agent SLPC protocol
+- **Đã thực hiện**:
+  - Commit a1ff17e: bmad/rooms, 5 Cổng rào cản Req Guardrails, tools/lead_code_review.py, skill /lead-review, và hook dọn phòng tự động khi task Closed.
+- **Bàn giao bước tiếp theo**: Awaiting next task from User.
 
 ### Phiên #62 — `2026-10-16 17:49:37 +0700` | **Paseo/Agent**
 - **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
@@ -170,34 +197,6 @@
 - **Bàn giao bước tiếp theo**: Awaiting next task from User.
 
 ### Phiên #47 — `2026-10-16 17:28:30 +0700` | **Supervisor (Auto Research+Gen)**
-- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat Monitor doc tien do kiem tra agent
-- **Đã thực hiện**:
-  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_monitor_do.md
-  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md
-- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_monitor_do.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md`
-- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_monitor_do.md và tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md.
-
-### Phiên #46 — `2026-10-16 17:25:31 +0700` | **Paseo/Agent**
-- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
-- **Đã thực hiện**:
-  - Turn N/A ended with outcome=unknown (agentId=None)
-- **Bàn giao bước tiếp theo**: Awaiting next task from User.
-
-### Phiên #45 — `2026-10-16 17:24:55 +0700` | **Supervisor (Auto Research+Gen)**
-- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat Monitor doc tien do kiem tra agent
-- **Đã thực hiện**:
-  - Research Report generated via Cache (TTL) -> tools/research/research_supervisor_slpc_heartbeat_monitor_do.md
-  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md
-- **File đã tạo/cập nhật**: `tools/research/research_supervisor_slpc_heartbeat_monitor_do.md`, `tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md`
-- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_slpc_heartbeat_monitor_do.md và tools/research/gen_brief_supervisor_slpc_heartbeat_monitor_do.md.
-
-### Phiên #44 — `2026-10-16 17:23:56 +0700` | **Paseo/Agent**
-- **Tóm tắt**: Paseo hook agent.turn_ended (unknown) - session
-- **Đã thực hiện**:
-  - Turn N/A ended with outcome=unknown (agentId=None)
-- **Bàn giao bước tiếp theo**: Awaiting next task from User.
-
-### Phiên #43 — `2026-10-16 17:23:32 +0700` | **Supervisor (Auto Research+Gen)**
 - **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: SLPC Heartbeat Monitor doc tien do kiem tra agent
 - **Đã thực hiện**:
   - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_slpc_heartbeat_monitor_do.md
