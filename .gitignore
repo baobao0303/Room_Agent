@@ -11,6 +11,8 @@
 *.token
 *.credentials.json
 .credentials.json
+.mcp.json
+tools/update_outline_*.py
 
 # 2. Python Runtimes & Caches
 __pycache__/
