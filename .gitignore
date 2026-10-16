@@ -80,7 +80,7 @@ Thumbs.db
 scratch/
 
 # 7. Sub-projects (own repos)
-/projects/
+# /projects/
 
 # 8. Company-identifying
 /private/
@@ -92,3 +92,8 @@ scratch/
 /codex-room-setup/
 /.harness_progress.json
 /.harness_hooks.jsonl
+
+# 9. Auto-generated research & test briefs
+tools/research/gen_brief_*
+tools/research/research_*
+tools/research/gen_test_*
