@@ -1,0 +1,173 @@
+{
+  "version": "1.0.0",
+  "project": "WiCX CRM Frontend",
+  "ecosystem": "Rsbuild + Angular 18 + Module Federation 2.0 + TDS-UI",
+  "graph": {
+    "nodes": [
+      {
+        "id": "app-shell",
+        "label": "App Shell (Host)",
+        "type": "host",
+        "port": 4200,
+        "entry": "projects/wicx-crm-fe/apps/app-shell",
+        "description": "Host Shell quản lý bố cục chung, Auth Guard, Menu bên trái và định tuyến tải động các Remote MFE."
+      },
+      {
+        "id": "mfe-cdp",
+        "label": "MFE CDP (Remote)",
+        "type": "remote",
+        "port": 4204,
+        "entry": "projects/wicx-crm-fe/apps/mfe-cdp",
+        "routes": [
+          "/:shopId/customers",
+          "/:shopId/customers/:id",
+          "/:shopId/data-raw"
+        ],
+        "description": "Phân hệ Dữ liệu khách hàng (CDP): Danh sách khách hàng, Chi tiết toàn màn hình Customer 360, Raw Event Data."
+      },
+      {
+        "id": "mfe-crm",
+        "label": "MFE CRM (Remote)",
+        "type": "remote",
+        "port": 4203,
+        "entry": "projects/wicx-crm-fe/apps/mfe-crm",
+        "routes": [
+          "/:shopId/crm"
+        ],
+        "description": "Phân hệ Điều hành Bán hàng & Chăm sóc khách hàng."
+      },
+      {
+        "id": "mfe-account",
+        "label": "MFE Account (Remote)",
+        "type": "remote",
+        "port": 4201,
+        "entry": "projects/wicx-crm-fe/apps/mfe-account",
+        "routes": [
+          "/auth/login",
+          "/onboarding/tenant"
+        ],
+        "description": "Phân hệ Xác thực, Định danh Tenant và Quản lý Người dùng."
+      },
+      {
+        "id": "tds-ui",
+        "label": "TDS UI Component Library",
+        "type": "shared-library",
+        "npm": "tds-ui",
+        "description": "Thư viện Design System chuẩn doanh nghiệp (Card, Avatar, Button, Timeline, Data-Table, Tag, Message)."
+      },
+      {
+        "id": "wicx-core",
+        "label": "@wicx/core",
+        "type": "shared-library",
+        "entry": "projects/wicx-crm-fe/libs/wicx-core",
+        "description": "Thư viện nền tảng chia sẻ i18n resolver, provideWII18n, EventBus cross-MFE."
+      },
+      {
+        "id": "harness-ui",
+        "label": "Harness SLPC Live Dashboard",
+        "type": "tooling-ui",
+        "port": 8765,
+        "entry": "harness-ui",
+        "tech": "Astro + Tailwind + JS Islands + Python API backend",
+        "description": "Bảng điều khiển trực quan hóa thời gian thực: Bàn cờ Caro (Work Items), SLPC 4-Role Agents, Sổ cái Tiến độ và QC Workbench."
+      },
+      {
+        "id": "agent-supervisor",
+        "label": "Supervisor (Scope & Intent Guard)",
+        "type": "slpc-agent",
+        "room": "bmad/rooms/supervisor",
+        "description": "Tiếp nhận prompt từ User, tra cứu ngữ cảnh, tạo Work Item trên Floci DB, sinh Research Brief và bàn giao cho Lead Dev."
+      },
+      {
+        "id": "agent-lead",
+        "label": "Lead Dev (Technical Architect)",
+        "type": "slpc-agent",
+        "room": "bmad/rooms/lead",
+        "description": "Đọc biên bản từ Supervisor, thiết kế giải pháp kỹ thuật MFE, phân bổ task chi tiết cho Peer Dev."
+      },
+      {
+        "id": "agent-peer",
+        "label": "Peer Dev (Code Executor)",
+        "type": "slpc-agent",
+        "room": "bmad/rooms/peer",
+        "description": "Nhận task từ Lead Dev, thực thi code tối giản (YAGNI), tự chạy runnable test, cập nhật diff bàn giao cho QC."
+      },
+      {
+        "id": "agent-qc",
+        "label": "QC Verifier (Quality Gate)",
+        "type": "slpc-agent",
+        "room": "bmad/rooms/qc",
+        "description": "Nghiệm thu độc lập qua 5-Stage ISTQB Unit Tests, xác minh AC và báo cáo nghiệm thu về Supervisor."
+      }
+    ],
+    "edges": [
+      {
+        "source": "agent-supervisor",
+        "target": "agent-lead",
+        "kind": "agent-handoff",
+        "room": "bmad/rooms/supervisor",
+        "description": "Handoff #1: Supervisor bàn giao Scope, Intent và Work Item ID cho Lead Dev"
+      },
+      {
+        "source": "agent-lead",
+        "target": "agent-peer",
+        "kind": "agent-handoff",
+        "room": "bmad/rooms/lead",
+        "description": "Handoff #2: Lead Dev bàn giao Technical Plan và File Targets cho Peer Dev"
+      },
+      {
+        "source": "agent-peer",
+        "target": "agent-qc",
+        "kind": "agent-handoff",
+        "room": "bmad/rooms/peer",
+        "description": "Handoff #3: Peer Dev bàn giao Code Diff và kết quả tự test cho QC Verifier"
+      },
+      {
+        "source": "agent-qc",
+        "target": "agent-supervisor",
+        "kind": "agent-handoff",
+        "room": "bmad/rooms/qc",
+        "description": "Handoff #4: QC Verifier xác nhận 5-Stage ISTQB Test Pass, đóng Work Item và báo cáo Supervisor"
+      },
+      {
+        "source": "app-shell",
+        "target": "mfe-cdp",
+        "kind": "module-federation",
+        "path": "customers",
+        "description": "Shell tải động remote mfe-cdp khi URL khớp /:shopId/customers"
+      },
+      {
+        "source": "app-shell",
+        "target": "mfe-crm",
+        "kind": "module-federation",
+        "path": "crm",
+        "description": "Shell tải động remote mfe-crm khi URL khớp /:shopId/crm"
+      },
+      {
+        "source": "app-shell",
+        "target": "mfe-account",
+        "kind": "module-federation",
+        "path": "auth",
+        "description": "Shell chuyển hướng xác thực tới mfe-account"
+      },
+      {
+        "source": "mfe-cdp",
+        "target": "tds-ui",
+        "kind": "dependency",
+        "description": "CDP sử dụng trực tiếp các thành phần TDS UI"
+      },
+      {
+        "source": "mfe-cdp",
+        "target": "wicx-core",
+        "kind": "dependency",
+        "description": "CDP kế thừa i18n và runtime providers từ @wicx/core"
+      },
+      {
+        "source": "harness-ui",
+        "target": "app-shell",
+        "kind": "monitoring",
+        "description": "Dashboard giám sát trực quan trạng thái và tiến độ toàn hệ thống"
+      }
+    ]
+  }
+}

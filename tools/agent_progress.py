@@ -155,7 +155,10 @@ def render_markdown(state: dict[str, Any]) -> str:
     ])
 
     sessions = state.get("sessions", [])
-    for idx, session in enumerate(reversed(sessions), start=1):
+    recent_sessions = sessions[-20:]
+    if len(sessions) > 20:
+        lines.append(f"> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: {len(sessions)} phiên được lưu trong `.harness_progress.json`).\n")
+    for idx, session in enumerate(reversed(recent_sessions), start=1):
         lines.append(f"### Phiên #{len(sessions) - idx + 1} — `{session.get('timestamp', '')}` | **{session.get('agent', '')}**")
         lines.append(f"- **Tóm tắt**: {session.get('summary', '')}")
         done_list = session.get("done", [])
@@ -268,6 +271,50 @@ def cmd_log(args: argparse.Namespace, state: dict[str, Any]) -> None:
     }
     state.setdefault("sessions", []).append(session_entry)
     save_state(state)
+
+    # Automatically save handoff memo into bmad/rooms/<role>/
+    agent_lower = (args.agent or "").lower()
+    room = "peer"
+    if "supervisor" in agent_lower:
+        room = "supervisor"
+    elif "lead" in agent_lower:
+        room = "lead"
+    elif "qc" in agent_lower:
+        room = "qc"
+
+    room_dir = BASE_DIR / "bmad" / "rooms" / room
+    if room_dir.is_dir():
+        try:
+            ts_str = datetime.now(VN_TZ).strftime("%Y%m%d_%H%M%S")
+            memo_file = room_dir / f"handoff_{ts_str}.md"
+            latest_file = room_dir / "latest_handoff.md"
+            done_bullets = "\n".join(f"- [x] {d}" for d in done_items) if done_items else "- (Không có mục chi tiết)"
+            file_bullets = "\n".join(f"- `{f}`" for f in files) if files else "- (Không có file)"
+            missing_bullets = "\n".join(f"- [ ] {m}" for m in missing_items) if missing_items else ""
+
+            handoff_memo = f"""# BIÊN BẢN BÀN GIAO: {args.agent}
+
+- **Thời gian**: `{now_iso()}`
+- **Agent bàn giao**: `{args.agent}`
+- **Tóm tắt**: {args.summary}
+
+## 1. Đã hoàn thành trong phiên
+{done_bullets}
+
+## 2. File đã tạo / chỉnh sửa
+{file_bullets}
+
+## 3. Trọng tâm & Bước tiếp theo
+- **Trọng tâm hiện tại**: {args.focus or state.get('current_focus', '')}
+- **Bàn giao hành động tiếp**: {args.next or state.get('next_action', '')}
+{missing_bullets}
+"""
+            memo_file.write_text(handoff_memo, encoding="utf-8")
+            latest_file.write_text(handoff_memo, encoding="utf-8")
+            print(f"Đã lưu biên bản bàn giao vào {memo_file.relative_to(BASE_DIR)}.")
+        except Exception:
+            pass
+
     print(f"Đã cập nhật tiến độ vào {MARKDOWN_FILE} và {STATE_FILE}.")
 
 

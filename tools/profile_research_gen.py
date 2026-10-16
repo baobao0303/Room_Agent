@@ -10,6 +10,7 @@ Generation tools before/during task execution.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import re
 import subprocess
@@ -40,6 +41,42 @@ def run_cmd(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
 
 
 def execute_pipeline(
+    profile: str,
+    topic: str,
+    source_file: str | None = None,
+    spec_file: str | None = None,
+    task_id: int | None = None,
+    uc_code: str | None = None,
+    sync_harness: bool = False,
+) -> dict:
+    lock_path = Path("/tmp/paseo_profile_research_gen.lock")
+    lock_fd = None
+    try:
+        lock_fd = open(lock_path, "w")
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+    except Exception:
+        pass
+
+    try:
+        return _do_execute_pipeline(
+            profile=profile,
+            topic=topic,
+            source_file=source_file,
+            spec_file=spec_file,
+            task_id=task_id,
+            uc_code=uc_code,
+            sync_harness=sync_harness,
+        )
+    finally:
+        if lock_fd:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                lock_fd.close()
+            except Exception:
+                pass
+
+
+def _do_execute_pipeline(
     profile: str,
     topic: str,
     source_file: str | None = None,

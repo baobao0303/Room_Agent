@@ -19,6 +19,25 @@ WORKFLOW:
    - Run the QC Test Generator against the target source file and spec/task:
      `python3 tools/qc_test_generator.py --source <path/to/file.ts> --spec <path/to/spec.md> --task-id <id> --out-spec <path/to/file.spec.ts> --sync-harness`
    - Refine the generated `*.spec.ts` assertions to verify real business outcomes, edge cases, boundary values, and error handling.
+   - MANDATORY COMPONENT COVERAGE CHECKLIST:
+     Always verify and cover test cases across the 17 Standard Web Categories (.agents/skills/qc/references/web-test-cases-standards.md) when the component under test contains any of:
+     1) Textbox (alphanumeric, negative/decimal/integer, whitespace, special chars, required, min-max BVA, copy-paste, tab-index, placeholder, disabled/grayout)
+     2) Button (design/icon/color, size/responsive, click trigger, data mutation, debounce/rapid-click prevention, keyboard Enter/Space)
+     3) Search Box (design, placeholder, search icon, cursor focus, match start/mid/end, Enter key, paste, null/space, skeleton/loader, pagination reset, clear reset, alphabet sort)
+     4) Combobox & Dropdown (complete values, open on click, scroll, arrow keys, default value, non-editable, no blank/null items, max length ellipsis, pointer hover; Combo: clickable, keyboard input, mouse paste, auto-select valid, display update, change event)
+     5) Upload File/Image (upload button, design icon, text ellipsis, file picker trigger, multi-upload, batch upload, selection order, extension support, duplicate name, max size BVA, invalid format rejection, accept filter, image quality, preview/delete, drag & drop, empty file 0-byte error, forbidden types)
+     6) Form (position/layout, title/desc, field order, required asterisk *, action buttons, validation error messages, tab navigation, duplicate submit prevention, submit disabled when invalid)
+     7) ListView / Table (columns/buttons vs design, single/all select checkbox, sort alphabet/date, horizontal/vertical scroll, pagination)
+     8) Checkbox (UI/alignment, check/uncheck toggle, form model save, multi-select, required warning, default state, disabled on pending, label click toggle, keyboard Tab+Space; Remember Me: cookie/storage persistence, return auto-fill, opt-out login, clear cookie reset)
+     9) Radio Button (UI design, selectability, label click, default selection, mutual exclusivity, value fidelity on submit)
+     10) Header (alignment/height, icon alignment, icon semantics, link readability, logo position, global consistency, sticky header, clickable links, router navigation, logo to home, hover color, active state highlight, search bar, header/body demarcation, dropdown on hover/click)
+     11) Footer (bottom alignment, sticky footer on large displays, column layout, global consistency, policy/TOS links, social icons target=_blank, copyright text, logo)
+     12) Dialog / Modal (center position, title/content vs design, backdrop overlay, dynamic context message, action buttons, close/cancel/X cleanup, ESC key dismiss, cross-browser consistency)
+     13) Links (clickability, Angular Router internal navigation, external window.open with rel="noopener noreferrer", no 404, normal/hover/active/visited states, pointer cursor, internal load time, https protocol enforcement)
+     14) Date Field (datepicker widget open, responsive size, date selection reflection, default current month/year, prev/next arrows, month/year dropdown, manual DD/MM/YYYY typing, format parsing, date edit, non-numeric rejection, invalid day/month error, min/max limits)
+     15) Pop-up / Toast (spelling/grammar, empty input error, empty file error, max/min limit error, invalid URL/email error, consistent format, non-blocking position, semantic colors red/green/yellow/blue, auto-dismiss 3-5s, max toast stacking limit)
+     16) Graphical Report & Charts (empty state message, progress bar/spinner, X/Y axes accuracy & pie %, dynamic reactive update on data change, filter reactivity, tooltip on hover, auto axis scaling, extreme values handling, token palette, zoom/resize layout safety, export PNG/Excel, Excel fidelity)
+     17) Filter (expand/collapse on click, available options before search, backend catalog sync, exact match filtering, non-matching exclusion, responsive UI, multi-criteria combinations, reset filter button, URL query params sync on reload, pagination sync, empty result state)
 
 2. PHASE 2 — EXECUTION & VERIFICATION (When Peer marks a Task `Resolved` assigned to `qc`):
    - Poll tasks ready for verification:

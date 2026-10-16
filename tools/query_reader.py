@@ -14,7 +14,16 @@ import argparse
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Set
 
+try:
+    import resource
+    # Cap virtual memory at 768MB to prevent system OOM
+    resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 * 1024, 768 * 1024 * 1024))
+except Exception:
+    pass
+
 DEFAULT_EXTS = {".md", ".markdown", ".ts", ".js", ".json", ".html", ".css", ".py", ".sh", ".yaml", ".yml", ".txt"}
+IGNORED_DIRS = {"node_modules", "dist", ".git", "coverage", "__pycache__", ".nx", ".cache", "tmp", ".build", ".angular"}
+MAX_COLLECT_FILES = 120
 
 def stem(word: str) -> str:
     """Lightweight suffix stripping for plural and verb forms."""
@@ -144,19 +153,21 @@ def extract_chunks(path: Path) -> List[Dict[str, Any]]:
             return chunks
     return chunk_generic(content, str(path))
 
-def collect_files(target: Path, exts: Set[str]) -> List[Path]:
-    """Collect all target text files."""
+def collect_files(target: Path, exts: Set[str], max_files: int = MAX_COLLECT_FILES) -> List[Path]:
+    """Collect up to max_files text files to prevent memory explosion."""
     if target.is_file():
         return [target]
     if not target.is_dir():
         return []
     collected = []
     for root, dirs, files in os.walk(target):
-        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in {"node_modules", "dist", ".git", "coverage", "__pycache__"}]
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in IGNORED_DIRS]
         for f in files:
             p = Path(root) / f
             if p.suffix.lower() in exts or is_text_file(p):
                 collected.append(p)
+                if len(collected) >= max_files:
+                    return collected
     return collected
 
 def score_chunk(chunk: Dict[str, Any], query: str, query_tokens: List[str], query_stemmed: List[str]) -> float:
@@ -293,15 +304,17 @@ def query_read(
             "results": []
         }
 
-    all_chunks = []
-    for f in files:
-        all_chunks.extend(extract_chunks(f))
-
     scored = []
-    for ch in all_chunks:
-        sc = score_chunk(ch, query_str, query_tokens, query_stemmed)
-        if sc > 0:
-            scored.append((sc, ch))
+    total_chunks = 0
+    for f in files:
+        for ch in extract_chunks(f):
+            total_chunks += 1
+            sc = score_chunk(ch, query_str, query_tokens, query_stemmed)
+            if sc > 0:
+                scored.append((sc, ch))
+                if len(scored) > top_k * 10:
+                    scored.sort(key=lambda x: x[0], reverse=True)
+                    del scored[top_k * 3:]
 
     scored.sort(key=lambda x: x[0], reverse=True)
     top_results = scored[:top_k]
@@ -327,7 +340,7 @@ def query_read(
         "target": str(path),
         "query": query_str,
         "scanned_files": len(files),
-        "scanned_chunks": len(all_chunks),
+        "scanned_chunks": total_chunks,
         "match_count": len(scored),
         "results": results_data,
         "status": "success"

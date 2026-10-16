@@ -10,6 +10,7 @@ import sys
 import json
 import sqlite3
 import argparse
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -57,6 +58,29 @@ ALLOWED_PROFILES = [
     "Peer",
     "QC"
 ]
+
+def cleanup_task_room(item_id: int) -> int:
+    """Clean up handoff records and memos in bmad/rooms/ when a task is Closed."""
+    bmad_rooms = Path(BASE_DIR) / "bmad" / "rooms"
+    if not bmad_rooms.is_dir():
+        return 0
+    removed_count = 0
+    for memo_file in bmad_rooms.rglob(f"*handoff_{item_id}_*.md"):
+        try:
+            memo_file.unlink()
+            removed_count += 1
+        except Exception:
+            pass
+
+    for latest_file in bmad_rooms.rglob("latest_handoff.md"):
+        try:
+            content = latest_file.read_text(encoding="utf-8")
+            if f"#{item_id}" in content or f"Work Item: `#{item_id}`" in content:
+                latest_file.unlink()
+                removed_count += 1
+        except Exception:
+            pass
+    return removed_count
 
 class HarnessManager:
     def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH):
@@ -193,6 +217,10 @@ class HarnessManager:
             # Note: floci_db.update_work_item_state might need assigned_to_profile, but for now we just pass assigned_to if we don't modify it.
             # To properly update assigned_to_profile, we'd need to modify floci_client.py as well.
             updated = self.floci_db.update_work_item_state(item_id, target_state, assigned_to, assigned_to_profile)
+            if target_state.lower() == "closed":
+                cleaned = cleanup_task_room(item_id)
+                if cleaned > 0:
+                    print(f"[bmad/rooms] Task #{item_id} Closed -> Đã dọn dẹp {cleaned} file biên bản trong bmad/rooms/.")
             return {
                 "success": True,
                 "id": item_id,
@@ -231,6 +259,8 @@ class HarnessManager:
             query = f"UPDATE work_item SET {', '.join(updates)} WHERE id = ?"
             cursor.execute(query, tuple(params))
             conn.commit()
+            if target_state.lower() == "closed":
+                cleanup_task_room(item_id)
             return {"success": True, "id": item_id, "previous_state": current_state, "new_state": target_state, "assigned_to": assigned_to, "storage": "sqlite"}
 
     def delete_work_item(self, item_id: int) -> Dict[str, Any]:

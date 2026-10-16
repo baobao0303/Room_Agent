@@ -48,7 +48,8 @@ def gather_local_evidence(cwd: str, topic: str) -> str:
 
     keywords = " ".join(re.findall(r"[A-Za-z0-9_.\u00C0-\u1EF9-]+", topic)[:8])
     if query_script.is_file():
-        for target_sub in ("docs", "profiles", "tools", "projects"):
+        # Exclude large monorepo folders (projects) to prevent memory saturation
+        for target_sub in ("docs", "profiles", "tools"):
             target_dir = Path(cwd) / target_sub
             if target_dir.exists():
                 try:
@@ -155,6 +156,20 @@ def build_deterministic_fallback_report(cwd: str, topic: str, local_evidence: st
 
 def run_research(topic: str, output_file: str = None) -> dict:
     cwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    target_path = os.path.abspath(os.path.join(cwd, output_file)) if output_file else None
+
+    # TTL Cache: If output file was generated within 180 seconds, reuse it directly
+    if target_path and os.path.isfile(target_path):
+        mtime = os.path.getmtime(target_path)
+        if (datetime.now().timestamp() - mtime) < 180:
+            try:
+                with open(target_path, "r", encoding="utf-8") as f:
+                    cached_content = f.read()
+                print(f"[Cache HIT] Reusing fresh research report (<180s): {target_path}")
+                return {"success": True, "source": "Cache (TTL)", "output_file": target_path, "content": cached_content}
+            except Exception:
+                pass
+
     local_evidence = gather_local_evidence(cwd, topic)
     system_prompt = build_system_prompt(cwd, topic, local_evidence)
 
