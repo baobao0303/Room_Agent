@@ -155,7 +155,10 @@ def render_markdown(state: dict[str, Any]) -> str:
     ])
 
     sessions = state.get("sessions", [])
-    for idx, session in enumerate(reversed(sessions), start=1):
+    recent_sessions = sessions[-20:]
+    if len(sessions) > 20:
+        lines.append(f"> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: {len(sessions)} phiên được lưu trong `.harness_progress.json`).\n")
+    for idx, session in enumerate(reversed(recent_sessions), start=1):
         lines.append(f"### Phiên #{len(sessions) - idx + 1} — `{session.get('timestamp', '')}` | **{session.get('agent', '')}**")
         lines.append(f"- **Tóm tắt**: {session.get('summary', '')}")
         done_list = session.get("done", [])
