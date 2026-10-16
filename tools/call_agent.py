@@ -7,9 +7,21 @@ import sys
 import json
 import argparse
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 CONFIG_PATH = Path.home() / ".paseo" / "config.json"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+def resolve_room(role_name: str) -> str:
+    r = role_name.lower()
+    if "supervisor" in r:
+        return "supervisor"
+    if "lead" in r:
+        return "lead"
+    if "qc" in r:
+        return "qc"
+    return "peer"
 
 def get_profiles():
     if not CONFIG_PATH.exists():
@@ -20,9 +32,15 @@ def get_profiles():
     return {p["name"].lower(): p for p in profiles}
 
 def main():
-    parser = argparse.ArgumentParser(description="Call or wake up a Paseo agent profile (with automatic Research & Gen pipeline).")
-    parser.add_argument("--profile", required=True, help="Profile name (e.g. Supervisor, Lead, Peer, QC, Lead BA, Lead Dev, etc.)")
+    parser = argparse.ArgumentParser(description="Call or wake up a Paseo agent profile (with automatic Research & Gen pipeline and SLP Room Handoff).")
+    parser.add_argument("--profile", required=True, help="Target profile name (e.g. Supervisor, Lead, Peer, QC, Lead BA, Lead Dev, etc.)")
     parser.add_argument("--prompt", required=True, help="Task description or prompt for the agent")
+    parser.add_argument("--from-profile", default="Supervisor", help="Sender profile name (default: Supervisor)")
+    parser.add_argument("--goal", help="Ultimate Goal of the task (3-part delegation)")
+    parser.add_argument("--constraints", help="Hard Constraints (e.g. TDS UI tokens, Angular 18, no new deps)")
+    parser.add_argument("--suggested-path", help="Suggested Temporary Path from Lead (non-binding)")
+    parser.add_argument("--challenge", action="store_true", help="Flag for Peer challenging Lead's architecture with evidence")
+    parser.add_argument("--evidence", help="Empirical evidence (compiler log, benchmark, test failure) supporting challenge")
     parser.add_argument("--item-id", type=int, help="Harness Work Item ID (optional)")
     parser.add_argument("--source", help="Optional target source file to auto-generate 5-Stage ISTQB unit tests")
     parser.add_argument("--spec", help="Optional spec file path")
@@ -50,6 +68,72 @@ def main():
     mode = profile.get("modeId", "bypassPermissions")
     thinking = profile.get("thinkingOptionId", "high")
     instructions = profile.get("notes", "")
+
+    sender_role = args.from_profile
+    sender_room = resolve_room(sender_role)
+    target_room = resolve_room(profile_name)
+
+    # 1. Write SLP Handoff Memo to bmad/rooms/<sender_room>/
+    bmad_dir = PROJECT_ROOT / "bmad" / "rooms" / sender_room
+    bmad_dir.mkdir(parents=True, exist_ok=True)
+    ts_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ts_file = datetime.now().strftime("%Y%m%d_%H%M%S")
+    item_str = f"#{args.item_id}" if args.item_id else "N/A"
+
+    goal_str = args.goal or args.prompt
+    constraints_str = args.constraints or "Tuân thủ TDS UI tokens, Angular 18 Standalone, không nạp thêm lib thừa (YAGNI), bảo đảm single-ownership."
+    suggested_str = args.suggested_path or "Xem mã nguồn liên quan trong bmad/modules/ và bmad/flows/."
+
+    challenge_header = "BẢN PHẢN BIỆN KỸ THUẬT (EVIDENCE-BACKED CHALLENGE)" if args.challenge else "BIÊN BẢN BÀN GIAO CONTEXT (SLPC HANDOFF MEMO)"
+    evidence_section = ""
+    if args.challenge:
+        evidence_section = f"\n\n### BẰNG CHỨNG PHẢN BIỆN THỰC NGHIỆM (EVIDENCE DISCIPLINE)\n- **Bằng chứng**: {args.evidence or 'Xem log chi tiết đính kèm'}\n- **Lý do**: Giải pháp gợi ý bị cản trở bởi lỗi thực nghiệm."
+
+    memo_content = f"""# {challenge_header}: {sender_role} ➔ {profile_name}
+
+- **Thời gian**: `{ts_now}`
+- **Work Item**: `{item_str}`
+- **Agent bàn giao (From)**: `{sender_role}`
+- **Agent tiếp nhận (To)**: `{profile_name}`
+- **Nội dung tóm tắt**: {args.prompt}
+
+---
+
+## 1. Giao Việc Chuẩn 3 Phần (3-Part Delegation)
+1. **Mục tiêu tối hậu (Ultimate Goal)**:
+   > {goal_str}
+
+2. **Ràng buộc cứng (Hard Constraints)**:
+   > {constraints_str}
+
+3. **Giải pháp gợi ý tạm thời (Suggested Temporary Path)**:
+   > {suggested_str}
+{evidence_section}
+
+---
+
+## 2. Ranh Giới Quyền Hạn (Single-Ownership Invariant)
+> *"Một phạm vi mã nguồn/nhiệm vụ đang thay đổi chỉ có DUY NHẤT một owner tại một thời điểm, cho tới khi được bàn giao chính thức."*
+- Nghiêm cấm can thiệp hoặc sửa đè vào module ngoài phạm vi bàn giao.
+- Sau khi hoàn thành, bắt buộc xuất biên bản bàn giao tại `bmad/rooms/{target_room}/latest_handoff.md` qua lệnh `python3 tools/agent_progress.py log`.
+"""
+    try:
+        (bmad_dir / "latest_handoff.md").write_text(memo_content, encoding="utf-8")
+        (bmad_dir / f"handoff_{args.item_id or 'general'}_{ts_file}.md").write_text(memo_content, encoding="utf-8")
+        print(f"[SLP Room] Đã ghi biên bản bàn giao: bmad/rooms/{sender_room}/latest_handoff.md")
+    except Exception as exc:
+        print(f"[Warning] Không thể ghi memo bmad: {exc}", file=sys.stderr)
+
+    room_block = (
+        f"\n\n=== SLPC MULTI-AGENT ROOM HANDOFF (MANDATORY READ FIRST) ===\n"
+        f"A formal handoff memo has been registered by `{sender_role}` in:\n"
+        f"  - `/home/baoltb/Desktop/Paseo_Project/bmad/rooms/{sender_room}/latest_handoff.md`\n\n"
+        f"You MUST:\n"
+        f"1. Read `/home/baoltb/Desktop/Paseo_Project/bmad/rooms/{sender_room}/latest_handoff.md` for your 3-part delegation (Ultimate Goal, Hard Constraints, Suggested Path).\n"
+        f"2. Obey Single-Ownership Invariant: you own only your assigned module/scope. No cross-editing other modules.\n"
+        f"3. If the suggested path fails in practice, exercise your Right to Challenge with empirical evidence (`python3 tools/call_agent.py --from-profile \"{profile_name}\" --profile \"{sender_role}\" --challenge --evidence \"...\"`).\n"
+        f"4. When finished, record your handoff via `python3 tools/agent_progress.py log --agent \"{profile_name}\" ...` (auto-saves to `bmad/rooms/{target_room}/latest_handoff.md`) and transition the Work Item state on Harness DB.\n"
+    )
 
     pre_gen_block = ""
     if not args.skip_pre_gen:
@@ -82,7 +166,7 @@ def main():
     if args.item_id:
         task_body = f"[Harness Item #{args.item_id}] {task_body}"
 
-    full_prompt = f"{instructions}{pre_gen_block}\n\n=== TASK ASSIGNMENT ===\n{task_body}" if instructions else f"{pre_gen_block}\n\n{task_body}"
+    full_prompt = f"{instructions}{room_block}{pre_gen_block}\n\n=== TASK ASSIGNMENT ===\n{task_body}" if instructions else f"{room_block}{pre_gen_block}\n\n{task_body}"
     title = f"{profile_name}: {task_body[:40]}"
 
     cmd = [

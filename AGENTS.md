@@ -7,6 +7,8 @@
 ## 1. Workspace Identity & Canonical Paths
 
 - **Root Workspace**: `/home/baoltb/Desktop/Paseo_Project`
+- **BMAD Central Brain**: `/home/baoltb/Desktop/Paseo_Project/bmad` (Knowledge Graph, Architecture & Data Flows)
+- **Paseo Daemon Plugins**: `/home/baoltb/Desktop/Paseo_Project/plugins` (Lifecycle hooks, environment & approval bridge)
 - **Frontend Source Code**: `/home/baoltb/Desktop/Paseo_Project/projects/crm-fe` (Angular 18, Module Federation, Nx, UI-Lib)
 - **REMOTE Docs Repository**: `/home/baoltb/Desktop/crm-doc` (REMOTE `_git/crm` branch `docs/base`)
 - **Obsidian Knowledge Base**: `/home/baoltb/Desktop/obsidian-obsidian` (Specs, ADRs, Protocols, Beats, Metas)
@@ -15,35 +17,34 @@
 
 ---
 
-## 2. Team Multi-Agent Roles & Workflow Gates
+## 2. Team Multi-Agent Roles & Workflow Gates (SLPC)
 
-Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua các cổng kiểm soát (Workflow Gates):
+Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 4 cổng kiểm soát SLPC:
 
 ```text
 [Yêu cầu từ User]
        │
        ▼
-1. BA (Analysis) ────► Bóc tách Use Case, AC & đồng bộ vào Harness / Docs
+1. Supervisor (Scope & Intent Guard) ──► Phân tích scope, tạo Epic/Task trên Harness DB
        │
        ▼
-2. Scrum Master ──► Kích hoạt & Điều phối Gates trên Harness:
-       ├──► 3. API Analyst  [Cổng: Contract READY / Swagger Mock]
-       ├──► 4. Architect    [Cổng: MFE Arch & Token Mapping APPROVED]
-       ├──► 5. FE Dev          [Cổng: Green Build & AC Implemented in projects/crm-fe]
-       ├──► 6. Code Reviewer     [Cổng: Review APPROVED & Clean Diff]
-       └──► 7. QC & Release [Cổng: QC PASSED & Test Matrix Verified]
+2. Lead (Architect & Technical PM) ────► Thiết kế kiến trúc, API contract, phân rã task
        │
        ▼
-[Task DONE]
+3. Peer (Code Executor / Dev) ────────► Lập trình tính năng (Angular 18/TDS), viết Unit Test
+       │
+       ▼
+4. QC (Quality Gate & Test Architect) ─► Sinh testcase ISTQB 5-Stage, nghiệm thu độc lập
+       │
+       ▼
+[Task CLOSED]
 ```
 
-### Chi tiết vai trò:
-1. **BA (`ba`, `crm-doc-read`)**: Phân tích nghiệp vụ từ REMOTE Use Cases (`UC1.01`..`UC4.09`), viết Acceptance Criteria (AC), quản lý `docs/spec/`.
-2. **Scrum Master (`scrum-master`, `harness-ops`)**: Quản trị bảng điều khiển Harness, theo dõi trạng thái `New ➔ Accepted ➔ Active ➔ Resolved ➔ Closed`, kiểm soát gates.
-3. **API Analyst (`api-analyst`)**: Swagger/OpenAPI contracts, Ingestion APIs, mock data mapping.
-4. **Architect & Reviewer (`grandmaster`, `code-review`)**: Thiết kế kiến trúc Micro-Frontend, module boundaries, audit token UI-Lib, duyệt PR.
-5. **Frontend Engineer (`angular-fe`, `fe-jr`, `ui-lib-usage`, `ui-lib-figma`)**: Lập trình Angular 18 tại `projects/crm-fe/`, sử dụng UI Lib tokens, tuân thủ TDD.
-6. **QC & Tester (`qc`, `automation-functional-testing`)**: Viết E2E test cases, xác thực `verify_command` và cập nhật Test Matrix trên Harness.
+### Chi tiết 4 vai trò SLPC:
+1. **Supervisor (`supervisor`)**: Scope & Intent Guard. Tiếp nhận yêu cầu từ User, phân tích phạm vi, tạo Epic/Task/Story trên Harness DB, điều phối Lead/Peer và kiểm soát chi phí/rủi ro.
+2. **Lead (`lead`)**: Technical Architect & PM. Phân tích tài liệu nghiệp vụ, thiết kế kiến trúc hệ thống, API Contract, duyệt giải pháp kỹ thuật và phân rã task cho Peer.
+3. **Peer (`peer`)**: Code Executor (Developer). Hiện thực hóa mã nguồn theo spec, tuân thủ Angular 18 + TDS UI Design System, viết unit test và chuyển task sang `Resolved`.
+4. **QC (`qc`)**: Independent Quality Gate & Test Architect. Nghiệm thu độc lập, sinh testcase theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria và đóng task (`Resolved ➔ Closed`).
 
 ---
 
@@ -66,9 +67,10 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
 - **Mục đích**: Duyệt cấu trúc thư mục chống lỗi `EISDIR`, tìm kiếm ngữ cảnh chính xác cao bằng thuật toán BM25.
 - **Lệnh thực thi**: `python3 tools/query_reader.py <folder_path> ["<từ_khóa>"]`
 
-### D. UI-Lib & Figma Skills (`ui-lib-usage`, `ui-lib-figma`)
-- **`ui-lib-figma`**: Token lookup qua `ui-token-lookup.js`, chuyển đổi Figma sang Angular UI Lib.
-- **`ui-lib-usage`**: Danh mục gần 80 components UI Lib, recipes, troubleshooting.
+### D. TDS UI & Figma Tools (`tools/tds_search.py`, Skill `tds-ui-usage`, `tds-ui-figma`)
+- **`tds-ui-figma`**: Token lookup, chuyển đổi Figma node sang TDS Angular component và tokens `tds-color-*`.
+- **`tds-ui-usage`**: Danh mục gần 80 components UI Lib, recipes, troubleshooting.
+- **`tools/tds_search.py`**: Tra cứu API, selectors, component TDS offline nhanh chóng.
 
 ### E. Agent Progress & Handoff Ledger (`tools/agent_progress.py` & `docs/AGENT_PROGRESS.md`)
 - **Mục đích**: Nơi lưu trữ tập trung toàn bộ những gì các Agent đã làm, những hạng mục còn thiếu, và bước tiếp theo cần thực hiện để khi User yêu cầu **"làm tiếp"** / **"báo cáo tiến độ"**, bất kỳ Agent nào vào cũng nắm bắt và báo cáo được ngay.
@@ -82,6 +84,26 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua c
   1. `gemini-codebase-analyzer`: Phân tích toàn cảnh codebase quy mô lớn với Context Window 1M+ tokens (`gemini --prompt "..." --all-files`).
   2. `strategic-reasoning-architect`: Suy luận chiến lược, đánh giá kiến trúc và tìm Root Cause phức tạp (`codex -m "gpt-5" "..."`).
   3. `slpc-qc-verifier`: Sub-agent chuyên trách Role thứ 4 (`QC`) thực thi quy trình 5-Stage ISTQB Pipeline (`python3 tools/qc_test_generator.py`) và nghiệm thu độc lập.
+
+### G. BMAD Central Brain (`/home/baoltb/Desktop/Paseo_Project/bmad`)
+- **Bản chất**: "Bộ não" lưu trữ đồ thị tri thức kiến trúc, ranh giới module và luồng nghiệp vụ tập trung, giải quyết triệt để vấn đề Context Overflow (tránh nạp 248.000 file source thô vào LLM context).
+- **Tương thích Understand-Anything**: Tích hợp với `understand-anything` để trực quan hóa đồ thị kiến trúc:
+  - `bmad/architecture.json`: Đồ thị Nodes (App Shell Host, Remote MFEs `mfe-cdp`, `mfe-crm`, `mfe-account`, thư viện dùng chung `tds-ui`) kèm port dev (4200, 4204, 4203...), router mapping (`/:shopId/customers`, `/:shopId/data-raw`...) và dependencies.
+  - `bmad/modules/`: Tóm tắt vai trò, API contracts và công nghệ (Rsbuild Module Federation 2.0, Angular 18 Signals, Tailwind CSS).
+  - `bmad/flows/`: Đồ thị luồng tương tác và luồng dữ liệu người dùng (ví dụ: `customer-360-flow.md`).
+- **Quy tắc bắt buộc**: Trước khi Lead/Peer lập trình hoặc BA bóc tách spec, **Agent PHẢI đọc `bmad/architecture.json`** và các file module liên quan để nắm trọn vẹn điểm chạm hệ thống.
+
+### H. Paseo Lifecycle Plugins (`/home/baoltb/Desktop/Paseo_Project/plugins`)
+- **Vị trí**: `/home/baoltb/Desktop/Paseo_Project/plugins/slpc-lifecycle-hooks`
+- **Mục đích**: Plugin chính thức chạy trên server Paseo Daemon (`@getpaseo/plugin/server`, port `:6767`), đăng ký 11 lifecycle hooks (`workspace.create`, `agent.create`, `session.open`, `tool.execute`, `subagent.spawn`...).
+- **Chức năng tự động hóa**:
+  1. **Inject môi trường SLPC**: Tự động cấp các biến môi trường `PASEO_SLPC_HOOK_ACTIVE=1`, `PASEO_HOOK_TOOL`, `PASEO_RESEARCH_GEN_TOOL` cho mọi agent session.
+  2. **Tự động phê duyệt an toàn**: Regex `SAFE_AUTO_APPROVE_PATTERN` tự duyệt các lệnh đọc git và scripts trong `tools/` mà không hỏi prompt thủ công.
+  3. **Ép cổng Research & Gen Gate**: Kích hoạt `tools/profile_research_gen.py` đồng bộ tri thức trước khi agent thực thi.
+- **Quản lý & Kiểm tra trạng thái**:
+  ```bash
+  python3 /home/baoltb/Desktop/Paseo_Project/tools/paseo_hooks.py status
+  ```
 
 ---
 

@@ -22,6 +22,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -179,6 +180,108 @@ def trigger_research_gen(role: str, topic: str) -> dict[str, Any]:
         return {"triggered": False, "error": str(exc)}
 
 
+def clean_closed_task_rooms(max_retain_per_room: int = 2) -> dict[str, Any]:
+    """Inspect bmad/rooms/ and purge handoff files belonging to Closed work items on Harness DB.
+    Also prunes excess timestamped files in each room to prevent context overlap.
+    """
+    bmad_rooms = PROJECT_ROOT / "bmad" / "rooms"
+    if not bmad_rooms.is_dir():
+        return {"cleaned_files": 0, "closed_tasks": []}
+
+    removed_files: list[str] = []
+    referenced_ids: set[int] = set()
+
+    for f in bmad_rooms.rglob("*.md"):
+        if f.name in ("README.md", "template-handoff.md"):
+            continue
+        try:
+            content = f.read_text(encoding="utf-8")
+            matches = re.findall(r"#(\d{4,6})", content)
+            for m in matches:
+                referenced_ids.add(int(m))
+        except Exception:
+            pass
+
+    closed_ids: set[int] = set()
+    if referenced_ids:
+        try:
+            sys.path.insert(0, str(PROJECT_ROOT / "tools"))
+            from harness_manager import HarnessManager
+            mgr = HarnessManager()
+            for tid in referenced_ids:
+                try:
+                    wi = mgr.floci_db.get_work_item(tid)
+                    if wi and str(wi.get("state", "")).lower() in ("closed", "removed"):
+                        closed_ids.add(tid)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    if closed_ids:
+        for f in bmad_rooms.rglob("*.md"):
+            if f.name in ("README.md", "template-handoff.md"):
+                continue
+            try:
+                content = f.read_text(encoding="utf-8")
+                for cid in closed_ids:
+                    if f"#{cid}" in content or f"Work Item: `#{cid}`" in content or f"handoff_{cid}_" in f.name:
+                        f.unlink()
+                        removed_files.append(str(f.relative_to(PROJECT_ROOT)))
+                        break
+            except Exception:
+                pass
+
+    for role_dir in ("supervisor", "lead", "peer", "qc"):
+        r_path = bmad_rooms / role_dir
+        if not r_path.is_dir():
+            continue
+        ts_files = sorted(
+            [p for p in r_path.glob("handoff_*.md") if p.is_file()],
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if len(ts_files) > max_retain_per_room:
+            for old_file in ts_files[max_retain_per_room:]:
+                try:
+                    old_file.unlink()
+                    removed_files.append(str(old_file.relative_to(PROJECT_ROOT)))
+                except Exception:
+                    pass
+
+        if role_dir == "lead":
+            rev_files = sorted(
+                [p for p in r_path.glob("review_*.md") if p.is_file()],
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
+            if len(rev_files) > max_retain_per_room:
+                for old_rev in rev_files[max_retain_per_room:]:
+                    try:
+                        old_rev.unlink()
+                        removed_files.append(str(old_rev.relative_to(PROJECT_ROOT)))
+                    except Exception:
+                        pass
+
+    return {
+        "cleaned_files": len(removed_files),
+        "removed_paths": removed_files,
+        "closed_task_ids": list(closed_ids),
+    }
+
+
+def cmd_clean_rooms(args: argparse.Namespace) -> int:
+    """Manually or hooked purge of closed task rooms and pruning of old handoffs."""
+    res = clean_closed_task_rooms(max_retain_per_room=args.keep)
+    if args.json:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    else:
+        print(f"[Paseo Room Hook] Đã dọn dẹp {res['cleaned_files']} file biên bản trùng lặp/closed trong bmad/rooms/.")
+        for p in res["removed_paths"]:
+            print(f"  - Xóa: {p}")
+    return 0
+
+
 def cmd_emit(args: argparse.Namespace) -> int:
     """Invoke `paseo hooks <agent> <event>` and record activity in .harness_hooks.jsonl."""
     paseo_bin = find_paseo_bin()
@@ -215,6 +318,10 @@ def cmd_emit(args: argparse.Namespace) -> int:
         role = args.role or infer_slpc_role(stdin_payload, args.agent) or "Peer"
         topic = args.topic or (stdin_payload[:160] if stdin_payload else f"{args.agent}:{args.event}")
         research_result = trigger_research_gen(role, topic)
+
+    cleanup_result = None
+    if args.event in ("Stop", "SessionEnd"):
+        cleanup_result = clean_closed_task_rooms()
 
     entry = {
         "kind": "cli_agent_hook",
@@ -276,6 +383,9 @@ def cmd_plugin_event(args: argparse.Namespace) -> int:
             summary=f"Paseo hook agent.turn_ended ({outcome_kind}) - {agent_title or agent_id or 'session'}",
             done=f"Turn {turn_id or 'N/A'} ended with outcome={outcome_kind} (agentId={agent_id})",
         )
+
+    if hook in ("agent.closed", "agent.archived", "agent.turn_ended"):
+        clean_closed_task_rooms()
 
     entry = {
         "kind": "plugin_lifecycle_hook",
@@ -527,6 +637,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_status = sub.add_parser("status", help="Inspect status of all 3 Paseo hook layers and recent events")
     p_status.add_argument("--limit", type=int, default=15, help="Max recent hook events to display")
     p_status.set_defaults(func=cmd_status)
+
+    # 6. clean-rooms: purge closed task memos & prune old handoffs
+    p_clean = sub.add_parser("clean-rooms", help="Inspect bmad/rooms/ and purge handoff files belonging to Closed tasks")
+    p_clean.add_argument("--keep", type=int, default=2, help="Max recent handoff files to keep per role room (default: 2)")
+    p_clean.add_argument("--json", action="store_true", help="Output JSON result")
+    p_clean.set_defaults(func=cmd_clean_rooms)
 
     return parser
 
