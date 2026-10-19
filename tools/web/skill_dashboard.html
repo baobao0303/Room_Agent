@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skill Hub - Quản Lý Kỹ Năng Agent Tập Trung</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+            },
+            surface: {
+              base: '#0f172a',
+              card: '#1e293b',
+              border: '#334155',
+              hover: '#273548'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Custom slim scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .drop-active { border-color: #38bdf8 !important; background-color: rgba(56, 189, 248, 0.08) !important; }
+  </style>
+</head>
+<body class="bg-surface-base text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-surface-border bg-surface-card/80 backdrop-blur sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+        <i class="fa-solid fa-wand-magic-sparkles text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-semibold tracking-tight text-white flex items-center gap-2">
+          Skill Hub <span class="text-xs px-2 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800 font-mono">v1.0</span>
+        </h1>
+        <p class="text-xs text-slate-400">Kho quản lý, upload và đồng bộ kỹ năng tự động cho SLPC Agents</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3">
+      <button onclick="syncAllSkills()" id="btnSync" class="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-sm transition active:scale-95">
+        <i class="fa-solid fa-rotate text-sm" id="iconSync"></i>
+        <span>Đồng bộ tất cả Room</span>
+      </button>
+
+      <button onclick="openCreateModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium shadow-sm transition active:scale-95">
+        <i class="fa-solid fa-plus text-sm"></i>
+        <span>Tạo Skill mới</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-6">
+
+    <!-- UPLOAD DROP ZONE & QUICK STATS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <!-- Drag & Drop Area -->
+      <div id="dropZone" class="lg:col-span-2 border-2 border-dashed border-surface-border hover:border-sky-500/70 bg-surface-card/50 rounded-xl p-6 flex flex-col items-center justify-center text-center transition cursor-pointer relative group">
+        <input type="file" id="fileInput" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" accept=".zip,.tar.gz,.md" onchange="handleFileSelect(event)">
+        <div class="w-12 h-12 rounded-full bg-slate-800/80 border border-surface-border flex items-center justify-center mb-3 group-hover:scale-110 transition text-sky-400">
+          <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-200 mb-1">Kéo & Thả file Skill (.zip, .tar.gz hoặc folder) vào đây</h3>
+        <p class="text-xs text-slate-400 max-w-md">Hệ thống sẽ tự động giải nén, đọc <code class="text-sky-300 font-mono">SKILL.md</code>, lưu vào Master Registry và liên kết tới các Agent Room.</p>
+        <div class="mt-3 flex items-center gap-2">
+          <span class="text-[11px] px-2.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Hỗ trợ file nén ZIP</span>
+          <span class="text-[11px] px-2.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Tự động nhận diện cấu trúc</span>
+        </div>
+      </div>
+
+      <!-- Quick Sync Status Card -->
+      <div class="bg-surface-card border border-surface-border rounded-xl p-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Trạng thái đồng bộ</span>
+            <span id="badgeTargetCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">5 Đích</span>
+          </div>
+          <div class="space-y-2 text-xs" id="syncTargetsList">
+            <div class="flex items-center justify-between text-slate-400 py-1 border-b border-surface-border/50">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[7px] text-emerald-400"></i> Global Claude Code</span>
+              <span class="font-mono text-slate-500">~/.claude/skills</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400 py-1 border-b border-surface-border/50">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[7px] text-emerald-400"></i> Global Paseo</span>
+              <span class="font-mono text-slate-500">~/.paseo/skills</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400 py-1 border-b border-surface-border/50">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[7px] text-emerald-400"></i> Room_Agent Workspace</span>
+              <span class="font-mono text-slate-500">.claude/skills</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400 py-1 border-b border-surface-border/50">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[7px] text-emerald-400"></i> Paseo Project Agents</span>
+              <span class="font-mono text-slate-500">.agents/skills</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400 py-1">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[7px] text-emerald-400"></i> BMAD Sub-Rooms</span>
+              <span class="font-mono text-slate-500">bmad/rooms/*</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-surface-border flex items-center justify-between text-xs text-slate-400">
+          <span>Tổng số Skill: <strong id="lblTotalSkills" class="text-white font-mono text-sm">--</strong></span>
+          <span id="lblLastSync" class="text-[11px] text-slate-500">Chưa đồng bộ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-card/60 border border-surface-border rounded-xl p-3.5">
+      <div class="relative w-full sm:w-96">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input type="text" id="txtSearch" placeholder="Tìm kiếm theo tên skill, mô tả hoặc trigger..." oninput="filterSkills()"
+          class="w-full bg-slate-900 border border-surface-border rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <span class="text-xs text-slate-400">Nguồn:</span>
+        <select id="selSourceFilter" onchange="filterSkills()" class="bg-slate-900 border border-surface-border rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          <option value="all">Tất cả nguồn</option>
+          <option value="master">Master Registry (skills/)</option>
+          <option value="claude">Global (~/.claude/skills)</option>
+          <option value="paseo">Paseo (~/.paseo/skills)</option>
+          <option value="project">Dự án (.agents/skills)</option>
+        </select>
+        <button onclick="loadSkills()" class="px-2.5 py-1.5 rounded-lg border border-surface-border hover:bg-slate-800 text-slate-300 text-xs transition" title="Làm mới">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- SKILLS GRID -->
+    <div id="skillsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Loading Skeleton -->
+      <div class="col-span-full py-16 text-center text-slate-500">
+        <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-sky-400"></i>
+        <p class="text-xs">Đang tải danh sách kỹ năng...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PREVIEW / DETAIL MODAL -->
+  <div id="previewModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-surface-card border border-surface-border rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-slate-900/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-mono font-bold text-sm">/</div>
+          <div>
+            <h2 id="modalSkillName" class="text-sm font-semibold text-white font-mono">skill-name</h2>
+            <p id="modalSkillDesc" class="text-xs text-slate-400">Mô tả skill</p>
+          </div>
+        </div>
+        <button onclick="closePreviewModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto flex-1 font-mono text-xs text-slate-300 bg-slate-950/70 whitespace-pre-wrap leading-relaxed" id="modalSkillContent">
+        <!-- Content will be rendered here -->
+      </div>
+
+      <div class="px-6 py-3.5 border-t border-surface-border bg-slate-900/40 flex items-center justify-between text-xs">
+        <div class="text-slate-400 flex items-center gap-2">
+          <span>Kích hoạt:</span>
+          <code id="modalSlashCmd" class="px-2 py-0.5 rounded bg-slate-800 text-sky-300 font-mono">/skill-name</code>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copyCommand()" class="px-3 py-1.5 rounded-lg border border-surface-border hover:bg-slate-800 text-slate-300 transition">
+            <i class="fa-regular fa-copy mr-1"></i> Sao chép lệnh
+          </button>
+          <button onclick="closePreviewModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE SKILL MODAL -->
+  <div id="createModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-surface-card border border-surface-border rounded-2xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-slate-900/60">
+        <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-folder-plus text-sky-400"></i> Tạo Kỹ Năng Mới
+        </h2>
+        <button onclick="closeCreateModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form id="frmCreateSkill" onsubmit="handleCreateSkill(event)" class="p-6 overflow-y-auto flex-1 flex flex-col gap-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Tên Skill (kebab-case) <span class="text-rose-400">*</span></label>
+          <input type="text" id="newSkillName" required placeholder="ví dụ: e2e-test-runner hoặc angular-perf-review"
+            pattern="^[a-z0-9\-_]+$"
+            class="w-full bg-slate-900 border border-surface-border rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500">
+          <p class="text-[11px] text-slate-500 mt-1">Chỉ gồm chữ thường, số, dấu gạch nối (-). Đây cũng là tên slash command (/<span class="font-mono">tên-skill</span>).</p>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Mô tả ngắn gọn <span class="text-rose-400">*</span></label>
+          <input type="text" id="newSkillDesc" required placeholder="Mô tả khi nào Agent nên gọi skill này..."
+            class="w-full bg-slate-900 border border-surface-border rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div class="flex-1 flex flex-col">
+          <label class="block text-slate-300 font-medium mb-1">Nội dung hướng dẫn (<code class="text-sky-300">SKILL.md</code>) <span class="text-rose-400">*</span></label>
+          <textarea id="newSkillContent" required rows="10" placeholder="# Hướng dẫn kỹ năng&#10;&#10;1. Bước 1: ...&#10;2. Bước 2: ..."
+            class="w-full bg-slate-900 border border-surface-border rounded-lg p-3 text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 leading-relaxed"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2 border-t border-surface-border">
+          <button type="button" onclick="closeCreateModal()" class="px-4 py-2 rounded-lg border border-surface-border hover:bg-slate-800 text-slate-300 font-medium transition">
+            Hủy
+          </button>
+          <button type="submit" id="btnSubmitCreate" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium transition shadow-sm flex items-center gap-2">
+            <span>Tạo & Lưu vào Registry</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden transition-all duration-300 transform translate-y-2">
+    <div class="flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-medium text-white" id="toastBox">
+      <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+      <span id="toastMsg">Thao tác thành công</span>
+    </div>
+  </div>
+
+  <script>
+    let allSkills = [];
+
+    // Drag and drop setup
+    const dropZone = document.getElementById('dropZone');
+    ['dragenter', 'dragover'].forEach(name => {
+      dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('drop-active'); }, false);
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('drop-active'); }, false);
+    });
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) uploadFile(files[0]);
+    });
+
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        uploadFile(e.target.files[0]);
+      }
+    }
+
+    async function uploadFile(file) {
+      showToast('Đang tải lên và xử lý file skill: ' + file.name, 'info');
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        const base64Data = evt.target.result.split(',')[1] || evt.target.result;
+        try {
+          const res = await fetch('/api/skills/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: file.name,
+              data: base64Data
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Đã thêm thành công skill: ' + data.skill_name + ' và đồng bộ vào các Room!', 'success');
+            await loadSkills();
+          } else {
+            showToast('Lỗi tải lên: ' + (data.error || 'Không xác định'), 'error');
+          }
+        } catch (err) {
+          showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function loadSkills() {
+      const grid = document.getElementById('skillsGrid');
+      grid.innerHTML = `
+        <div class="col-span-full py-16 text-center text-slate-500">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-sky-400"></i>
+          <p class="text-xs">Đang nạp danh sách kỹ năng...</p>
+        </div>`;
+      try {
+        const res = await fetch('/api/skills');
+        const data = await res.json();
+        allSkills = data.skills || [];
+        document.getElementById('lblTotalSkills').innerText = allSkills.length;
+        if (data.last_sync) {
+          document.getElementById('lblLastSync').innerText = 'Đồng bộ lúc: ' + data.last_sync;
+        }
+        renderSkills(allSkills);
+      } catch (err) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-rose-400">
+            <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i>
+            <p class="text-xs">Không thể kết nối đến Skill Manager API: ${err.message}</p>
+          </div>`;
+      }
+    }
+
+    function renderSkills(skills) {
+      const grid = document.getElementById('skillsGrid');
+      if (skills.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-16 text-center text-slate-500">
+            <i class="fa-solid fa-box-open text-3xl mb-2"></i>
+            <p class="text-xs">Chưa có skill nào phù hợp. Hãy kéo thả file .zip hoặc tạo skill mới!</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = skills.map(s => `
+        <div class="bg-surface-card border border-surface-border hover:border-slate-600 rounded-xl p-4 flex flex-col justify-between transition hover:-translate-y-0.5 group">
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded bg-slate-800 text-sky-400 flex items-center justify-center font-mono text-xs font-bold border border-slate-700">/</span>
+                <h3 class="text-sm font-semibold text-white font-mono group-hover:text-sky-400 transition truncate max-w-[200px]" title="${s.name}">${s.name}</h3>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded font-mono ${s.synced ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                ${s.synced ? '<i class="fa-solid fa-check text-[9px] mr-0.5"></i> Synced' : '<i class="fa-solid fa-clock text-[9px] mr-0.5"></i> Local'}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 line-clamp-2 mb-3 leading-relaxed" title="${s.description || ''}">${s.description || 'Chưa có mô tả chi tiết.'}</p>
+          </div>
+
+          <div class="pt-3 border-t border-surface-border/60 flex items-center justify-between text-xs">
+            <span class="text-[11px] text-slate-500 font-mono truncate max-w-[150px]" title="${s.source_path}">${s.source || 'Master Registry'}</span>
+            <div class="flex items-center gap-2">
+              <button onclick="previewSkill('${s.name}')" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition flex items-center gap-1">
+                <i class="fa-regular fa-eye"></i> Xem
+              </button>
+              <button onclick="deleteSkill('${s.name}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Xóa skill">
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterSkills() {
+      const q = document.getElementById('txtSearch').value.toLowerCase().trim();
+      const src = document.getElementById('selSourceFilter').value;
+      const filtered = allSkills.filter(s => {
+        const matchesQuery = s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q));
+        const matchesSrc = src === 'all' || (s.source_type && s.source_type === src);
+        return matchesQuery && matchesSrc;
+      });
+      renderSkills(filtered);
+    }
+
+    async function syncAllSkills() {
+      const btn = document.getElementById('btnSync');
+      const icon = document.getElementById('iconSync');
+      btn.disabled = true;
+      icon.classList.add('fa-spin');
+      showToast('Đang quét và đồng bộ kỹ năng tới tất cả các Room...', 'info');
+
+      try {
+        const res = await fetch('/api/skills/sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Đã đồng bộ thành công ${data.synced_count} skills sang ${data.target_rooms_count} phòng/workspaces!`, 'success');
+          await loadSkills();
+        } else {
+          showToast('Lỗi đồng bộ: ' + (data.error || 'Không xác định'), 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi gửi yêu cầu đồng bộ: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        icon.classList.remove('fa-spin');
+      }
+    }
+
+    async function previewSkill(name) {
+      try {
+        const res = await fetch(`/api/skills/${encodeURIComponent(name)}`);
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('modalSkillName').innerText = data.skill.name;
+          document.getElementById('modalSkillDesc').innerText = data.skill.description || '';
+          document.getElementById('modalSkillContent').innerText = data.skill.content || 'Nội dung trống';
+          document.getElementById('modalSlashCmd').innerText = `/${data.skill.name}`;
+          document.getElementById('previewModal').classList.remove('hidden');
+        } else {
+          showToast('Không thể mở skill: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối: ' + err.message, 'error');
+      }
+    }
+
+    function closePreviewModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+    }
+
+    function openCreateModal() {
+      document.getElementById('frmCreateSkill').reset();
+      document.getElementById('createModal').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.add('hidden');
+    }
+
+    async function handleCreateSkill(e) {
+      e.preventDefault();
+      const name = document.getElementById('newSkillName').value.trim();
+      const desc = document.getElementById('newSkillDesc').value.trim();
+      const content = document.getElementById('newSkillContent').value;
+      const btn = document.getElementById('btnSubmitCreate');
+
+      btn.disabled = true;
+      btn.innerText = 'Đang lưu...';
+
+      try {
+        const res = await fetch('/api/skills/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description: desc, content })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Đã tạo skill /${name} thành công và đồng bộ tới các phòng!`, 'success');
+          closeCreateModal();
+          await loadSkills();
+        } else {
+          showToast('Lỗi tạo skill: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi gửi yêu cầu: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Tạo & Lưu vào Registry';
+      }
+    }
+
+    async function deleteSkill(name) {
+      if (!confirm(`Bạn có chắc chắn muốn xóa skill '${name}' khỏi Registry và gỡ liên kết ở tất cả các phòng?`)) return;
+      try {
+        const res = await fetch(`/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Đã xóa skill /${name}`, 'success');
+          await loadSkills();
+        } else {
+          showToast('Lỗi khi xóa: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi: ' + err.message, 'error');
+      }
+    }
+
+    function copyCommand() {
+      const cmd = document.getElementById('modalSlashCmd').innerText;
+      navigator.clipboard.writeText(cmd);
+      showToast('Đã sao chép lệnh: ' + cmd, 'success');
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const box = document.getElementById('toastBox');
+      const icon = document.getElementById('toastIcon');
+      const text = document.getElementById('toastMsg');
+
+      text.innerText = msg;
+      if (type === 'success') {
+        box.className = 'flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-medium text-white bg-emerald-600 border border-emerald-500';
+        icon.className = 'fa-solid fa-circle-check';
+      } else if (type === 'error') {
+        box.className = 'flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-medium text-white bg-rose-600 border border-rose-500';
+        icon.className = 'fa-solid fa-triangle-exclamation';
+      } else {
+        box.className = 'flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-medium text-white bg-sky-600 border border-sky-500';
+        icon.className = 'fa-solid fa-circle-info';
+      }
+
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.remove('translate-y-2'), 10);
+      setTimeout(() => {
+        toast.classList.add('translate-y-2');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 4000);
+    }
+
+    // Initial load
+    loadSkills();
+  </script>
+</body>
+</html>

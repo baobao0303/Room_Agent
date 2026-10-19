@@ -448,6 +448,15 @@ def cmd_worktree(args: argparse.Namespace) -> int:
                 actions_taken.append("Symlinked .venv into worktree")
             except Exception as exc:
                 actions_taken.append(f"Skipped .venv symlink: {exc}")
+        # Automatically sync skills into worktree .claude/skills
+        try:
+            skill_mgr_py = PROJECT_ROOT / "tools/skill_manager.py"
+            if skill_mgr_py.exists():
+                subprocess.run([sys.executable, str(skill_mgr_py), "sync"], capture_output=True, timeout=15)
+                actions_taken.append("Synchronized skills into worktree and rooms")
+        except Exception as exc:
+            actions_taken.append(f"Skipped skill sync: {exc}")
+
         actions_taken.append(f"Worktree ready on branch {worktree_env['PASEO_BRANCH_NAME']}")
     elif phase == "pre-destroy":
         actions_taken.append(

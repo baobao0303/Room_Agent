@@ -92,6 +92,19 @@
       Đọc `docs/AGENT_PROGRESS.md` hoặc chạy `python3 tools/agent_progress.py status` để báo cáo ngay cho User: (1) Đã làm xong những gì, (2) Còn thiếu những gì, và (3) Bước tiếp theo sẽ thực hiện. Sau khi làm xong một bước, cập nhật lại bằng `python3 tools/agent_progress.py log ...`.
     </instructions>
   </command>
+  <command>
+    <name>skill-manager</name>
+    <description>Quản lý, upload và đồng bộ kỹ năng (skills) tập trung qua Web Dashboard hoặc CLI.</description>
+    <instructions>
+      Khởi chạy Web Dashboard giao diện trực quan: `python3 tools/skill_manager.py serve --port 5252 --open`
+      Hoặc thao tác dòng lệnh CLI:
+      - Xem danh sách: `python3 tools/skill_manager.py list`
+      - Đồng bộ tất cả room: `python3 tools/skill_manager.py sync`
+      - Tạo skill: `python3 tools/skill_manager.py add --name <name> --desc <desc>`
+      - Upload file .zip: `python3 tools/skill_manager.py upload <path_to_zip>`
+      - Chẩn đoán: `python3 tools/skill_manager.py doctor`
+    </instructions>
+  </command>
 </custom_commands>
 
 # Chat Session Protocol (SUPERVISOR MODE)

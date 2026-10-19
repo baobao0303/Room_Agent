@@ -1,0 +1,4 @@
+interface:
+  display_name: "TDS UI Figma Workflow"
+  short_description: "Figma-to-Angular workflow using tds-ui."
+  default_prompt: "Use $tds-ui-figma to implement or compare a selected Figma design using tds-ui components and tds-color tokens."

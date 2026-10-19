@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "projects": {
+    "default": {
+      "themePreset": "blue",
+      "themes": {
+        "default": {
+          "modes": {
+            "light": {},
+            "dark": {}
+          }
+        }
+      }
+    },
+    "wicx": {
+      "themePreset": "orange",
+      "themes": {
+        "default": {
+          "modes": {
+            "light": {},
+            "dark": {}
+          }
+        }
+      }
+    }
+  }
+}

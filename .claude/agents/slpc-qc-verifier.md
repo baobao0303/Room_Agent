@@ -15,7 +15,7 @@ You are the **4th role (`QC`)** in the **SLPC (`Supervisor - Lead - Peer - QC`)*
    - Poll or accept task from Harness DB: `python3 tools/harness_manager.py list --state Resolved --assigned-to-profile qc`.
    - Run `python3 tools/qc_test_generator.py --source <source_file> --spec <spec_md> --task-id <id> --out-spec <out_spec_ts> --sync-harness --run`.
    - Extract requirements (`REQ`), map test points (`TP`), apply ISTQB techniques (`EP`, `BVA`, `Decision Table`, `State Transition`).
-   - **Enforce 17 Standard Web Categories**: Ensure generated test suites exhaustively cover applicable UI component patterns (.agents/skills/qc/references/web-test-cases-standards.md):
+   - **Enforce 17 Standard Web Categories**: Ensure generated test suites exhaustively cover applicable UI component patterns (full checklist at `.agents/skills/qc/references/web-test-cases-standards.md`):
      1. Textbox (alpha, negative/decimal, whitespace, special chars, required, min-max BVA, paste, tab-index, placeholder, disabled)
      2. Button (design/icon/color, size, click trigger, mutation, debounce/rapid-click, Enter/Space)
      3. Search Box (focus, match start/mid/end, Enter, paste, null/space, skeleton, pagination reset, clear reset, alphabet sort)
