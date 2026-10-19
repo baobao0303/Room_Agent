@@ -105,6 +105,14 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 4
   python3 /home/baoltb/Desktop/Paseo_Project/tools/paseo_hooks.py status
   ```
 
+### I. Skill Manager & Inverted Index DB Search (`tools/skill_manager.py`)
+- **Lưu trữ**: Floci DynamoDB endpoint `http://<FLOCI_HOST>:14566` (bảng `harness_skills` và chỉ mục ngược `harness_skills_index`).
+- **Mục đích**: Quản lý Master Registry 80+ skills, đồng bộ đa phòng và tìm kiếm cực nhanh qua Inverted Index (**truy vấn phân vùng $O(1)$, tuyệt đối không ScanAll toàn bảng**).
+- **Lệnh thực thi**:
+  - Tìm kiếm skill theo từ khóa: `python3 tools/skill_manager.py search "<từ_khóa>" [--limit 10] [--json]` (hoặc `query`)
+  - Đồng bộ và lập chỉ mục DB: `python3 tools/skill_manager.py sync-db` | `python3 tools/skill_manager.py sync`
+  - Liệt kê toàn bộ: `python3 tools/skill_manager.py list [--json]`
+
 ---
 
 ## 4. Coding & Operation Rules

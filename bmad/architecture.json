@@ -20,9 +20,10 @@
         "entry": "projects/wicx-crm-fe/apps/mfe-cdp",
         "routes": [
           "/:shopId/customers/data-raw",
-          "/:shopId/data-raw"
+          "/:shopId/data-raw",
+          "/:shopId/data-raw/field-mapping"
         ],
-        "description": "Phân hệ Dữ liệu khách hàng (CDP): Raw Event Data."
+        "description": "Phân hệ Dữ liệu khách hàng (CDP): Raw Event Data & Field Mapping UI (SPEC-CDP-MAPPING-2026-V1)."
       },
       {
         "id": "mfe-crm",

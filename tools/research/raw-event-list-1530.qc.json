@@ -1,0 +1,1796 @@
+{
+  "stage1_requirement_analysis": {
+    "module": "RawEventListComponent",
+    "summary": "[CDP/DataRaw] - Loại bỏ fallback source = 'unknown' trong enhanceEventItem và loại trừ 'unknown' khỏi sourceTabs",
+    "scope": [
+      "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/",
+      "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetc"
+    ],
+    "roles": [
+      "User"
+    ],
+    "functional_requirements": [
+      {
+        "id": "REQ-001",
+        "title": "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/",
+        "description": "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp."
+      },
+      {
+        "id": "REQ-002",
+        "title": "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetc",
+        "description": "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      }
+    ],
+    "business_rules": [],
+    "constraints": [],
+    "preconditions": [],
+    "acceptance_criteria": [
+      "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+      "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+    ],
+    "risks": [],
+    "assumptions": []
+  },
+  "stage1_code_context": {
+    "file_path": "/home/baoltb/Desktop/Room_Agent/projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts",
+    "module_name": "RawEventListComponent",
+    "language": "typescript",
+    "framework": "jest",
+    "is_angular_component": true,
+    "is_angular_service": false,
+    "has_signals": true,
+    "classes": [
+      "RawEventListComponent"
+    ],
+    "symbols": [
+      {
+        "name": "RawEventListComponent.ngOnInit",
+        "method_name": "ngOnInit",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onAllTenantsChange",
+        "method_name": "onAllTenantsChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "checked",
+            "type": "boolean",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.fetchEventSources",
+        "method_name": "fetchEventSources",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tenantId",
+            "type": "string",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.fetchEvents",
+        "method_name": "fetchEvents",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tenantId",
+            "type": "string",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.updateSourceTabsFromEvents",
+        "method_name": "updateSourceTabsFromEvents",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "items",
+            "type": "RawEventItem[]",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.enhanceEventItem",
+        "method_name": "enhanceEventItem",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "item",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "requestedSource",
+            "type": "string | null",
+            "optional": true
+          }
+        ],
+        "return_type": "RawEventItem",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onSourceTabChange",
+        "method_name": "onSourceTabChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "tabIdx",
+            "type": "number | undefined",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onSearchChange",
+        "method_name": "onSearchChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "kw",
+            "type": "string",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.toggleSortDirection",
+        "method_name": "toggleSortDirection",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onPageIndexChange",
+        "method_name": "onPageIndexChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "page",
+            "type": "number",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onPageSizeChange",
+        "method_name": "onPageSizeChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "size",
+            "type": "number",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onSelectionChange",
+        "method_name": "onSelectionChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "selectedKeys",
+            "type": "string[]",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.clearSelection",
+        "method_name": "clearSelection",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.onExpandChange",
+        "method_name": "onExpandChange",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "dataRow",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "expanded",
+            "type": "boolean",
+            "optional": false
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.toggleRowInline",
+        "method_name": "toggleRowInline",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "dataRow",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "event",
+            "type": "MouseEvent",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": true,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.getPayloadSize",
+        "method_name": "getPayloadSize",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "payload",
+            "type": "object | string",
+            "optional": true
+          }
+        ],
+        "return_type": "string",
+        "has_branches": true,
+        "has_throws": true,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.openDrawer",
+        "method_name": "openDrawer",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "item",
+            "type": "RawEventItem",
+            "optional": false
+          },
+          {
+            "name": "event",
+            "type": "MouseEvent",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": true,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.closeDrawer",
+        "method_name": "closeDrawer",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.openCompareModal",
+        "method_name": "openCompareModal",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.closeCompareModal",
+        "method_name": "closeCompareModal",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.copyToClipboard",
+        "method_name": "copyToClipboard",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "text",
+            "type": "object | string | null | undefined",
+            "optional": false
+          },
+          {
+            "name": "msgKeyOrText",
+            "type": "string",
+            "optional": true
+          }
+        ],
+        "return_type": "void",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.getSourceDotColor",
+        "method_name": "getSourceDotColor",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "source",
+            "type": "string | undefined",
+            "optional": false
+          }
+        ],
+        "return_type": "string",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.getEventTypeTagColor",
+        "method_name": "getEventTypeTagColor",
+        "class_name": "RawEventListComponent",
+        "kind": "method",
+        "params": [
+          {
+            "name": "type",
+            "type": "string | undefined",
+            "optional": false
+          }
+        ],
+        "return_type": "'primary' | 'success' | 'warning' | 'info' | 'default'",
+        "has_branches": true,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.activeMainTab",
+        "method_name": "activeMainTab",
+        "class_name": "RawEventListComponent",
+        "kind": "signal:signal",
+        "params": [],
+        "return_type": "'raw' | 'mapping'",
+        "has_branches": false,
+        "has_throws": false,
+        "is_async": false
+      },
+      {
+        "name": "RawEventListComponent.selectedIds",
+        "method_name": "selectedIds",
+        "class_name": "RawEventListComponent",
+        "kind": "signal:signal",
+        "params": [],
+        "return_type": "string[]",
+        "has_branches": false,
+        "has_throws": false,
+        "is_async": false
+      }
+    ]
+  },
+  "stage2_test_point_set": {
+    "test_points": [
+      {
+        "id": "TP-001",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit()",
+        "description": "Verify input/output behavior and state transitions of RawEventListComponent.ngOnInit",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "ngOnInit",
+        "dimension": "flow",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Exported codebase symbol RawEventListComponent.ngOnInit requires unit test coverage"
+      },
+      {
+        "id": "TP-002",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange()",
+        "description": "Verify input/output behavior and state transitions of RawEventListComponent.onAllTenantsChange",
+        "requirement_refs": [
+          "REQ-002"
+        ],
+        "symbol_ref": "onAllTenantsChange",
+        "dimension": "flow",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Exported codebase symbol RawEventListComponent.onAllTenantsChange requires unit test coverage"
+      },
+      {
+        "id": "TP-003",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()",
+        "description": "Verify RawEventListComponent.onAllTenantsChange handles null/invalid parameters and boundary limits safely",
+        "requirement_refs": [
+          "REQ-002"
+        ],
+        "symbol_ref": "onAllTenantsChange",
+        "dimension": "boundary",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Parameter/error path detected in symbol RawEventListComponent.onAllTenantsChange"
+      },
+      {
+        "id": "TP-004",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()",
+        "description": "Verify RawEventListComponent.fetchEventSources handles null/invalid parameters and boundary limits safely",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "fetchEventSources",
+        "dimension": "boundary",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Parameter/error path detected in symbol RawEventListComponent.fetchEventSources"
+      },
+      {
+        "id": "TP-005",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()",
+        "description": "Verify input/output behavior and state transitions of RawEventListComponent.updateSourceTabsFromEvents",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "updateSourceTabsFromEvents",
+        "dimension": "flow",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Exported codebase symbol RawEventListComponent.updateSourceTabsFromEvents requires unit test coverage"
+      },
+      {
+        "id": "TP-006",
+        "title": "[RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec",
+        "description": "Verify RawEventListComponent.updateSourceTabsFromEvents: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "symbol_ref": "updateSourceTabsFromEvents",
+        "dimension": "permission",
+        "risk_level": "high",
+        "priority": "P0",
+        "rationale": "Directly validates requirement REQ-001 on RawEventListComponent.updateSourceTabsFromEvents"
+      }
+    ],
+    "dropped_test_points": [
+      {
+        "id": "TP-004",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.fetchEventSources()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-006",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.fetchEvents()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-007",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEvents()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-009",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.updateSourceTabsFromEvents()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-010",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.enhanceEventItem()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-011",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.enhanceEventItem()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-012",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onSourceTabChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-013",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onSourceTabChange()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-014",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onSearchChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-015",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onSearchChange()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-016",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.toggleSortDirection()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-017",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onPageIndexChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-018",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onPageIndexChange()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-019",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onPageSizeChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-020",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onPageSizeChange()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-021",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onSelectionChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-022",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onSelectionChange()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-023",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.clearSelection()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-024",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.onExpandChange()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-025",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onExpandChange()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-026",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.toggleRowInline()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-027",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.toggleRowInline()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-028",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.getPayloadSize()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-029",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getPayloadSize()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-030",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.openDrawer()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-031",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.openDrawer()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-032",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.closeDrawer()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-033",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.openCompareModal()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-034",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.closeCompareModal()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-035",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.copyToClipboard()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-036",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.copyToClipboard()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-037",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.getSourceDotColor()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-038",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getSourceDotColor()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-039",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.getEventTypeTagColor()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-040",
+        "title": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.getEventTypeTagColor()",
+        "reason": "Semantically duplicate with TP-005"
+      },
+      {
+        "id": "TP-041",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.activeMainTab()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-042",
+        "title": "[RawEventListComponent] Functional contract of RawEventListComponent.selectedIds()",
+        "reason": "Semantically duplicate with TP-001"
+      },
+      {
+        "id": "TP-044",
+        "title": "[RawEventListComponent] enhanceEventItem không gán fallback source = 'unknown' khi thiếu ",
+        "reason": "Exceeded dynamic limit 6"
+      }
+    ],
+    "validation_issues": [
+      "Trimmed 1 test points exceeding budget 6"
+    ],
+    "coverage_target": "Cover 2 requirements and 25 codebase symbols across ISTQB dimensions"
+  },
+  "stage3_test_design_plan": {
+    "items": [
+      {
+        "test_point_id": "TP-001",
+        "techniques": [
+          "state_transition"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP001-01",
+            "test_point_id": "TP-001",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit(): Valid state transition path",
+            "data_hint": "Trigger allowed state mutation from valid initial state"
+          },
+          {
+            "id": "CI-TP001-02",
+            "test_point_id": "TP-001",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit(): Invalid/guarded state transition",
+            "data_hint": "Trigger action from disallowed or locked state"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'flow' -> state_transition"
+      },
+      {
+        "test_point_id": "TP-002",
+        "techniques": [
+          "state_transition"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP002-01",
+            "test_point_id": "TP-002",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange(): Valid state transition path",
+            "data_hint": "Trigger allowed state mutation from valid initial state"
+          },
+          {
+            "id": "CI-TP002-02",
+            "test_point_id": "TP-002",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange(): Invalid/guarded state transition",
+            "data_hint": "Trigger action from disallowed or locked state"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'flow' -> state_transition"
+      },
+      {
+        "test_point_id": "TP-003",
+        "techniques": [
+          "boundary_value",
+          "equivalence_partitioning"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP003-01",
+            "test_point_id": "TP-003",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Lower boundary and below-min edge",
+            "data_hint": "Test at minimum allowed value and (min - 1) / empty"
+          },
+          {
+            "id": "CI-TP003-02",
+            "test_point_id": "TP-003",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Upper boundary and above-max edge",
+            "data_hint": "Test at maximum allowed value and (max + 1) / overflow"
+          },
+          {
+            "id": "CI-TP003-03",
+            "test_point_id": "TP-003",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Valid equivalence partition input",
+            "data_hint": "Provide typical valid inputs within allowed spec/type domain"
+          },
+          {
+            "id": "CI-TP003-04",
+            "test_point_id": "TP-003",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Invalid equivalence partition input",
+            "data_hint": "Provide malformed, null/undefined, or disallowed inputs"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'boundary' -> boundary_value, equivalence_partitioning"
+      },
+      {
+        "test_point_id": "TP-004",
+        "techniques": [
+          "boundary_value",
+          "equivalence_partitioning"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP004-01",
+            "test_point_id": "TP-004",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Lower boundary and below-min edge",
+            "data_hint": "Test at minimum allowed value and (min - 1) / empty"
+          },
+          {
+            "id": "CI-TP004-02",
+            "test_point_id": "TP-004",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Upper boundary and above-max edge",
+            "data_hint": "Test at maximum allowed value and (max + 1) / overflow"
+          },
+          {
+            "id": "CI-TP004-03",
+            "test_point_id": "TP-004",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Valid equivalence partition input",
+            "data_hint": "Provide typical valid inputs within allowed spec/type domain"
+          },
+          {
+            "id": "CI-TP004-04",
+            "test_point_id": "TP-004",
+            "technique": "equivalence_partitioning",
+            "description": "[RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Invalid equivalence partition input",
+            "data_hint": "Provide malformed, null/undefined, or disallowed inputs"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'boundary' -> boundary_value, equivalence_partitioning"
+      },
+      {
+        "test_point_id": "TP-005",
+        "techniques": [
+          "state_transition"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP005-01",
+            "test_point_id": "TP-005",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Valid state transition path",
+            "data_hint": "Trigger allowed state mutation from valid initial state"
+          },
+          {
+            "id": "CI-TP005-02",
+            "test_point_id": "TP-005",
+            "technique": "state_transition",
+            "description": "[RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Invalid/guarded state transition",
+            "data_hint": "Trigger action from disallowed or locked state"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'flow' -> state_transition"
+      },
+      {
+        "test_point_id": "TP-006",
+        "techniques": [
+          "decision_table",
+          "boundary_value"
+        ],
+        "coverage_items": [
+          {
+            "id": "CI-TP006-01",
+            "test_point_id": "TP-006",
+            "technique": "decision_table",
+            "description": "[RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: All rule conditions satisfied",
+            "data_hint": "All boolean/business conditions evaluate to true simultaneously"
+          },
+          {
+            "id": "CI-TP006-02",
+            "test_point_id": "TP-006",
+            "technique": "decision_table",
+            "description": "[RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: Individual condition falsified",
+            "data_hint": "Toggle each required condition to false one by one"
+          },
+          {
+            "id": "CI-TP006-03",
+            "test_point_id": "TP-006",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: Lower boundary and below-min edge",
+            "data_hint": "Test at minimum allowed value and (min - 1) / empty"
+          },
+          {
+            "id": "CI-TP006-04",
+            "test_point_id": "TP-006",
+            "technique": "boundary_value",
+            "description": "[RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: Upper boundary and above-max edge",
+            "data_hint": "Test at maximum allowed value and (max + 1) / overflow"
+          }
+        ],
+        "case_budget": 2,
+        "rationale": "Dimension 'permission' -> decision_table, boundary_value"
+      }
+    ],
+    "total_budget": 12,
+    "technique_summary": {
+      "boundary_value": 3,
+      "decision_table": 1,
+      "equivalence_partitioning": 2,
+      "state_transition": 3
+    }
+  },
+  "stage4_test_cases": [
+    {
+      "id": "TC-TP001-01",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.ngOnInit() (state_transition #1) when valid input is provided to RawEventListComponent.ngOnInit",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (validPayload = { id: '1' })",
+        "When invoking RawEventListComponent.ngOnInit under condition: [RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit(): Valid state transition path",
+        "Then verify succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit()"
+      ],
+      "test_data": "validPayload = { id: '1' }",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-001"
+      ],
+      "covered_items": [
+        "CI-TP001-01"
+      ],
+      "symbol_ref": "ngOnInit",
+      "is_negative": false,
+      "rationale": "Covers CI-TP001-01 (state_transition) for TP-001"
+    },
+    {
+      "id": "TC-TP001-02",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.ngOnInit() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.ngOnInit",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (invalidPayload = null)",
+        "When invoking RawEventListComponent.ngOnInit under condition: [RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit(): Invalid/guarded state transition",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit()"
+      ],
+      "test_data": "invalidPayload = null",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.ngOnInit()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-001"
+      ],
+      "covered_items": [
+        "CI-TP001-02"
+      ],
+      "symbol_ref": "ngOnInit",
+      "is_negative": true,
+      "rationale": "Covers CI-TP001-02 (state_transition) for TP-001"
+    },
+    {
+      "id": "TC-TP002-01",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onAllTenantsChange() (state_transition #1) when valid input is provided to RawEventListComponent.onAllTenantsChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (checked=true)",
+        "When invoking RawEventListComponent.onAllTenantsChange under condition: [RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange(): Valid state transition path",
+        "Then verify succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange()"
+      ],
+      "test_data": "checked=true",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "test_point_refs": [
+        "TP-002"
+      ],
+      "covered_items": [
+        "CI-TP002-01"
+      ],
+      "symbol_ref": "onAllTenantsChange",
+      "is_negative": false,
+      "rationale": "Covers CI-TP002-01 (state_transition) for TP-002"
+    },
+    {
+      "id": "TC-TP002-02",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onAllTenantsChange() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (checked=false)",
+        "When invoking RawEventListComponent.onAllTenantsChange under condition: [RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange(): Invalid/guarded state transition",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange()"
+      ],
+      "test_data": "checked=false",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.onAllTenantsChange()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "test_point_refs": [
+        "TP-002"
+      ],
+      "covered_items": [
+        "CI-TP002-02"
+      ],
+      "symbol_ref": "onAllTenantsChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP002-02 (state_transition) for TP-002"
+    },
+    {
+      "id": "TC-TP003-01",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (checked=false)",
+        "When invoking RawEventListComponent.onAllTenantsChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Lower boundary and below-min edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "test_data": "checked=false",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "test_point_refs": [
+        "TP-003"
+      ],
+      "covered_items": [
+        "CI-TP003-01"
+      ],
+      "symbol_ref": "onAllTenantsChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP003-01 (boundary_value) for TP-003"
+    },
+    {
+      "id": "TC-TP003-02",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (checked=false)",
+        "When invoking RawEventListComponent.onAllTenantsChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Upper boundary and above-max edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "test_data": "checked=false",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "test_point_refs": [
+        "TP-003"
+      ],
+      "covered_items": [
+        "CI-TP003-02"
+      ],
+      "symbol_ref": "onAllTenantsChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP003-02 (boundary_value) for TP-003"
+    },
+    {
+      "id": "TC-TP003-03",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (checked=false)",
+        "When invoking RawEventListComponent.onAllTenantsChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Valid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "test_data": "checked=false",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "test_point_refs": [
+        "TP-003"
+      ],
+      "covered_items": [
+        "CI-TP003-03"
+      ],
+      "symbol_ref": "onAllTenantsChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP003-03 (equivalence_partitioning) for TP-003"
+    },
+    {
+      "id": "TC-TP003-04",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (checked=false)",
+        "When invoking RawEventListComponent.onAllTenantsChange under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange(): Invalid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "test_data": "checked=false",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.onAllTenantsChange()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "test_point_refs": [
+        "TP-003"
+      ],
+      "covered_items": [
+        "CI-TP003-04"
+      ],
+      "symbol_ref": "onAllTenantsChange",
+      "is_negative": true,
+      "rationale": "Covers CI-TP003-04 (equivalence_partitioning) for TP-003"
+    },
+    {
+      "id": "TC-TP004-01",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (tenantId='')",
+        "When invoking RawEventListComponent.fetchEventSources under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Lower boundary and below-min edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "test_data": "tenantId=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-01"
+      ],
+      "symbol_ref": "fetchEventSources",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-01 (boundary_value) for TP-004"
+    },
+    {
+      "id": "TC-TP004-02",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (tenantId='')",
+        "When invoking RawEventListComponent.fetchEventSources under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Upper boundary and above-max edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "test_data": "tenantId=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-02"
+      ],
+      "symbol_ref": "fetchEventSources",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-02 (boundary_value) for TP-004"
+    },
+    {
+      "id": "TC-TP004-03",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (tenantId='')",
+        "When invoking RawEventListComponent.fetchEventSources under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Valid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "test_data": "tenantId=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-03"
+      ],
+      "symbol_ref": "fetchEventSources",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-03 (equivalence_partitioning) for TP-004"
+    },
+    {
+      "id": "TC-TP004-04",
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (tenantId='')",
+        "When invoking RawEventListComponent.fetchEventSources under condition: [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources(): Invalid equivalence partition input",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "test_data": "tenantId=''",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Exception & boundary handling in RawEventListComponent.fetchEventSources()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-004"
+      ],
+      "covered_items": [
+        "CI-TP004-04"
+      ],
+      "symbol_ref": "fetchEventSources",
+      "is_negative": true,
+      "rationale": "Covers CI-TP004-04 (equivalence_partitioning) for TP-004"
+    },
+    {
+      "id": "TC-TP005-01",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #1) when valid input is provided to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[{ id: '1' }])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Valid state transition path",
+        "Then verify succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[{ id: '1' }]",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-005"
+      ],
+      "covered_items": [
+        "CI-TP005-01"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": false,
+      "rationale": "Covers CI-TP005-01 (state_transition) for TP-005"
+    },
+    {
+      "id": "TC-TP005-02",
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents(): Invalid/guarded state transition",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Functional contract of RawEventListComponent.updateSourceTabsFromEvents()"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-005"
+      ],
+      "covered_items": [
+        "CI-TP005-02"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP005-02 (state_transition) for TP-005"
+    },
+    {
+      "id": "TC-TP006-01",
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (decision_table #1) when valid input is provided to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[{ id: '1' }])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: All rule conditions satisfied",
+        "Then verify succeeds and satisfies [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "test_data": "items=[{ id: '1' }]",
+      "expected_results": [
+        "succeeds and satisfies [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-01"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": false,
+      "rationale": "Covers CI-TP006-01 (decision_table) for TP-006"
+    },
+    {
+      "id": "TC-TP006-02",
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (decision_table #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: Individual condition falsified",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-02"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-02 (decision_table) for TP-006"
+    },
+    {
+      "id": "TC-TP006-03",
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (boundary_value #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: Lower boundary and below-min edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-03"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-03 (boundary_value) for TP-006"
+    },
+    {
+      "id": "TC-TP006-04",
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (boundary_value #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents",
+      "preconditions": [
+        "RawEventListComponent test environment is initialized"
+      ],
+      "steps": [
+        "Given RawEventListComponent instance / context is ready with test data (items=[])",
+        "When invoking RawEventListComponent.updateSourceTabsFromEvents under condition: [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec: Upper boundary and above-max edge",
+        "Then verify rejects or handles fault safely for [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "test_data": "items=[]",
+      "expected_results": [
+        "rejects or handles fault safely for [RawEventListComponent] Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec"
+      ],
+      "acceptance_criteria": [
+        "Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projects/wicx-crm-fe/apps/mfe-cdp/src/app/pages/data-raw/raw-event-list.component.ts): 1. Trong enhanceEventItem(item, requestedSource), loại bỏ nhánh else gán source = 'unknown' khi sự kiện không có source/eventSource và không khớp connectorId/eventId heuristic (để source giữ nguyên undefined). 2. Trong fetchEventSources(tenantId), lọc bỏ giá trị 'unknown' (không phân biệt hoa thường: .filter((s) => Boolean(s) && s !== 'unknown')) trước khi khởi tạo this.sourceTabs. 3. Trong updateSourceTabsFromEvents(items), bổ sung điều kiện src !== 'unknown' để không bao giờ tự động sinh tab UNKNOWN từ danh sách sự kiện. 4. Cập nhật và bổ sung unit test trong raw-event-list.component.spec.ts kiểm chứng cả 3 trường hợp trên, chạy pass 100% unit test mfe-cdp.",
+        "enhanceEventItem không gán fallback source = 'unknown' khi thiếu source. 2. fetchEventSources và updateSourceTabsFromEvents loại trừ hoàn toàn 'unknown' (case-insensitive) khỏi sourceTabs. 3. Không hiển thị tab UNKNOWN trên thanh tab nguồn sự kiện. 4. Unit test raw-event-list.component.spec.ts (mfe-cdp) pass 100%."
+      ],
+      "priority": "P0",
+      "automation": "Auto",
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "test_point_refs": [
+        "TP-006"
+      ],
+      "covered_items": [
+        "CI-TP006-04"
+      ],
+      "symbol_ref": "updateSourceTabsFromEvents",
+      "is_negative": true,
+      "rationale": "Covers CI-TP006-04 (boundary_value) for TP-006"
+    }
+  ],
+  "stage5_coverage_report": {
+    "total_cases": 18,
+    "total_test_points": 6,
+    "total_coverage_items": 18,
+    "requirement_coverage_pct": 100.0,
+    "coverage_item_pct": 100.0,
+    "symbol_coverage_pct": 16.0,
+    "covered_requirements": [
+      "REQ-001",
+      "REQ-002"
+    ],
+    "uncovered_requirements": [],
+    "covered_test_points": [
+      "TP-001",
+      "TP-002",
+      "TP-003",
+      "TP-004",
+      "TP-005",
+      "TP-006"
+    ],
+    "uncovered_test_points": [],
+    "uncovered_coverage_items": [],
+    "covered_symbols": [
+      "fetchEventSources",
+      "ngOnInit",
+      "onAllTenantsChange",
+      "updateSourceTabsFromEvents"
+    ],
+    "uncovered_symbols": [
+      "activeMainTab",
+      "clearSelection",
+      "closeCompareModal",
+      "closeDrawer",
+      "copyToClipboard",
+      "enhanceEventItem",
+      "fetchEvents",
+      "getEventTypeTagColor",
+      "getPayloadSize",
+      "getSourceDotColor",
+      "onExpandChange",
+      "onPageIndexChange",
+      "onPageSizeChange",
+      "onSearchChange",
+      "onSelectionChange",
+      "onSourceTabChange",
+      "openCompareModal",
+      "openDrawer",
+      "selectedIds",
+      "toggleRowInline",
+      "toggleSortDirection"
+    ],
+    "dimension_summary": {
+      "boundary": 2,
+      "flow": 3,
+      "permission": 1
+    },
+    "priority_summary": {
+      "P0": 18
+    },
+    "duplicates": [
+      {
+        "case_a": "TC-TP001-01",
+        "case_b": "TC-TP002-01",
+        "similarity": 0.87
+      },
+      {
+        "case_a": "TC-TP001-02",
+        "case_b": "TC-TP002-02",
+        "similarity": 0.88
+      },
+      {
+        "case_a": "TC-TP002-01",
+        "case_b": "TC-TP002-02",
+        "similarity": 0.85
+      },
+      {
+        "case_a": "TC-TP003-01",
+        "case_b": "TC-TP003-02",
+        "similarity": 0.99
+      },
+      {
+        "case_a": "TC-TP003-01",
+        "case_b": "TC-TP003-03",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP003-01",
+        "case_b": "TC-TP003-04",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP003-02",
+        "case_b": "TC-TP003-03",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP003-02",
+        "case_b": "TC-TP003-04",
+        "similarity": 0.86
+      },
+      {
+        "case_a": "TC-TP003-03",
+        "case_b": "TC-TP003-04",
+        "similarity": 1.0
+      },
+      {
+        "case_a": "TC-TP004-01",
+        "case_b": "TC-TP004-02",
+        "similarity": 0.99
+      },
+      {
+        "case_a": "TC-TP004-01",
+        "case_b": "TC-TP004-03",
+        "similarity": 0.92
+      },
+      {
+        "case_a": "TC-TP004-01",
+        "case_b": "TC-TP004-04",
+        "similarity": 0.92
+      },
+      {
+        "case_a": "TC-TP004-02",
+        "case_b": "TC-TP004-03",
+        "similarity": 0.92
+      },
+      {
+        "case_a": "TC-TP004-02",
+        "case_b": "TC-TP004-04",
+        "similarity": 0.92
+      },
+      {
+        "case_a": "TC-TP004-03",
+        "case_b": "TC-TP004-04",
+        "similarity": 1.0
+      },
+      {
+        "case_a": "TC-TP006-02",
+        "case_b": "TC-TP006-03",
+        "similarity": 0.93
+      },
+      {
+        "case_a": "TC-TP006-02",
+        "case_b": "TC-TP006-04",
+        "similarity": 0.93
+      },
+      {
+        "case_a": "TC-TP006-03",
+        "case_b": "TC-TP006-04",
+        "similarity": 0.99
+      }
+    ],
+    "quality_issues": []
+  },
+  "generated_spec_file": "/home/baoltb/Desktop/Room_Agent/tools/research/raw-event-list-1530.qc.spec.ts",
+  "harness_synced_testcases": [
+    {
+      "tc_id": "TC-TP001-01",
+      "harness_id": 2084,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.ngOnInit() (state_transition #1) when valid input is provided to RawEventListComponent.ngOnInit"
+    },
+    {
+      "tc_id": "TC-TP001-02",
+      "harness_id": 2085,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.ngOnInit() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.ngOnInit"
+    },
+    {
+      "tc_id": "TC-TP002-01",
+      "harness_id": 2086,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onAllTenantsChange() (state_transition #1) when valid input is provided to RawEventListComponent.onAllTenantsChange"
+    },
+    {
+      "tc_id": "TC-TP002-02",
+      "harness_id": 2087,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.onAllTenantsChange() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange"
+    },
+    {
+      "tc_id": "TC-TP003-01",
+      "harness_id": 2088,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange"
+    },
+    {
+      "tc_id": "TC-TP003-02",
+      "harness_id": 2089,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange"
+    },
+    {
+      "tc_id": "TC-TP003-03",
+      "harness_id": 2090,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange"
+    },
+    {
+      "tc_id": "TC-TP003-04",
+      "harness_id": 2091,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.onAllTenantsChange() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.onAllTenantsChange"
+    },
+    {
+      "tc_id": "TC-TP004-01",
+      "harness_id": 2092,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (boundary_value #1) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources"
+    },
+    {
+      "tc_id": "TC-TP004-02",
+      "harness_id": 2093,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (boundary_value #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources"
+    },
+    {
+      "tc_id": "TC-TP004-03",
+      "harness_id": 2094,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (equivalence_partitioning #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources"
+    },
+    {
+      "tc_id": "TC-TP004-04",
+      "harness_id": 2095,
+      "title": "[RawEventListComponent]: Exception & boundary handling in RawEventListComponent.fetchEventSources() (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.fetchEventSources"
+    },
+    {
+      "tc_id": "TC-TP005-01",
+      "harness_id": 2096,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #1) when valid input is provided to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP005-02",
+      "harness_id": 2097,
+      "title": "[RawEventListComponent]: Functional contract of RawEventListComponent.updateSourceTabsFromEvents() (state_transition #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP006-01",
+      "harness_id": 2098,
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (decision_table #1) when valid input is provided to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP006-02",
+      "harness_id": 2099,
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (decision_table #2) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP006-03",
+      "harness_id": 2100,
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (boundary_value #3) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    },
+    {
+      "tc_id": "TC-TP006-04",
+      "harness_id": 2101,
+      "title": "[RawEventListComponent]: Khắc phục triệt để Bug WI-1174 trên RawEventListComponent (projec (boundary_value #4) when invalid/edge input or boundary violation is passed to RawEventListComponent.updateSourceTabsFromEvents"
+    }
+  ],
+  "execution_result": {
+    "passed": true,
+    "exit_code": 0,
+    "elapsed_seconds": 78.96,
+    "command": "npx nx test mfe-cdp --watch=false",
+    "cwd": "/home/baoltb/Desktop/Room_Agent/projects/wicx-crm-fe",
+    "output_tail": "|\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat Object.<anonymous> (\u001b[22m\u001b[2m../../node_modules/jest-preset-angular/setup-jest.js\u001b[2m:1:111)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat Object.<anonymous> (\u001b[22m\u001b[2msrc/test-setup.ts\u001b[2m:119:1)\u001b[22m\u001b[2m\u001b[22m\n\u001b[0m\u001b[7m\u001b[1m\u001b[32m PASS \u001b[39m\u001b[22m\u001b[27m\u001b[0m \u001b[0m\u001b[7m\u001b[37m mfe-cdp \u001b[39m\u001b[27m\u001b[0m \u001b[2mapps/mfe-cdp/src/app/pages/data-raw/\u001b[22m\u001b[1mraw-event-list.component.spec.ts\u001b[22m (\u001b[0m\u001b[1m\u001b[41m46.969 s\u001b[49m\u001b[22m\u001b[0m)\n  \u001b[1m● \u001b[22mConsole\n    \u001b[2m\u001b[33mconsole.warn\u001b[39m\u001b[22m\n\u001b[33m      \u001b[39m\n\u001b[33m          Importing \"setup-jest.js\" directly is deprecated. The file \"setup-jest.js\" will be removed in the future.\u001b[39m\n\u001b[33m          Please use \"setupZoneTestEnv\" function instead. Example:\u001b[39m\n\u001b[33m      \u001b[39m\n\u001b[33m          // setup-jest.ts\u001b[39m\n\u001b[33m          import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';\u001b[39m\n\u001b[33m      \u001b[39m\n\u001b[33m          setupZoneTestEnv();\u001b[39m\n\u001b[33m      \u001b[39m\n\u001b[2m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m 117 |\u001b[39m     }\u001b[33m,\u001b[39m\u001b[22m\n\u001b[2m     \u001b[90m 118 |\u001b[39m }\u001b[33m;\u001b[39m\u001b[22m\n\u001b[2m    \u001b[31m\u001b[1m>\u001b[22m\u001b[2m\u001b[39m\u001b[90m 119 |\u001b[39m \u001b[36mimport\u001b[39m \u001b[32m'jest-preset-angular/setup-jest'\u001b[39m\u001b[33m;\u001b[39m\u001b[22m\n\u001b[2m     \u001b[90m     |\u001b[39m \u001b[31m\u001b[1m^\u001b[22m\u001b[2m\u001b[39m\u001b[22m\n\u001b[2m     \u001b[90m 120 |\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat Object.<anonymous> (\u001b[22m\u001b[2m../../node_modules/jest-preset-angular/setup-jest.js\u001b[2m:1:111)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat Object.<anonymous> (\u001b[22m\u001b[2msrc/test-setup.ts\u001b[2m:119:1)\u001b[22m\u001b[2m\u001b[22m\n\u001b[33mA worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.\u001b[39m\n\u001b[1mTest Suites: \u001b[22m\u001b[1m\u001b[32m4 passed\u001b[39m\u001b[22m, 4 total\n\u001b[1mTests:       \u001b[22m\u001b[1m\u001b[32m59 passed\u001b[39m\u001b[22m, 59 total\n\u001b[1mSnapshots:   \u001b[22m0 total\n\u001b[1mTime:\u001b[22m        \u001b[1m\u001b[33m59.311 s\u001b[39m\u001b[22m\n\u001b[2mRan all test suites\u001b[22m\u001b[2m.\u001b[22m"
+  }
+}

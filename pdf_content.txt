@@ -1,0 +1,996 @@
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Hồ sơ khách hàng
+
+Mapping dữ liệu
+
+Tổng hợp sự kiện nhận về từ mọi trang liên kết. Chọn một trang ở bên trái để xem chi tiết.
+
+Dữ liệu sự kiện
+Trang liên kết
+
+4 trang
+
+Tổng quan sự kiện nhận về
+
+Thời gian
+
+Từ điển dữ liệu
+Quy tắc
+CENTRALFLOW (NỘI BỘ)
+
+Hàng chờ xử lý
+
+2
+
+CRM
+Website · CRM
+
+9.737
+
+4/4
+
+549
+
+Trang liên kết
+
+TMT 1
+
+Sự kiện nhận về
+
+Khách đã nhận diện
+
+Nhận gần nhất
+
+7.505
+
+0
+
+13/08 16:04
+
+1.284
+
+312
+
+13/08 21:12
+
+436
+
+97
+
+13/08 18:40
+
+512
+
+140
+
+13/08 20:05
+
+CENTRALFLOW (NỘI BỘ)
+Đang nhận
+
+CRM
+Website · CRM
+
+TMT 2
+
+MẠNG XÃ HỘI
+Đang nhận
+
+TMT 1
+Facebook Page
+
+TMT 1
+Zalo OA · Zalo ID:
+1838472937455621
+204
+
+Khách đã nhận diện
+
+Theo trang liên kết
+
+MẠNG XÃ HỘI
+
+Facebook Page ·
+Page ID:
+1322815864251565
+
+Trang liên kết đang nhận
+
+Đang nhận
+
+Lịch sử thay đổi
+
+Facebook Page ·
+Page ID:
+547851926310482
+
+Tổng sự kiện nhận về
+
+TMT 2
+Đang nhận
+
+Facebook Page
+
+TMT 1
+Zalo OA
+
+Khách đã nhận diện: khách có SĐT, email hoặc ID mạng xã hội để gộp vào hồ sơ. CRM đang là 0 vì form CentralFlow hiện chưa gửi giá trị khách điền. Số
+liệu trên màn này là dữ liệu mẫu.
+
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Hồ sơ khách hàng
+Trang liên kết
+
+4 trang
+
+CRM
+
+Dữ liệu sự kiện
+3
+
+4
+
+Đang mapping
+
+Hoàn tất
+
+Từ điển dữ liệu
+Chưa cấu hình
+
+CENTRALFLOW (NỘI BỘ)
+
+Đã cấu hình chung
+
+Quy tắc
+
+0/2 form đã map xong
+
+CRM
+Hàng chờ xử lý
+
+2
+
+Website · CRM
+
+Đang nhận
+
+Cấu hình chung
+Lịch sử thay đổi
+
+Sự kiện hành vi (4)
+
+Lịch sử hoạt động
+
+MẠNG XÃ HỘI
+
+TMT 1
+Facebook Page ·
+Page ID:
+547851926310482
+
+Đang nhận
+
+1. Thông tin kết nối & ánh xạ dữ liệu
+
+Lưu cấu hình
+
+Thông tin kết nối
+
+TMT 2
+Facebook Page ·
+Page ID:
+1322815864251565
+
+Nguồn dữ liệu *
+
+Tên trang liên kết *
+
+Đang nhận
+
+Loại trang liên kết
+
+TMT 1
+Zalo OA · Zalo ID:
+1838472937455621
+204
+
+Đang nhận
+
+Ánh xạ dữ liệu từ JSON
+Tên trong CDP *
+
+Lấy từ trường JSON *
+
+Trang liên kết
+Cho biết sự kiện thuộc trang nào
+
+Loại sự kiện
+Cho biết loại sự kiện: xem trang, click, cuộn trang, gửi form
+
+Thêm trường
+
+Danh sách trường lấy từ dữ liệu JSON thực tế. Đối chiếu với bản ghi mẫu bên phải để chọn đúng trường.
+
+Xem trước dữ liệu JSON (mẫu)
+Bản ghi gần nhất từ CentralFlow
+
+{
+"event_id": "5f0e7a12-6b30-43d4-bcea-69581db3e60e",
+"event_name": "auto_form_submit_custom",
+"event_time": "2026-08-13T09:02:10.420Z",
+"site_id": "CRM",
+"visitor_id": "0a7f33c1-f105-40ff-a6a0-7d2ae7d7459d",
+"session_id": "74040eb7-e953-421b-9bb4-737fa144b057",
+"data": {
+"current_url": "https://[tên-miền-CRM]/lien-he.html",
+"system_event_type": "AutoFormSubmit"
+},
+"received_at": "2026-08-13T09:02:11Z"
+}
+
+2. Dữ liệu trả về sau cấu hình
+
+Đọc theo cấu hình ở trên · mới nhất trước
+
+Trang liên kết
+
+Loại sự kiện
+
+Mã sự kiện
+
+Thời gian nhận
+
+CRM
+
+PageView
+
+cc623a9b…
+
+13/08 16:04:13
+
+CRM
+
+AutoClick
+
+6a99b44c…
+
+13/08 16:03:26
+
+CRM
+
+PageView
+
+08d12dfd…
+
+13/08 16:02:39
+
+CRM
+
+ScrollDepth
+
+a708a7ae…
+
+13/08 16:01:52
+
+CRM
+
+AutoClick
+
+4540215f…
+
+13/08 16:01:05
+
+CRM
+
+PageView
+
+e3779b10…
+
+13/08 16:00:18
+
+CRM
+
+AutoFormSubmit
+
+81af14c1…
+
+13/08 15:59:31
+
+CRM
+
+PageView
+
+1fe68e72…
+
+13/08 15:58:44
+
+CRM
+
+AutoClick
+
+be1e0823…
+
+13/08 15:57:57
+
+CRM
+
+PageView
+
+5c5581d4…
+
+13/08 15:57:10
+
+Hiển thị 1–10 trên 7.505 bản ghi
+
+‹
+
+1
+
+2
+
+…
+
+751
+
+›
+
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Hồ sơ khách hàng
+Trang liên kết
+
+4 trang
+
+CRM
+
+Dữ liệu sự kiện
+Từ điển dữ liệu
+Chưa cấu hình
+
+CENTRALFLOW (NỘI BỘ)
+
+Đã cấu hình chung
+
+Quy tắc
+2
+
+Website · CRM
+
+Đang mapping
+
+Hoàn tất
+
+Đang nhận
+
+Cấu hình chung
+Lịch sử thay đổi
+
+4
+
+0/2 form đã map xong
+
+CRM
+Hàng chờ xử lý
+
+3
+
+Sự kiện hành vi (4)
+
+Lịch sử hoạt động
+
+MẠNG XÃ HỘI
+
+TMT 1
+Facebook Page ·
+Page ID:
+547851926310482
+
+Đang nhận
+
+4 loại sự kiện tracker gửi về. Số lượt tính từ lần đầu lưu cấu hình thành công.
+
+TMT 2
+Facebook Page ·
+Page ID:
+1322815864251565
+
+Sự kiện nhận về
+
+Tên sự kiện
+
+Loại sự kiện
+
+Số lượt
+
+Ý nghĩa
+
+Gửi form
+
+AutoFormSubmit
+
+8
+
+Khách gửi form. Trường trong form được map vào
+hồ sơ khách.
+
+Xem trang
+
+PageView
+
+3.281
+
+Khách xem một trang. Trang bài viết có thêm thông
+tin bài (tác giả, chuyên mục, thẻ)
+
+Nhấp chuột
+
+AutoClick
+
+2.089
+
+Khách bấm vào link hoặc nút
+
+Tỷ lệ đọc trang
+
+ScrollDepth
+
+711
+
+Tracker gửi 4 mốc 25/50/75/100%. Chỉ lưu mốc
+50% và 100%
+
+Hoàn tất cấu hình
+
+Lưu vào Hồ sơ khách
+hàng
+
+Đang nhận
+
+TMT 1
+Zalo OA · Zalo ID:
+1838472937455621
+204
+
+Đang nhận
+
+Form đã ghi nhận (2)
+Form liên hệ
+/lien-he.html · FORM-01 · gửi gần nhất 05/08 07:16
+
+Cấu hình mapping
+
+4 trường
+
+Form đăng ký dùng thử
+/dang-ky-dung-thu.html · FORM-02 · gửi gần nhất 10/08 04:33
+3 trường
+
+Cấu hình mapping
+
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Hồ sơ khách hàng
+Trang liên kết
+
+4 trang
+
+CRM
+
+Dữ liệu sự kiện
+Từ điển dữ liệu
+Chưa cấu hình
+
+CENTRALFLOW (NỘI BỘ)
+
+Đã cấu hình chung
+
+Quy tắc
+2
+
+Website · CRM
+
+Đang mapping
+
+Hoàn tất
+
+Đang nhận
+
+Cấu hình chung
+Lịch sử thay đổi
+
+4
+
+0/2 form đã map xong
+
+CRM
+Hàng chờ xử lý
+
+3
+
+Sự kiện hành vi (4)
+
+Lịch sử hoạt động
+
+MẠNG XÃ HỘI
+
+TMT 1
+Facebook Page ·
+Page ID:
+547851926310482
+
+Đang nhận
+
+Ghi lại mỗi lần lưu ở tab Cấu hình chung và Sự kiện hành vi: ai thay đổi, lúc nào, đổi gì. Mapping form có lịch sử riêng.
+
+TMT 2
+Facebook Page ·
+Page ID:
+1322815864251565
+
+Lịch sử hoạt động
+
+Đang nhận
+
+Thời gian
+
+Người thực hiện
+
+Hoạt động
+
+13/08/2026 16:10
+
+Admin
+
+Sự kiện hành vi
+
+Bật lưu "Tỷ lệ đọc trang" vào hồ sơ khách hàng
+TMT 1
+Zalo OA · Zalo ID:
+1838472937455621
+204
+
+Đang nhận
+
+12/08/2026 14:30
+
+Admin
+
+Cấu hình chung
+
+Thêm trường: Mã sự kiện ← event_id
+Thêm trường: Thời gian nhận ← received_at
+05/08/2026 10:05
+
+Admin
+
+Sự kiện hành vi
+
+Tắt lưu "Tỷ lệ đọc trang" vào hồ sơ khách hàng
+27/07/2026 09:15
+
+Admin
+
+Cấu hình chung
+
+Lưu cấu hình lần đầu, bắt đầu tính số lượt
+Trang liên kết ← site_id
+Loại sự kiện ← data.system_event_type
+
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Hồ sơ khách hàng
+Trang liên kết
+
+4 trang
+
+CRM
+
+Dữ liệu sự kiện
+Từ điển dữ liệu
+CENTRALFLOW (NỘI BỘ)
+
+Quy tắc
+
+2
+
+3
+
+4
+
+Chưa cấu hình
+
+Đã cấu hình chung
+
+Đang mapping
+
+Hoàn tất
+
+Chưa lưu cấu hình chung
+
+CRM
+Hàng chờ xử lý
+
+1
+
+2
+
+Website · CRM
+
+Đang nhận
+
+Cấu hình chung
+Lịch sử thay đổi
+
+Sự kiện hành vi
+
+Lịch sử hoạt động
+
+MẠNG XÃ HỘI
+
+TMT 1
+Facebook Page ·
+Page ID:
+547851926310482
+
+Đang nhận
+
+TMT 2
+Facebook Page ·
+Page ID:
+1322815864251565
+
+Chưa có sự kiện
+Đang nhận
+
+Lưu Cấu hình chung để bắt đầu nhận sự kiện của trang này.
+Đi tới Cấu hình chung
+
+TMT 1
+Zalo OA · Zalo ID:
+1838472937455621
+204
+
+Đang nhận
+
+Trang liên kết
+
+4 trang
+
+CENTRALFLOW (NỘI BỘ)
+
+CRM
+Website · CRM
+
+Đang nhận
+
+MẠNG XÃ HỘI
+
+TMT 1
+Facebook Page · Page
+ID: 547851926310482
+
+Đang nhận
+
+TMT 2
+Facebook Page · Page
+ID: 1322815864251565
+
+Đang nhận
+
+TMT 1
+Zalo OA · Zalo ID:
+183847293745562120
+4
+
+Đang nhận
+
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Hồ sơ khách hàng
+Quay lại
+Dữ liệu sự kiện
+
+Mapping dữ liệu: Form liên hệ
+
+Từ điển dữ liệu
+
+Nguồn WEB-01 · CRM
+
+Đường dẫn /lien-he.html
+
+Sự kiện Gửi form
+
+Bản ghi gần nhất 14/10/2026 08:41
+
+Quy tắc
+Hàng chờ xử lý
+
+2
+
+Trường dữ liệu của form
+
+Lưu thay đổi
+
+Lịch sử thay đổi
+Trường dữ liệu nguồn
+
+Giá trị mẫu gần nhất
+
+form.tds-input-1
+
+"0969733325"
+
+form.tds-input-2
+
+"Tấn "
+
+form.tds-input-3
+
+"tansida@gmail.com"
+
+form.tds-input-4
+
+"Quận 7"
+
+Trường CDP
+
+Quy tắc chuẩn hóa
+
+Tin cậy
+
+CDP Admin
+
+Dữ liệu sự kiện
+
+Tổng quan
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Hồ sơ khách hàng
+Quay lại mapping form
+
+Mapping dữ liệu / CRM / Gửi form / Form liên hệ / Lịch sử thay đổi
+
+Dữ liệu sự kiện
+
+Lịch sử thay đổi mapping
+
+Từ điển dữ liệu
+
+WEB-01 · form /lien-he.html (Form liên hệ). Mỗi lần lưu tạo một phiên bản mới và áp dụng ngay. Chỉ admin được cấu hình mapping.
+Quy tắc
+Hàng chờ xử lý
+
+1
+
+Phiên bản 3: thay đổi so với phiên bản 2
+
+Đang chạy
+
+Các phiên bản
+
+Lưu bởi [Tên admin] · 14/10/2026 09:40 · áp dụng cho dữ liệu nhận từ lúc lưu
+
+Lịch sử thay đổi
+
+Phiên bản 3
+Thêm
+
+form.tds-input-3 → email · CH-EMAIL · tin cậy Cao
+
+Đang chạy
+
+[Tên admin] · 14/10/2026 · 3 thay đổi
+
+Hệ thống tự map
+
+Phiên bản 2
+Sửa
+
+form.tds-input-2 · quy tắc chuẩn hóa
+
+Lưu trữ
+
+[Tên admin] · 10/10/2026 · 2 thay đổi
+
+Không áp dụng → CH-TEN
+
+Xem
+Chưa map
+
+Khôi phục
+
+form.tds-input-4 → thuộc tính mở rộng
+Chưa có trường CDP phù hợp, dữ liệu vẫn được giữ
+
+Phiên bản 1
+
+Lưu trữ
+
+[Tên admin] · 02/10/2026 · tạo mới
+
+Xem
+
+Khôi phục
+
+Khôi phục tạo một phiên bản mới từ bản cũ và
+áp dụng ngay. Lịch sử không bị xóa.
+
+Dữ liệu sự kiện
+
+CDP Admin
+Tổng quan
+Hồ sơ khách hàng
+
+Dữ liệu thô
+
+Mapping dữ liệu
+
+Tất cả nguồn
+
+FACEBOOK
+
+Dữ liệu sự kiện
+MỞ RỘNG
+
+Từ điển dữ liệu
+
+TM
+
+PARTNER
+
+DOANH NGHIỆP
+
+TMT
+Store-VN #01
+
+TPOS
+
+Tất cả
+
+ZALO
+
+TMT
+
+180 ngày
+
+Store-VN #01
+
+Hàng chờ xử lý
+
+MÃ SỰ KIỆN
+
+THỜI GIAN TẠO (UTC)
+
+e7d439d1-fd69-0a12-7b97-e0dc51ad0c24
+
+2026-10-13 17:29:56
+
+5e0b3c29-9b4e-f745-1d8b-7c429bec2dee
+
+2026-10-13 14:19:34
+
+2900ade0-3d99-ea0e-179c-92ffb7be4fac
+
+2026-10-13 14:19:34
+
+cdc624f5-861a-6045-db07-c1222b6a31b2
+
+2026-10-13 14:19:24
+
+26f4f50d-4407-b98a-aef5-bc9c550a9999
+
+2026-10-09 16:37:04
+
+8b6ff02b-3d6f-f8fa-92b6-574450aa79b2
+
+2026-10-09 16:17:59
+
+e68929b0-3fa8-5fec-feaa-d3ed6175b45f
+
+2026-10-05 16:06:36
+
+fec80256-9442-a4cc-71e5-7997274b29f9
+
+2026-10-02 14:37:36
+
+d1a51b89-d414-11e4-ab82-68f022d4aa9f
+
+2026-10-01 17:01:08
+
+ab541666-045c-2128-e029-db1e49d7c8b5
+
+2026-10-01 17:00:53
+
+2
+
+TMT
+Lịch sử thay đổi
+
+Store-VN #01
+
+TMT
+Store-VN #01
+
+TMT
+Store-VN #01
+
+TMT
+Store-VN #01
+
+TMT
+Store-VN #01
+
+TMT
+Store-VN #01
+
+TMT
+Store-VN #01
+
+TMT
+Store-VN #01
+
+AS
+
+Asd
+
+Mới nhất
+
+Quy tắc
+TMT
+
+1
+
+THAO TÁC
+
+

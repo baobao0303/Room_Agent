@@ -4,6 +4,7 @@ Transparently supports Floci emulation endpoint on local / host network.
 """
 import os
 import sys
+import re
 from decimal import Decimal
 from typing import Dict, Any, List, Optional
 from datetime import datetime
@@ -111,10 +112,12 @@ def _load_local_store() -> Dict[str, Any]:
                     data.setdefault("work_items", {})
                     data.setdefault("stories", {})
                     data.setdefault("tools", {})
+                    data.setdefault("skills", {})
+                    data.setdefault("skills_inverted_index", {})
                     return data
         except Exception:
             pass
-    return {"metadata": {}, "work_items": {}, "stories": {}, "tools": {}}
+    return {"metadata": {}, "work_items": {}, "stories": {}, "tools": {}, "skills": {}, "skills_inverted_index": {}}
 
 
 def _save_local_store(store: Dict[str, Any]) -> None:
@@ -159,6 +162,31 @@ def _normalize_item(item: Dict[str, Any]) -> Dict[str, Any]:
     out["source"] = "tfs" if raw_src == "tfs" else "local"
     return out
 
+
+STOP_WORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "he",
+    "in", "is", "it", "its", "of", "on", "that", "the", "to", "was", "were",
+    "will", "with", "this", "but", "they", "have", "had", "what", "when",
+    "where", "who", "which", "why", "how", "all", "any", "both", "each", "few",
+    "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own",
+    "same", "so", "than", "too", "very", "can", "just", "should", "now",
+    "của", "và", "là", "cho", "các", "những", "trong", "được", "có", "này", "với"
+}
+
+
+def tokenize_for_search(text: str) -> List[str]:
+    """Tokenize and normalize text for inverted indexing and search."""
+    if not text:
+        return []
+    expanded = re.sub(r"[-_./]", " ", str(text))
+    tokens = re.findall(r"[a-zA-Z0-9]+", (str(text) + " " + expanded).lower())
+    result = []
+    seen = set()
+    for tok in tokens:
+        if len(tok) >= 2 and tok not in STOP_WORDS and tok not in seen:
+            seen.add(tok)
+            result.append(tok)
+    return result
 
 
 class FlociHarnessDB:
@@ -227,7 +255,7 @@ class FlociHarnessDB:
                 "status": "local_fallback",
                 "endpoint": LOCAL_DB_PATH,
                 "created_tables": [],
-                "existing_tables": ["harness_metadata", "harness_work_items", "harness_stories", "harness_tools"],
+                "existing_tables": ["harness_metadata", "harness_work_items", "harness_stories", "harness_tools", "harness_skills", "harness_skills_index"],
                 "s3_bucket": self.s3_bucket
             }
 
@@ -250,6 +278,17 @@ class FlociHarnessDB:
             "harness_tools": {
                 "KeySchema": [{"AttributeName": "name", "KeyType": "HASH"}],
                 "AttributeDefinitions": [{"AttributeName": "name", "AttributeType": "S"}]
+            },
+            "harness_skills": {
+                "KeySchema": [{"AttributeName": "name", "KeyType": "HASH"}],
+                "AttributeDefinitions": [{"AttributeName": "name", "AttributeType": "S"}]
+            },
+            "harness_skills_index": {
+                "KeySchema": [{"AttributeName": "token", "KeyType": "HASH"}, {"AttributeName": "skill_name", "KeyType": "RANGE"}],
+                "AttributeDefinitions": [
+                    {"AttributeName": "token", "AttributeType": "S"},
+                    {"AttributeName": "skill_name", "AttributeType": "S"}
+                ]
             }
         }
 
@@ -576,6 +615,236 @@ class FlociHarnessDB:
             items = [i for i in items if i.get("responsibility") == responsibility]
         items.sort(key=lambda x: x.get("name", ""))
         return items
+
+    # --- Skills CRUD & Inverted Index Search ---
+    def sync_skills_index(self, skills: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Synchronizes skills into the primary skills store and builds an Inverted Index
+        (token -> skill_name) on DynamoDB and local store.
+        Avoids full table scans during search.
+        """
+        store = _load_local_store()
+        store.setdefault("skills", {})
+        store.setdefault("skills_inverted_index", {})
+
+        online = self._is_online()
+        table_skills = self.ddb_resource.Table("harness_skills") if online else None
+        table_index = self.ddb_resource.Table("harness_skills_index") if online else None
+
+        new_local_index: Dict[str, Dict[str, Any]] = {}
+        indexed_count = 0
+        total_tokens = set()
+        items_skills = []
+        items_index = []
+
+        for skill in skills:
+            name = str(skill.get("name", "")).strip()
+            if not name:
+                continue
+
+            desc = str(skill.get("description", "")).strip()
+            source = str(skill.get("source", "")).strip()
+            source_type = str(skill.get("source_type", "")).strip()
+            path = str(skill.get("path", "")).strip()
+            synced = bool(skill.get("synced", True))
+            files_count = int(skill.get("files_count", 1))
+            updated_at = datetime.utcnow().isoformat()
+
+            skill_record = {
+                "name": name,
+                "description": desc,
+                "source": source,
+                "source_type": source_type,
+                "path": path,
+                "synced": synced,
+                "files_count": files_count,
+                "updated_at": updated_at
+            }
+
+            # Update primary store
+            store["skills"][name] = skill_record
+            if online:
+                items_skills.append(skill_record)
+
+            # Tokenize fields with specific weights
+            name_tokens = set(tokenize_for_search(name))
+            desc_tokens = set(tokenize_for_search(desc))
+            all_skill_tokens = name_tokens | desc_tokens
+
+            snippet = desc[:180] + ("..." if len(desc) > 180 else "")
+
+            for tok in all_skill_tokens:
+                total_tokens.add(tok)
+                weight = 0
+                fields = []
+                if tok in name_tokens:
+                    weight += 10
+                    fields.append("name")
+                if tok in desc_tokens:
+                    weight += 2
+                    fields.append("description")
+
+                # Local index
+                if tok not in new_local_index:
+                    new_local_index[tok] = {}
+                new_local_index[tok][name] = {
+                    "weight": weight,
+                    "fields": fields,
+                    "snippet": snippet
+                }
+
+                # DynamoDB index item
+                if online:
+                    items_index.append({
+                        "token": tok,
+                        "skill_name": name,
+                        "weight": Decimal(str(weight)),
+                        "fields": ",".join(fields),
+                        "snippet": snippet
+                    })
+
+            indexed_count += 1
+
+        # Batch write to DynamoDB if online
+        if online and table_skills and table_index:
+            try:
+                with table_skills.batch_writer() as writer:
+                    for it in items_skills:
+                        writer.put_item(Item=it)
+                with table_index.batch_writer() as writer:
+                    for it in items_index:
+                        writer.put_item(Item=it)
+            except Exception:
+                pass
+
+        store["skills_inverted_index"] = new_local_index
+        _save_local_store(store)
+
+        return {
+            "status": "success",
+            "indexed_skills": indexed_count,
+            "unique_tokens": len(total_tokens),
+            "backend": "dynamodb" if online else "local_json"
+        }
+
+    def get_skill(self, name: str) -> Optional[Dict[str, Any]]:
+        """Fetch single skill by primary key (O(1) point lookup)."""
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_skills")
+                resp = table.get_item(Key={"name": name})
+                if "Item" in resp:
+                    return DecimalEncoder.decode(resp["Item"])
+            except Exception:
+                pass
+        store = _load_local_store()
+        return store.get("skills", {}).get(name)
+
+    def search_skills(self, query_text: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        High-performance skill search using the Inverted Index.
+        DOES NOT perform full table scans (ScanAll).
+        Instead, directly queries the partition key (token) for each query token,
+        merges relevance scores, and only fetches the top-K matching skill documents.
+        """
+        query_tokens = tokenize_for_search(query_text)
+        if not query_tokens:
+            return []
+
+        online = self._is_online()
+        table_skills = self.ddb_resource.Table("harness_skills") if online else None
+        table_index = self.ddb_resource.Table("harness_skills_index") if online else None
+        store = _load_local_store()
+
+        aggregated_scores: Dict[str, Dict[str, Any]] = {}
+
+        # 1. Query ONLY the partitions matching query_tokens (O(1) per token, ZERO table scan)
+        for tok in query_tokens:
+            entries = []
+            if online:
+                try:
+                    # Exact Partition Key Query: Key('token').eq(tok)
+                    resp = table_index.query(KeyConditionExpression=Key("token").eq(tok))
+                    entries = [DecimalEncoder.decode(i) for i in resp.get("Items", [])]
+                except Exception:
+                    entries = []
+
+            # Fallback or local lookup
+            if not entries:
+                local_map = store.get("skills_inverted_index", {}).get(tok, {})
+                entries = [
+                    {
+                        "token": tok,
+                        "skill_name": sname,
+                        "weight": data.get("weight", 1),
+                        "fields": ",".join(data.get("fields", [])),
+                        "snippet": data.get("snippet", "")
+                    }
+                    for sname, data in local_map.items()
+                ]
+
+            for entry in entries:
+                sname = entry.get("skill_name")
+                if not sname:
+                    continue
+                w = float(entry.get("weight", 1.0))
+                if sname not in aggregated_scores:
+                    aggregated_scores[sname] = {
+                        "score": 0.0,
+                        "matched_tokens": set(),
+                        "snippet": entry.get("snippet", "")
+                    }
+                aggregated_scores[sname]["score"] += w
+                aggregated_scores[sname]["matched_tokens"].add(tok)
+
+        if not aggregated_scores:
+            return []
+
+        # 2. Ranking and multi-term match boosting
+        clean_q = query_text.strip().lower()
+        for sname, meta in aggregated_scores.items():
+            matched_count = len(meta["matched_tokens"])
+            # Bonus for matching multiple tokens in a query
+            if matched_count > 1:
+                meta["score"] *= (1.0 + (matched_count / len(query_tokens)) * 0.8)
+            # Bonus if exact query substring matches skill name
+            if clean_q in sname.lower():
+                meta["score"] += 25.0
+
+        # 3. Sort by score descending and take Top-K
+        sorted_names = sorted(aggregated_scores.keys(), key=lambda k: aggregated_scores[k]["score"], reverse=True)[:limit]
+
+        # 4. Fetch ONLY the top-K full documents by Primary Key (O(1) Point Lookup)
+        results = []
+        for rank, sname in enumerate(sorted_names, start=1):
+            doc = None
+            if online:
+                try:
+                    resp = table_skills.get_item(Key={"name": sname})
+                    doc = DecimalEncoder.decode(resp.get("Item")) if "Item" in resp else None
+                except Exception:
+                    pass
+            if not doc:
+                doc = store.get("skills", {}).get(sname)
+
+            score_info = aggregated_scores[sname]
+            if doc:
+                item_result = dict(doc)
+                item_result["rank"] = rank
+                item_result["score"] = round(score_info["score"], 2)
+                item_result["matched_tokens"] = sorted(list(score_info["matched_tokens"]))
+                results.append(item_result)
+            else:
+                results.append({
+                    "rank": rank,
+                    "name": sname,
+                    "score": round(score_info["score"], 2),
+                    "matched_tokens": sorted(list(score_info["matched_tokens"])),
+                    "description": score_info.get("snippet", ""),
+                    "source": "index"
+                })
+
+        return results
 
     # --- Stats ---
     def get_stats(self) -> Dict[str, Any]:

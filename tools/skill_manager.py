@@ -260,6 +260,37 @@ def sync_skills() -> Dict[str, Any]:
     }
 
 
+def get_harness_db():
+    """Retrieve FlociHarnessDB instance with fallback."""
+    try:
+        if str(BASE_DIR) not in sys.path:
+            sys.path.insert(0, str(BASE_DIR))
+        try:
+            from tools.floci_client import FlociHarnessDB
+        except ImportError:
+            from floci_client import FlociHarnessDB
+        return FlociHarnessDB()
+    except Exception as e:
+        return None
+
+
+def sync_skills_to_db() -> Dict[str, Any]:
+    """Sync all discovered skills to DynamoDB/Local DB with an Inverted Index."""
+    db = get_harness_db()
+    if not db:
+        return {"status": "error", "message": "Không thể kết nối FlociHarnessDB"}
+    skills = get_all_skills()
+    return db.sync_skills_index(skills)
+
+
+def search_skills_db(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Search skills on Database via Inverted Index without table scan."""
+    db = get_harness_db()
+    if not db:
+        return []
+    return db.search_skills(query, limit=limit)
+
+
 def add_skill(name: str, description: str, content: str) -> Dict[str, Any]:
     """Create a new skill in Master Registry and trigger sync."""
     ensure_dirs()
@@ -557,6 +588,20 @@ def main():
     p_serve.add_argument("--port", type=int, default=5252, help="Cổng máy chủ (mặc định: 5252)")
     p_serve.add_argument("--open", action="store_true", help="Tự động mở trình duyệt")
 
+    # sync-db
+    p_syncdb = subparsers.add_parser("sync-db", help="Lập chỉ mục Inverted Index toàn bộ skills lên DynamoDB/Local DB")
+
+    # search / query
+    p_search = subparsers.add_parser("search", help="Tìm kiếm skill hiệu quả bằng Inverted Index trên DB (không ScanAll)")
+    p_search.add_argument("query", help="Từ khóa hoặc chuỗi cần tìm kiếm")
+    p_search.add_argument("--limit", type=int, default=10, help="Số lượng kết quả tối đa (mặc định: 10)")
+    p_search.add_argument("--json", action="store_true", help="Xuất kết quả JSON")
+
+    p_query = subparsers.add_parser("query", help="Alias của search - Query skill trên DB qua Inverted Index")
+    p_query.add_argument("query", help="Từ khóa hoặc chuỗi cần tìm kiếm")
+    p_query.add_argument("--limit", type=int, default=10, help="Số lượng kết quả tối đa (mặc định: 10)")
+    p_query.add_argument("--json", action="store_true", help="Xuất kết quả JSON")
+
     args = parser.parse_args()
 
     if args.command == "list" or not args.command:
@@ -584,6 +629,9 @@ def main():
             print("⚠️ Cảnh báo lỗi:")
             for err in res["errors"]:
                 print(f"  - {err}")
+        db_res = sync_skills_to_db()
+        if db_res.get("status") == "success":
+            print(f"🗄️ Đã lập chỉ mục Inverted Index {db_res['indexed_skills']} skills ({db_res['unique_tokens']} tokens) lên Database ({db_res['backend']})!")
 
     elif args.command == "add":
         content = args.content
@@ -631,6 +679,46 @@ def main():
 
     elif args.command == "serve":
         serve_dashboard(port=args.port, auto_open=args.open)
+
+    elif args.command == "sync-db":
+        print("⚡ Đang quét và lập chỉ mục Inverted Index toàn bộ skills lên Database...")
+        res = sync_skills_to_db()
+        if res.get("status") == "success":
+            print(f"✅ Đã lập chỉ mục {res['indexed_skills']} skills thành công!")
+            print(f"🔑 Tổng số unique search tokens: {res['unique_tokens']}")
+            print(f"🗄️ Backend lưu trữ: {res['backend']}")
+        else:
+            print(f"❌ Lỗi: {res.get('message')}")
+
+    elif args.command in ("search", "query"):
+        q = args.query.strip()
+        if not q:
+            print("⚠️ Vui lòng nhập từ khóa tìm kiếm!")
+            sys.exit(1)
+
+        results = search_skills_db(q, limit=args.limit)
+
+        if getattr(args, "json", False):
+            print(json.dumps(results, indent=2, ensure_ascii=False))
+        else:
+            print("\n" + "=" * 95)
+            print(f"🔍 KẾT QUẢ TÌM KIẾM SKILL TRÊN DB (INVERTED INDEX) CHO TỪ KHÓA: \"{q}\"")
+            print("=" * 95)
+            if not results:
+                print(f"ℹ️ Không tìm thấy skill nào khớp với từ khóa \"{q}\".")
+                print("Tip: Chạy 'python3 tools/skill_manager.py sync-db' để đảm bảo index DB được cập nhật.")
+            else:
+                print(f"{'#':<3} {'SCORE':<7} {'TÊN SKILL':<28} {'TOKENS KHỚP':<18} {'MÔ TẢ'}")
+                print("-" * 95)
+                for item in results:
+                    rank = str(item.get("rank", 1))
+                    score = str(item.get("score", 0.0))
+                    name = item.get("name", "")[:26]
+                    matched = ",".join(item.get("matched_tokens", []))[:16]
+                    desc = (item.get("description") or "").replace("\n", " ")[:38]
+                    print(f"{rank:<3} {score:<7} {name:<28} {matched:<18} {desc}")
+                print("-" * 95)
+                print(f"Tìm thấy {len(results)} kết quả phù hợp (Truy vấn phân vùng O(1), không Scan toàn bảng).\n")
 
 
 if __name__ == "__main__":
