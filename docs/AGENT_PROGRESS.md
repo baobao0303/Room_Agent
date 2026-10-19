@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-19 09:41:51 +0700`
+- **Cập nhật lần cuối**: `2026-10-19 09:47:51 +0700`
 - **Agent cập nhật gần nhất**: `Supervisor`
-- **Trọng tâm hiện tại**: Điều phối xử lý Bug WI-20 trên trang data-raw
+- **Trọng tâm hiện tại**: Chuẩn hóa cấu hình cột mặc định bảng Khách hàng (mfe-crm)
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Theo dõi Lead phân tích kiến trúc, giao subtask cho Peer và tiến độ review
+  > Chờ Lead phân rã task giao Peer cập nhật customer-list.component.ts và chạy test
 
 ---
 
@@ -46,6 +46,8 @@
 - [x] Tạo Bug WI-20 trên Harness DB
 - [x] Chạy pipeline research cho Lead
 - [x] Spawn Lead agent (7af86690-b3a0-46e9-b33b-f91ae0ef4499)
+- [x] Tạo Bug WI-65 trên Harness DB
+- [x] Spawn Lead agent (f0e3dade-a4fd-47e2-ba51-a3e0064e3a94)
 
 ---
 
@@ -58,6 +60,43 @@
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 24 phiên được lưu trong `.harness_progress.json`).
+
+### Phiên #24 — `2026-10-19 09:47:51 +0700` | **Supervisor**
+- **Tóm tắt**: Tạo Bug WI-65 và giao Lead khôi phục 8 cột mặc định bảng Khách hàng theo Hình 1
+- **Đã thực hiện**:
+  - Tạo Bug WI-65 trên Harness DB
+  - Chạy pipeline research cho Lead
+  - Spawn Lead agent (f0e3dade-a4fd-47e2-ba51-a3e0064e3a94)
+- **File đã tạo/cập nhật**: `bmad/rooms/supervisor/latest_handoff.md`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Chờ Lead phân rã task giao Peer cập nhật customer-list.component.ts và chạy test
+
+### Phiên #23 — `2026-10-19 09:47:28 +0700` | **Lead (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead: Phân tích và khắc phục Bug WI-65: Khôi phục cấu hình hiển thị cột mặc định của bảng Khách hàng trong apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.ts theo đúng Hình 1 của User: 1. Cột Khách hàng (fullName) là cột cố định ghim trái, loại bỏ khỏi danh sách toggle cài đặt cột trong tds-column-settings. 2. 8 cột bật mặc định (tdsChecked: true): Số điện thoại, Doanh nghiệp, Trạng thái, Ngày hẹn chăm sóc, Người phụ trách, Ghi chú, Kênh nguồn, Ngày tạo. 3. 3 cột tắt mặc định (tdsChecked: false): Email, Loại khách hàng, Ngày hoạt động cuối (đổi title sang 'Ngày hoạt động cuối'). 4. Chạy unit test mfe-crm đảm bảo pass 100%.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_65.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_65.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_65.md`, `tools/research/gen_brief_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_65.md`
+- **Bàn giao bước tiếp theo**: Profile Lead tiếp tục hoàn thiện task dựa trên tools/research/research_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_65.md và tools/research/gen_brief_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_65.md.
+
+### Phiên #22 — `2026-10-19 09:46:25 +0700` | **Lead (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead: Bug WI-20 Dropdown tenant scope raw-event-list flex-col
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_bug_wi_20_dropdown_tenant_scope.md
+  - Generated 5-Stage ISTQB Unit Test Suite -> tools/research/gen_test_lead_bug_wi_20_dropdown_tenant_scope.spec.ts
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_bug_wi_20_dropdown_tenant_scope.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_bug_wi_20_dropdown_tenant_scope.md`, `tools/research/gen_test_lead_bug_wi_20_dropdown_tenant_scope.spec.ts`, `tools/research/gen_brief_lead_bug_wi_20_dropdown_tenant_scope.md`
+- **Bàn giao bước tiếp theo**: Profile Lead tiếp tục hoàn thiện task dựa trên tools/research/research_lead_bug_wi_20_dropdown_tenant_scope.md và tools/research/gen_brief_lead_bug_wi_20_dropdown_tenant_scope.md.
+
+### Phiên #21 — `2026-10-19 09:45:54 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Chuan hoa danh sach cot mac dinh bang Khach hang theo Hinh 1
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_chuan_hoa_danh_sach_cot_m.md
+  - Generated 5-Stage ISTQB Unit Test Suite -> projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.spec.ts
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_chuan_hoa_danh_sach_cot_m.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_chuan_hoa_danh_sach_cot_m.md`, `projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.spec.ts`, `tools/research/gen_brief_supervisor_chuan_hoa_danh_sach_cot_m.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_chuan_hoa_danh_sach_cot_m.md và tools/research/gen_brief_supervisor_chuan_hoa_danh_sach_cot_m.md.
 
 ### Phiên #20 — `2026-10-19 09:41:51 +0700` | **Supervisor**
 - **Tóm tắt**: Tạo Bug WI-20 và dispatch cho Lead khắc phục lỗi dropdown chọn phạm vi tenant
@@ -188,40 +227,6 @@
   - 5. Unit test mfe-crm pass 52/52 (100%)
 - **File đã tạo/cập nhật**: `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.html`, `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.ts`, `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.scss`
 - **Bàn giao bước tiếp theo**: Nhận phản hồi nghiệm thu từ User
-
-### Phiên #4 — `2026-10-19 09:07:50 +0700` | **Lead (Auto Research+Gen)**
-- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead: WI-1 [CRM/DetailCustomer] - Chuẩn hóa bố cục màn hình Chi tiết Khách hàng 360
-- **Đã thực hiện**:
-  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_wi_1_crm_detailcustomer_chu_n_h.md
-  - Generated Role Execution Brief -> tools/research/gen_brief_lead_wi_1_crm_detailcustomer_chu_n_h.md
-- **File đã tạo/cập nhật**: `tools/research/research_lead_wi_1_crm_detailcustomer_chu_n_h.md`, `tools/research/gen_brief_lead_wi_1_crm_detailcustomer_chu_n_h.md`
-- **Bàn giao bước tiếp theo**: Profile Lead tiếp tục hoàn thiện task dựa trên tools/research/research_lead_wi_1_crm_detailcustomer_chu_n_h.md và tools/research/gen_brief_lead_wi_1_crm_detailcustomer_chu_n_h.md.
-
-### Phiên #3 — `2026-10-19 09:06:57 +0700` | **Supervisor**
-- **Tóm tắt**: Kiểm tra trạng thái Epic WI-1 ([CRM/DetailCustomer]) và gọi Lead kiểm tra/nghiệm thu 12 subtasks đã Resolved
-- **Đã thực hiện**:
-  - 1. Chạy profile_research_gen.py cho Supervisor (WI-1). 2. Rà soát Harness DB: Epic WI-1 đang ở trạng thái New nhưng toàn bộ 12 subtasks con (WI-2, WI-5..WI-15) đều đã được Peer hoàn thành và chuyển sang trạng thái Resolved. 3. Cập nhật patch_paseo.py và fix cờ --thinking trong tools/call_agent.py cho provider antigravity. 4. Ghi biên bản bàn giao vào bmad/rooms/supervisor/latest_handoff.md và spawn Lead (Agent ID: 22bc7453-db9c-4d6a-8649-8899c7412354) để rà soát và đóng Epic WI-1.
-- **File đã tạo/cập nhật**: `tools/call_agent.py`, `bmad/rooms/supervisor/latest_handoff.md`
-- **Bàn giao bước tiếp theo**: Theo dõi phản hồi từ Lead (22bc7453-db9c-4d6a-8649-8899c7412354) tại bmad/rooms/lead/latest_handoff.md và trạng thái WI-1 trên Harness DB
-
-### Phiên #2 — `2026-10-19 09:04:36 +0700` | **Supervisor (Auto Research+Gen)**
-- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Kiểm tra tiến độ Epic WI-1 [CRM/DetailCustomer] với Lead
-- **Đã thực hiện**:
-  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_ki_m_tra_ti_n_epic_wi_1_c.md
-  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_ki_m_tra_ti_n_epic_wi_1_c.md
-- **File đã tạo/cập nhật**: `tools/research/research_supervisor_ki_m_tra_ti_n_epic_wi_1_c.md`, `tools/research/gen_brief_supervisor_ki_m_tra_ti_n_epic_wi_1_c.md`
-- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_ki_m_tra_ti_n_epic_wi_1_c.md và tools/research/gen_brief_supervisor_ki_m_tra_ti_n_epic_wi_1_c.md.
-
-### Phiên #1 — `2026-10-19 08:51:19 +0700` | **Antigravity (Supervisor/Architect)**
-- **Tóm tắt**: Đọc toàn bộ Paseo_Project & codex-room-setup, viết Spec 8 mục và thiết lập hệ thống lưu tiến độ Agent
-- **Đã thực hiện**:
-  - Đọc hiểu toàn bộ cấu trúc Paseo_Project (4-role SLPC + Harness DB) và codex-room-setup (3-role SLP + Paseo v0.8.0)
-  - Cấu hình `.gitignore` ẩn `/codex-room-setup/` để không làm bẩn git status của dự án
-  - Chạy `./scripts/verify --source`, `./scripts/doctor`, `./install --dry-run` để xác định chính xác các mục còn thiếu trên máy
-  - Tạo file spec đầy đủ 8 mục tại `docs/spec/codex-room-setup-spec.md`
-  - Tạo `tools/agent_progress.py` và `docs/AGENT_PROGRESS.md` làm nơi lưu trữ trạng thái bàn giao giữa các Agent
-- **File đã tạo/cập nhật**: `.gitignore`, `docs/spec/codex-room-setup-spec.md`, `docs/AGENT_PROGRESS.md`, `tools/agent_progress.py`, `AGENTS.md`, `CLAUDE.md`
-- **Bàn giao bước tiếp theo**: Chờ lệnh từ User: Cài Paseo v0.8.0 (`./scripts/install-paseo`) hoặc cài đặt đầy đủ Codex CLI + `./install --apply`.
 
 ---
 
