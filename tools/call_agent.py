@@ -54,7 +54,7 @@ def main():
     profile = profiles.get(key)
 
     if not profile:
-        matches = [p for name, p in profiles.items() if key in name]
+        matches = [p for name, p in profiles.items() if key in name or name in key]
         if len(matches) == 1:
             profile = matches[0]
         else:
@@ -63,9 +63,9 @@ def main():
             sys.exit(1)
 
     profile_name = profile["name"]
-    provider = profile.get("provider", "router9")
-    model = profile.get("model", "ag/claude-sonnet-5-5-medium")
-    mode = profile.get("modeId", "bypassPermissions")
+    provider = profile.get("provider", "antigravity")
+    model = profile.get("model", "gemini-4-argon-high")
+    mode = profile.get("modeId", "full-access")
     thinking = profile.get("thinkingOptionId", "high")
     instructions = profile.get("notes", "")
 
@@ -127,9 +127,9 @@ def main():
     room_block = (
         f"\n\n=== SLPC MULTI-AGENT ROOM HANDOFF (MANDATORY READ FIRST) ===\n"
         f"A formal handoff memo has been registered by `{sender_role}` in:\n"
-        f"  - `/home/baoltb/Desktop/Paseo_Project/bmad/rooms/{sender_room}/latest_handoff.md`\n\n"
+        f"  - `{PROJECT_ROOT}/bmad/rooms/{sender_room}/latest_handoff.md`\n\n"
         f"You MUST:\n"
-        f"1. Read `/home/baoltb/Desktop/Paseo_Project/bmad/rooms/{sender_room}/latest_handoff.md` for your 3-part delegation (Ultimate Goal, Hard Constraints, Suggested Path).\n"
+        f"1. Read `{PROJECT_ROOT}/bmad/rooms/{sender_room}/latest_handoff.md` for your 3-part delegation (Ultimate Goal, Hard Constraints, Suggested Path).\n"
         f"2. Obey Single-Ownership Invariant: you own only your assigned module/scope. No cross-editing other modules.\n"
         f"3. If the suggested path fails in practice, exercise your Right to Challenge with empirical evidence (`python3 tools/call_agent.py --from-profile \"{profile_name}\" --profile \"{sender_role}\" --challenge --evidence \"...\"`).\n"
         f"4. When finished, record your handoff via `python3 tools/agent_progress.py log --agent \"{profile_name}\" ...` (auto-saves to `bmad/rooms/{target_room}/latest_handoff.md`) and transition the Work Item state on Harness DB.\n"
@@ -149,7 +149,7 @@ def main():
                 uc_code=args.uc,
                 sync_harness=bool(args.item_id),
             )
-            gen_list = "\n".join(f"  - `/home/baoltb/Desktop/Paseo_Project/{f}`" for f in pipeline_res.get("generated_files", []))
+            gen_list = "\n".join(f"  - `{PROJECT_ROOT}/{f}`" for f in pipeline_res.get("generated_files", []))
             pre_gen_block = (
                 "\n\n=== AUTO-GENERATED RESEARCH & GEN ARTIFACTS (MANDATORY READ FIRST) ===\n"
                 f"Pre-pipeline (`tools/profile_research_gen.py`) has already executed Research & Gen for `{profile_name}`:\n"

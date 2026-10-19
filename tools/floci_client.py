@@ -17,6 +17,8 @@ try:
     from botocore.exceptions import ClientError
 except ImportError:
     for pattern in [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../.venv/lib/python*/site-packages")),
+        "/Users/bao312/Desktop/Room_Agent/.venv/lib/python*/site-packages",
         "/home/baoltb/.hermes/hermes-agent/venv/lib/python*/site-packages",
         "/home/baoltb/ponytail/venv/lib/python*/site-packages",
         os.path.expanduser("~/.hermes/hermes-agent/venv/lib/python*/site-packages")
@@ -301,6 +303,30 @@ class FlociHarnessDB:
         return nxt
 
     # --- Work Items CRUD ---
+    def _sync_item_to_s3(self, item: Dict[str, Any]) -> None:
+        if not self.s3_client or "id" not in item:
+            return
+        try:
+            key = f"work-items/item-{item['id']}.json"
+            body = json.dumps(item, ensure_ascii=False, indent=2).encode("utf-8")
+            self.s3_client.put_object(
+                Bucket=self.s3_bucket,
+                Key=key,
+                Body=body,
+                ContentType="application/json"
+            )
+        except Exception:
+            pass
+
+    def _delete_item_from_s3(self, item_id: int) -> None:
+        if not self.s3_client:
+            return
+        try:
+            key = f"work-items/item-{item_id}.json"
+            self.s3_client.delete_object(Bucket=self.s3_bucket, Key=key)
+        except Exception:
+            pass
+
     def put_work_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
         if "id" not in item or item["id"] is None:
             item["id"] = self.get_next_id("work_item_id")
@@ -320,6 +346,7 @@ class FlociHarnessDB:
                 table.put_item(Item=cleaned)
             except Exception:
                 pass
+            self._sync_item_to_s3(decoded)
         return decoded
 
     def get_work_item(self, item_id: int) -> Optional[Dict[str, Any]]:
@@ -375,7 +402,9 @@ class FlociHarnessDB:
                     ExpressionAttributeValues=values,
                     ReturnValues="ALL_NEW"
                 )
-                return _normalize_item(DecimalEncoder.decode(res.get("Attributes", {})))
+                updated_item = _normalize_item(DecimalEncoder.decode(res.get("Attributes", {})))
+                self._sync_item_to_s3(updated_item)
+                return updated_item
             except Exception:
                 pass
         return local_item
@@ -388,6 +417,7 @@ class FlociHarnessDB:
                 table.delete_item(Key={"id": item_id})
             except Exception:
                 pass
+            self._delete_item_from_s3(item_id)
 
         store = _load_local_store()
         sid = str(item_id)
@@ -441,24 +471,12 @@ class FlociHarnessDB:
                     if not start_key:
                         done = True
                 decoded = [_normalize_item(DecimalEncoder.decode(i)) for i in items]
-                if not any([wi_type, state, source, iteration, assigned_to_profile, parent_item_id is not None]) and decoded:
+                if not any([wi_type, state, source, iteration, assigned_to_profile, parent_item_id is not None]):
                     store = _load_local_store()
-                    local_map = store.get("work_items", {})
-                    merged_by_id: Dict[str, Dict[str, Any]] = {}
-                    for d in decoded:
-                        sid = str(d["id"])
-                        loc = local_map.get(sid)
-                        if isinstance(loc, dict) and str(loc.get("updated_at") or "") >= str(d.get("updated_at") or ""):
-                            merged_by_id[sid] = _normalize_item(loc)
-                        else:
-                            merged_by_id[sid] = d
-                    for sid, loc in local_map.items():
-                        if sid not in merged_by_id and isinstance(loc, dict) and loc.get("id") is not None:
-                            merged_by_id[sid] = _normalize_item(loc)
-                    if merged_by_id != local_map:
-                        store["work_items"] = merged_by_id
+                    remote_map = {str(d["id"]): d for d in decoded if d.get("id") is not None}
+                    if store.get("work_items") != remote_map:
+                        store["work_items"] = remote_map
                         _save_local_store(store)
-                    decoded = list(merged_by_id.values())
                 decoded.sort(key=lambda x: x.get("id", 0), reverse=True)
                 return decoded
             except Exception:

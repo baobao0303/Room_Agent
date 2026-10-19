@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-const PROJECT_ROOT = "/home/baoltb/Desktop/Paseo_Project";
+const PROJECT_ROOT = "/Users/bao312/Desktop/Room_Agent";
 const PYTHON_HOOK_SCRIPT = `${PROJECT_ROOT}/tools/paseo_hooks.py`;
 
 export function redactEnvPayload(data: unknown): string {

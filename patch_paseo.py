@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import json
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = Path(os.environ.get("PASEO_CONFIG", Path.home() / ".paseo" / "config.json"))
-PROFILES_DIR = Path(os.environ.get("PASEO_PROFILES_DIR", Path(__file__).resolve().parent / "profiles"))
+PROFILES_DIR = Path(os.environ.get("PASEO_PROFILES_DIR", PROJECT_ROOT / "profiles"))
 PROFILE_FILES = ["supervisor.md", "lead.md", "peer.md", "qc.md"]
 DEFAULT_IDS = {
     "Supervisor": "agent_profile_supervisor_slp",
@@ -12,6 +17,95 @@ DEFAULT_IDS = {
     "Peer": "agent_profile_peer_slp",
     "QC": "agent_profile_qc_slpc",
 }
+
+DEFAULT_DEPARTMENT_PROFILES = [
+    {
+        "id": "agent_profile_lead_ba",
+        "name": "Lead BA",
+        "provider": "antigravity",
+        "model": "gemini-4-argon-high",
+        "modeId": "full-access",
+        "thinkingOptionId": "high",
+        "notes": (
+            "Room role: Lead BA (Business Analyst Lead).\n"
+            "Own business requirement analysis, User Stories, Use Cases (UC), and Acceptance Criteria (AC) in `docs/spec/<project>/ba/`.\n"
+            "Coordinate with Lead Design and Lead Dev via Harness DB."
+        ),
+    },
+    {
+        "id": "agent_profile_peer_ba",
+        "name": "Peer BA",
+        "provider": "antigravity",
+        "model": "gemini-4-argon-high",
+        "modeId": "full-access",
+        "thinkingOptionId": "high",
+        "notes": (
+            "Room role: Peer BA (Business Analyst Executor).\n"
+            "Execute bounded BA tasks assigned by Lead BA, extract atomic requirement beats (`tools/distill_ba_beats.py`), and write specs in `docs/spec/<project>/ba/`."
+        ),
+    },
+    {
+        "id": "agent_profile_lead_design",
+        "name": "Lead design",
+        "provider": "antigravity",
+        "model": "gemini-4-argon-high",
+        "modeId": "full-access",
+        "thinkingOptionId": "high",
+        "notes": (
+            "Room role: Lead Design (UI/UX & Design System Architect).\n"
+            "Own UI/UX architecture, Figma token mapping (`tds-ui-figma`), and component specs in `docs/spec/<project>/design/`."
+        ),
+    },
+    {
+        "id": "agent_profile_peer_design",
+        "name": "Peer Design",
+        "provider": "antigravity",
+        "model": "gemini-4-argon-high",
+        "modeId": "full-access",
+        "thinkingOptionId": "high",
+        "notes": (
+            "Room role: Peer Design (UI/UX Design Executor).\n"
+            "Execute bounded Figma-to-TDS UI component and token mapping tasks in `docs/spec/<project>/design/`."
+        ),
+    },
+    {
+        "id": "agent_profile_lead_dev",
+        "name": "Lead Dev",
+        "provider": "antigravity",
+        "model": "gemini-4-argon-high",
+        "modeId": "full-access",
+        "thinkingOptionId": "high",
+        "notes": (
+            "Room role: Lead Dev (Technical Architect & Dev Lead).\n"
+            "Own technical architecture, API contracts (`docs/spec/<project>/dev/`), task breakdown, and code review before merge."
+        ),
+    },
+    {
+        "id": "agent_profile_peer_dev",
+        "name": "Peer Dev",
+        "provider": "antigravity",
+        "model": "gemini-4-argon-high",
+        "modeId": "full-access",
+        "thinkingOptionId": "high",
+        "notes": (
+            "Room role: Peer Dev (Software Engineer Executor).\n"
+            "Implement assigned tasks in Angular 18 / Nx / TDS UI, write unit tests, and transition completed tasks to `Resolved` for QC verification."
+        ),
+    },
+]
+
+
+def find_paseo_bin() -> str | None:
+    which_paseo = shutil.which("paseo")
+    if which_paseo:
+        return which_paseo
+    for candidate in (
+        Path.home() / ".local" / "bin" / "paseo",
+        Path("/Applications/Paseo.app/Contents/Resources/bin/paseo"),
+    ):
+        if candidate.exists():
+            return str(candidate)
+    return None
 
 
 def parse_profile(path: Path):
@@ -87,29 +181,41 @@ def patch():
             entry = {
                 "id": meta.get("id", DEFAULT_IDS.get(name, f"agent_profile_{name.lower()}_slp")),
                 "name": name,
-                "provider": meta.get("provider", os.environ.get("PASEO_PROVIDER", "router9")),
-                "model": model or "",
-                "modeId": meta.get("modeId", "bypassPermissions"),
+                "provider": meta.get("provider", os.environ.get("PASEO_PROVIDER", "antigravity")),
+                "model": model or "gemini-4-argon-high",
+                "modeId": meta.get("modeId", "full-access"),
                 "thinkingOptionId": meta.get("thinkingOptionId", "high"),
                 "notes": body,
             }
             profiles.append(entry)
 
+    existing_by_name = {p.get("name"): p for p in profiles if isinstance(p, dict)}
+    for dept_prof in DEFAULT_DEPARTMENT_PROFILES:
+        existing = existing_by_name.get(dept_prof["name"])
+        if existing is not None:
+            existing["provider"] = dept_prof["provider"]
+            existing["model"] = dept_prof["model"]
+            existing["modeId"] = dept_prof["modeId"]
+            existing["thinkingOptionId"] = dept_prof["thinkingOptionId"]
+        else:
+            profiles.append(dict(dept_prof))
+            existing_by_name[dept_prof["name"]] = profiles[-1]
+
     mandatory_gate_marker = "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT)"
     global_research_gen_directive = (
         "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):\n"
         "Whenever Paseo runs any profile (Supervisor, Lead, Peer, QC, Lead BA, Peer BA, Lead Dev, Peer Dev, Lead design, Peer Design), "
-        "you MUST execute the workspace Research and Generation tools in `/home/baoltb/Desktop/Paseo_Project`:\n"
-        "1. Unified Research & Gen Pipeline: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile \"<Role>\" --topic \"<Task>\" [--source <file>] [--task-id <id>]`\n"
-        "2. Research Tools: `python3 /home/baoltb/Desktop/Paseo_Project/tools/research/research_agent.py \"<topic>\"`, "
-        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/query_reader.py <path> \"<query>\"`, "
-        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/crm_doc_reader.py \"<query>\" [--uc <UC>]`, "
-        "and `python3 /home/baoltb/Desktop/Paseo_Project/tools/agent_progress.py find-thread \"<keyword>\"`.\n"
+        f"you MUST execute the workspace Research and Generation tools in `{PROJECT_ROOT}`:\n"
+        f"1. Unified Research & Gen Pipeline: `python3 {PROJECT_ROOT}/tools/profile_research_gen.py --profile \"<Role>\" --topic \"<Task>\" [--source <file>] [--task-id <id>]`\n"
+        f"2. Research Tools: `python3 {PROJECT_ROOT}/tools/research/research_agent.py \"<topic>\"`, "
+        f"`python3 {PROJECT_ROOT}/tools/query_reader.py <path> \"<query>\"`, "
+        f"`python3 {PROJECT_ROOT}/tools/crm_doc_reader.py \"<query>\" [--uc <UC>]`, "
+        f"and `python3 {PROJECT_ROOT}/tools/agent_progress.py find-thread \"<keyword>\"`.\n"
         "3. Sub-Agents (`031_claude_code_sub_agents`): `gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`.\n"
-        "4. Generation Tools: `python3 /home/baoltb/Desktop/Paseo_Project/tools/qc_test_generator.py --source <file> --spec <spec> --out-spec <spec_ts> --sync-harness`, "
-        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/distill_ba_beats.py`, "
-        "`python3 /home/baoltb/Desktop/Paseo_Project/tools/harness_manager.py`, "
-        "and `python3 /home/baoltb/Desktop/Paseo_Project/tools/agent_progress.py log --agent \"<Role>\" ...`."
+        f"4. Generation Tools: `python3 {PROJECT_ROOT}/tools/qc_test_generator.py --source <file> --spec <spec> --out-spec <spec_ts> --sync-harness`, "
+        f"`python3 {PROJECT_ROOT}/tools/distill_ba_beats.py`, "
+        f"`python3 {PROJECT_ROOT}/tools/harness_manager.py`, "
+        f"and `python3 {PROJECT_ROOT}/tools/agent_progress.py log --agent \"<Role>\" ...`."
     )
 
     data["pluginsEnabled"] = True
@@ -128,9 +234,14 @@ def patch():
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"Updated {CONFIG_PATH} with SLPC profiles and Mandatory Research+Gen enforcement from {PROFILES_DIR}.")
+        print(f"Updated {CONFIG_PATH} with {len(profiles)} Paseo profiles and Mandatory Research+Gen enforcement from {PROFILES_DIR}.")
+        paseo_bin = find_paseo_bin()
+        if paseo_bin:
+            res = subprocess.run([paseo_bin, "reload", "--json"], capture_output=True, text=True, check=False, timeout=15)
+            if res.returncode == 0:
+                print(f"Reloaded Paseo daemon live config via {paseo_bin}.")
     else:
-        print(f"[dry-run] Would update {CONFIG_PATH} with {len(PROFILE_FILES)} SLPC profiles.")
+        print(f"[dry-run] Would update {CONFIG_PATH} with {len(profiles)} Paseo profiles.")
 
     return data
 

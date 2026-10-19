@@ -116,9 +116,12 @@ def find_paseo_bin() -> str:
     which_paseo = shutil.which("paseo")
     if which_paseo:
         return which_paseo
-    fallback = Path.home() / ".local" / "bin" / "paseo"
-    if fallback.exists():
-        return str(fallback)
+    for fallback in (
+        Path.home() / ".local" / "bin" / "paseo",
+        Path("/Applications/Paseo.app/Contents/Resources/bin/paseo"),
+    ):
+        if fallback.exists():
+            return str(fallback)
     return "paseo"
 
 

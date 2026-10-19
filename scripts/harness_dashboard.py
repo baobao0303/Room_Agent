@@ -443,8 +443,8 @@ def get_slpc_profiles():
             "role": meta["role"],
             "badge": meta["badge"],
             "color": meta["color"],
-            "provider": p.get("provider", "router9"),
-            "model": p.get("model") or "",
+            "provider": p.get("provider", "antigravity"),
+            "model": p.get("model") or "gemini-4-argon-high",
             "thinking": p.get("thinkingOptionId", "high"),
             "notes": p.get("notes", ""),
             "counts": {
@@ -464,8 +464,8 @@ def get_slpc_profiles():
                 "role": meta["role"],
                 "badge": meta["badge"],
                 "color": meta["color"],
-                "provider": "router9",
-                "model": "",
+                "provider": "antigravity",
+                "model": "gemini-4-argon-high",
                 "thinking": "high",
                 "notes": "",
                 "counts": {"total": 0, "new": 0, "active": 0, "resolved": 0, "closed": 0}

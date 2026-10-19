@@ -19,11 +19,10 @@
         "port": 4204,
         "entry": "projects/wicx-crm-fe/apps/mfe-cdp",
         "routes": [
-          "/:shopId/customers",
-          "/:shopId/customers/:id",
+          "/:shopId/customers/data-raw",
           "/:shopId/data-raw"
         ],
-        "description": "Phân hệ Dữ liệu khách hàng (CDP): Danh sách khách hàng, Chi tiết toàn màn hình Customer 360, Raw Event Data."
+        "description": "Phân hệ Dữ liệu khách hàng (CDP): Raw Event Data."
       },
       {
         "id": "mfe-crm",
@@ -32,9 +31,11 @@
         "port": 4203,
         "entry": "projects/wicx-crm-fe/apps/mfe-crm",
         "routes": [
+          "/:shopId/customers",
+          "/:shopId/customers/:id",
           "/:shopId/crm"
         ],
-        "description": "Phân hệ Điều hành Bán hàng & Chăm sóc khách hàng."
+        "description": "Phân hệ Điều hành Bán hàng & Chăm sóc khách hàng: Danh sách khách hàng (Customers), Customer 360, Quản lý quan hệ khách hàng."
       },
       {
         "id": "mfe-account",

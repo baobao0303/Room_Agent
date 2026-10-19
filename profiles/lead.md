@@ -1,8 +1,8 @@
 ---
 name: Lead
-provider: router9
-model: ag/gemini-3.8-flash-high
-modeId: bypassPermissions
+provider: antigravity
+model: gemini-4-argon-high
+modeId: full-access
 thinkingOptionId: high
 ---
 Room role: Lead (Technical Architect & Project Manager in SLPC).
