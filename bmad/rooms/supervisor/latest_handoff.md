@@ -1,19 +1,20 @@
 # BIÊN BẢN BÀN GIAO: Supervisor
 
-- **Thời gian**: `2026-10-19 09:47:51 +0700`
+- **Thời gian**: `2026-10-19 09:50:14 +0700`
 - **Agent bàn giao**: `Supervisor`
-- **Tóm tắt**: Tạo Bug WI-65 và giao Lead khôi phục 8 cột mặc định bảng Khách hàng theo Hình 1
+- **Tóm tắt**: Hoàn thành khắc phục Bug WI-65: Khôi phục cấu hình 8 cột mặc định theo Hình 1
 
 ## 1. Đã hoàn thành trong phiên
-- [x] Tạo Bug WI-65 trên Harness DB
-- [x] Chạy pipeline research cho Lead
-- [x] Spawn Lead agent (f0e3dade-a4fd-47e2-ba51-a3e0064e3a94)
+- [x] Cập nhật tableColumns: loại bỏ fullName khỏi menu toggle, đặt 8 cột checked (SĐT, Doanh nghiệp, Trạng thái, Ngày hẹn chăm sóc, Người phụ trách, Ghi chú, Kênh nguồn, Ngày tạo), 3 cột unchecked (Email, Loại KH, Ngày hoạt động cuối)
+- [x] Chạy pass 52/52 tests mfe-crm
+- [x] Commit code fb0b628
+- [x] Đóng Task 65
 
 ## 2. File đã tạo / chỉnh sửa
-- `bmad/rooms/supervisor/latest_handoff.md`
-- `docs/AGENT_PROGRESS.md`
+- `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.ts`
+- `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.spec.ts`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: Chuẩn hóa cấu hình cột mặc định bảng Khách hàng (mfe-crm)
-- **Bàn giao hành động tiếp**: Chờ Lead phân rã task giao Peer cập nhật customer-list.component.ts và chạy test
+- **Trọng tâm hiện tại**: Chuẩn hóa bảng Khách hàng (mfe-crm)
+- **Bàn giao hành động tiếp**: User kiểm tra lại menu cài đặt cột trên trình duyệt
 

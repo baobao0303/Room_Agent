@@ -1,16 +1,18 @@
 # BIÊN BẢN BÀN GIAO: Peer
 
-- **Thời gian**: `2026-10-19 09:40:11 +0700`
+- **Thời gian**: `2026-10-19 09:48:14 +0700`
 - **Agent bàn giao**: `Peer`
-- **Tóm tắt**: Cập nhật width dropdown Lịch sử ghi chú thành 400px
+- **Tóm tắt**: Fix trường hợp dropdown Lịch sử ghi chú bị che tràn viền màn hình và chỉnh width 400px
 
 ## 1. Đã hoàn thành trong phiên
-- [x] Đổi width dropdown lịch sử ghi chú thành 400px (w-[400px]), pass 52/52 tests
+- [x] Width 400px, cấu hình CDK position strategy với withPush(true) + withViewportMargin(16) chống che góc phải, custom slim scrollbar, pass 52/52 tests
 
 ## 2. File đã tạo / chỉnh sửa
 - `customer-list.component.html`
+- `customer-list.component.ts`
+- `customer-list.component.scss`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: Chuẩn hóa hiển thị SLPC Harness Kanban
-- **Bàn giao hành động tiếp**: Chờ User nghiệm thu trực quan
+- **Trọng tâm hiện tại**: Chuẩn hóa cấu hình cột mặc định bảng Khách hàng (mfe-crm)
+- **Bàn giao hành động tiếp**: Chờ User kiểm tra trực quan trên trình duyệt
 - [ ] Không còn

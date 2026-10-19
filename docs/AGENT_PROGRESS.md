@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-19 09:47:51 +0700`
+- **Cập nhật lần cuối**: `2026-10-19 09:50:14 +0700`
 - **Agent cập nhật gần nhất**: `Supervisor`
-- **Trọng tâm hiện tại**: Chuẩn hóa cấu hình cột mặc định bảng Khách hàng (mfe-crm)
+- **Trọng tâm hiện tại**: Chuẩn hóa bảng Khách hàng (mfe-crm)
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Chờ Lead phân rã task giao Peer cập nhật customer-list.component.ts và chạy test
+  > User kiểm tra lại menu cài đặt cột trên trình duyệt
 
 ---
 
@@ -48,6 +48,11 @@
 - [x] Spawn Lead agent (7af86690-b3a0-46e9-b33b-f91ae0ef4499)
 - [x] Tạo Bug WI-65 trên Harness DB
 - [x] Spawn Lead agent (f0e3dade-a4fd-47e2-ba51-a3e0064e3a94)
+- [x] Width 400px, cấu hình CDK position strategy với withPush(true) + withViewportMargin(16) chống che góc phải, custom slim scrollbar, pass 52/52 tests
+- [x] Cập nhật tableColumns: loại bỏ fullName khỏi menu toggle, đặt 8 cột checked (SĐT, Doanh nghiệp, Trạng thái, Ngày hẹn chăm sóc, Người phụ trách, Ghi chú, Kênh nguồn, Ngày tạo), 3 cột unchecked (Email, Loại KH, Ngày hoạt động cuối)
+- [x] Chạy pass 52/52 tests mfe-crm
+- [x] Commit code fb0b628
+- [x] Đóng Task 65
 
 ---
 
@@ -61,7 +66,24 @@
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
 
-> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 24 phiên được lưu trong `.harness_progress.json`).
+> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 26 phiên được lưu trong `.harness_progress.json`).
+
+### Phiên #26 — `2026-10-19 09:50:14 +0700` | **Supervisor**
+- **Tóm tắt**: Hoàn thành khắc phục Bug WI-65: Khôi phục cấu hình 8 cột mặc định theo Hình 1
+- **Đã thực hiện**:
+  - Cập nhật tableColumns: loại bỏ fullName khỏi menu toggle, đặt 8 cột checked (SĐT, Doanh nghiệp, Trạng thái, Ngày hẹn chăm sóc, Người phụ trách, Ghi chú, Kênh nguồn, Ngày tạo), 3 cột unchecked (Email, Loại KH, Ngày hoạt động cuối)
+  - Chạy pass 52/52 tests mfe-crm
+  - Commit code fb0b628
+  - Đóng Task 65
+- **File đã tạo/cập nhật**: `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.ts`, `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.spec.ts`
+- **Bàn giao bước tiếp theo**: User kiểm tra lại menu cài đặt cột trên trình duyệt
+
+### Phiên #25 — `2026-10-19 09:48:14 +0700` | **Peer**
+- **Tóm tắt**: Fix trường hợp dropdown Lịch sử ghi chú bị che tràn viền màn hình và chỉnh width 400px
+- **Đã thực hiện**:
+  - Width 400px, cấu hình CDK position strategy với withPush(true) + withViewportMargin(16) chống che góc phải, custom slim scrollbar, pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`, `customer-list.component.ts`, `customer-list.component.scss`
+- **Bàn giao bước tiếp theo**: Chờ User kiểm tra trực quan trên trình duyệt
 
 ### Phiên #24 — `2026-10-19 09:47:51 +0700` | **Supervisor**
 - **Tóm tắt**: Tạo Bug WI-65 và giao Lead khôi phục 8 cột mặc định bảng Khách hàng theo Hình 1
@@ -207,26 +229,6 @@
   - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_check_backlog_and_pending.md
 - **File đã tạo/cập nhật**: `tools/research/research_supervisor_check_backlog_and_pending.md`, `tools/research/gen_brief_supervisor_check_backlog_and_pending.md`
 - **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_check_backlog_and_pending.md và tools/research/gen_brief_supervisor_check_backlog_and_pending.md.
-
-### Phiên #6 — `2026-10-19 09:16:09 +0700` | **Supervisor (Auto Research+Gen)**
-- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Rà soát mã nguồn customer-list và detail-customer
-- **Đã thực hiện**:
-  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_r_so_t_m_ngu_n_customer_l.md
-  - Generated 5-Stage ISTQB Unit Test Suite -> projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.spec.ts
-  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_r_so_t_m_ngu_n_customer_l.md
-- **File đã tạo/cập nhật**: `tools/research/research_supervisor_r_so_t_m_ngu_n_customer_l.md`, `projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.spec.ts`, `tools/research/gen_brief_supervisor_r_so_t_m_ngu_n_customer_l.md`
-- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_r_so_t_m_ngu_n_customer_l.md và tools/research/gen_brief_supervisor_r_so_t_m_ngu_n_customer_l.md.
-
-### Phiên #5 — `2026-10-19 09:14:41 +0700` | **Supervisor**
-- **Tóm tắt**: Chuyển đổi Lịch sử ghi chú từ tds-modal (nằm giữa) sang tds-popover (anchored ngay tại vị trí click) theo chuẩn Figma 1318:14221
-- **Đã thực hiện**:
-  - 1. Chuyển đổi Lịch sử ghi chú từ tds-modal sang tds-popover anchored trực tiếp dưới nút [ 🕒 ]
-  - 2. Chuẩn hóa nút icon lịch sử ghi chú thành size-6 rounded border tds-color-border-primary
-  - 3. Tạo template noteHistoryPopoverTpl (width 360px) gồm Header tiêu đề + icon X, Body danh sách lịch sử trong khung viền bo góc kèm avatar/bullet/ngày tháng, Footer nút Đóng góc phải
-  - 4. Bổ sung custom scrollbar 4px thanh mảnh
-  - 5. Unit test mfe-crm pass 52/52 (100%)
-- **File đã tạo/cập nhật**: `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.html`, `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.ts`, `apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.scss`
-- **Bàn giao bước tiếp theo**: Nhận phản hồi nghiệm thu từ User
 
 ---
 
