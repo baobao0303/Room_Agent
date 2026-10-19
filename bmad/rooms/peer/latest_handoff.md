@@ -1,19 +1,16 @@
 # BIÊN BẢN BÀN GIAO: Peer
 
-- **Thời gian**: `2026-10-19 00:05:49 +0700`
+- **Thời gian**: `2026-10-19 09:30:13 +0700`
 - **Agent bàn giao**: `Peer`
-- **Tóm tắt**: Bỏ đổi màu cam khi hover cột Ghi chú và mở modal Lịch sử ghi chú (Figma 1318:14221) khi click
+- **Tóm tắt**: Thu nhỏ chiều rộng dropdown Lịch sử ghi chú từ 480px xuống 340px chuẩn Figma 1318:14221
 
 ## 1. Đã hoàn thành trong phiên
-- [x] Bỏ group-hover:tds-color-text-brand-primary ở cột Ghi chú
-- [x] thêm tds-modal Lịch sử ghi chú (width 500px, danh sách lịch sử ghi chú chuẩn TDS theo Figma 1318:14221) khi click vào icon/nội dung ghi chú
-- [x] 52/52 unit tests PASS
+- [x] Giảm width dropdown lịch sử ghi chú từ 480px xuống 340px, tinh chỉnh padding và font kích thước compact chuẩn Figma Node 1318:14221, pass 52/52 tests
 
 ## 2. File đã tạo / chỉnh sửa
-- `projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.html`
-- `projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customers/components/customer-list/customer-list.component.ts`
+- `customer-list.component.html`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: Khôi phục bảng Kanban SLPC Harness — Floci DynamoDB cho Admin
-- **Bàn giao hành động tiếp**: Chờ User kiểm tra giao diện trên trình duyệt
+- **Trọng tâm hiện tại**: [Supervisor] Cap nhat Target Limit thanh Khong gioi han tren Aevum Kanban
+- **Bàn giao hành động tiếp**: Chờ User kiểm tra lại kích thước
 - [ ] Không còn

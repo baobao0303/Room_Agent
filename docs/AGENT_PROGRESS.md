@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-19 09:22:18 +0700`
+- **Cập nhật lần cuối**: `2026-10-19 09:31:58 +0700`
 - **Agent cập nhật gần nhất**: `Supervisor`
-- **Trọng tâm hiện tại**: Quản lý tiến độ & đồng bộ trạng thái hệ thống
+- **Trọng tâm hiện tại**: Chuẩn hóa hiển thị SLPC Harness Kanban
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Điều phối QC nghiệm thu đóng WI-3, WI-4 và hoàn thiện commit mfe-crm
+  > User refresh trang web để kiểm tra hiển thị ô Target / Limit mới
 
 ---
 
@@ -36,6 +36,9 @@
 - [x] 4. Chuẩn hóa màu avatar theo Figma (#E7DEFF/#1A128C cho Phan Tấn Hải, #E2F1FF/#186FD9 cho Trần An Vy), dấu chấm #7E8796, border-t footer
 - [x] Xác minh binary codex, paseo, ~/.codex, ~/.config/codex-room và tiến trình Paseo đã hoạt động trên máy trạm
 - [x] Epic WI-1 đã Closed
+- [x] Gắn tds-dropdown vào cột Ghi chú để popup mở ngay dưới cell, loại bỏ hoàn toàn tds-modal căn giữa màn hình, loại bỏ viền button quanh icon và mũi tên popover, pass 52/52 tests
+- [x] Giảm width dropdown lịch sử ghi chú từ 480px xuống 340px, tinh chỉnh padding và font kích thước compact chuẩn Figma Node 1318:14221, pass 52/52 tests
+- [x] Tạo và đóng Task 19: chuyển limit mặc định từ 25 sang 0 (không giới hạn), hiển thị ký hiệu ∞ trên Header và Table view của Aevum Kanban
 
 ---
 
@@ -43,10 +46,40 @@
 
 - [ ] **[M1]** Chờ QC nghiệm thu và đóng Task WI-3 & WI-4 (Shell icon chuông)
 - [ ] **[M2]** Chờ User kiểm tra giao diện Popover Lịch sử ghi chú trên trình duyệt
+- [ ] **[M3]** Không còn
 
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #14 — `2026-10-19 09:31:58 +0700` | **Supervisor**
+- **Tóm tắt**: Cập nhật hiển thị Target / Limit thành Không giới hạn (∞) trên bảng SLPC Harness Aevum
+- **Đã thực hiện**:
+  - Tạo và đóng Task 19: chuyển limit mặc định từ 25 sang 0 (không giới hạn), hiển thị ký hiệu ∞ trên Header và Table view của Aevum Kanban
+- **File đã tạo/cập nhật**: `projects/Aevum/packages/backend/server/src/core/auth/kanban-store.ts`, `projects/Aevum/packages/frontend/core/src/desktop/pages/workspace/kanban/index.tsx`
+- **Bàn giao bước tiếp theo**: User refresh trang web để kiểm tra hiển thị ô Target / Limit mới
+
+### Phiên #13 — `2026-10-19 09:30:13 +0700` | **Peer**
+- **Tóm tắt**: Thu nhỏ chiều rộng dropdown Lịch sử ghi chú từ 480px xuống 340px chuẩn Figma 1318:14221
+- **Đã thực hiện**:
+  - Giảm width dropdown lịch sử ghi chú từ 480px xuống 340px, tinh chỉnh padding và font kích thước compact chuẩn Figma Node 1318:14221, pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`
+- **Bàn giao bước tiếp theo**: Chờ User kiểm tra lại kích thước
+
+### Phiên #12 — `2026-10-19 09:28:59 +0700` | **Supervisor (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Supervisor: Cap nhat Target Limit thanh Khong gioi han tren Aevum Kanban
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_supervisor_cap_nhat_target_limit_tha.md
+  - Generated Role Execution Brief -> tools/research/gen_brief_supervisor_cap_nhat_target_limit_tha.md
+- **File đã tạo/cập nhật**: `tools/research/research_supervisor_cap_nhat_target_limit_tha.md`, `tools/research/gen_brief_supervisor_cap_nhat_target_limit_tha.md`
+- **Bàn giao bước tiếp theo**: Profile Supervisor tiếp tục hoàn thiện task dựa trên tools/research/research_supervisor_cap_nhat_target_limit_tha.md và tools/research/gen_brief_supervisor_cap_nhat_target_limit_tha.md.
+
+### Phiên #11 — `2026-10-19 09:27:13 +0700` | **Peer**
+- **Tóm tắt**: Chuyển Lịch sử ghi chú sang tds-dropdown gắn trực tiếp tại cell, loại bỏ modal toàn màn hình nằm giữa và loại bỏ border quanh icon
+- **Đã thực hiện**:
+  - Gắn tds-dropdown vào cột Ghi chú để popup mở ngay dưới cell, loại bỏ hoàn toàn tds-modal căn giữa màn hình, loại bỏ viền button quanh icon và mũi tên popover, pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`, `customer-list.component.ts`
+- **Bàn giao bước tiếp theo**: Chờ User kiểm tra trực quan trên trình duyệt
 
 ### Phiên #10 — `2026-10-19 09:22:18 +0700` | **Supervisor**
 - **Tóm tắt**: Cập nhật Sổ cái Tiến độ: Xác nhận hạ tầng Codex Room & Paseo đã sẵn sàng, giải phóng M1-M6
