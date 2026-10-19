@@ -175,9 +175,10 @@ def main():
         "--provider", provider,
         "--model", model,
         "--mode", mode,
-        "--thinking", thinking,
-        full_prompt
     ]
+    if provider != "antigravity" and thinking and thinking != "auto":
+        cmd.extend(["--thinking", thinking])
+    cmd.append(full_prompt)
 
     if args.dry_run:
         print("Dry run command:", " ".join(cmd[:10]), "...")

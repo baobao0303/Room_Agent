@@ -82,7 +82,7 @@ Thumbs.db
 scratch/
 
 # 7. Sub-projects (own repos)
-# /projects/
+/projects/
 
 # 8. Company-identifying
 /private/
@@ -99,3 +99,5 @@ scratch/
 tools/research/gen_brief_*
 tools/research/research_*
 tools/research/gen_test_*
+tools/research/detailcustomer_*
+tools/research/qc_5stage_*
