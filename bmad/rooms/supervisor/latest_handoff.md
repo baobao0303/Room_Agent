@@ -1,17 +1,19 @@
 # BIÊN BẢN BÀN GIAO: Supervisor
 
-- **Thời gian**: `2026-10-19 09:31:58 +0700`
+- **Thời gian**: `2026-10-19 09:41:51 +0700`
 - **Agent bàn giao**: `Supervisor`
-- **Tóm tắt**: Cập nhật hiển thị Target / Limit thành Không giới hạn (∞) trên bảng SLPC Harness Aevum
+- **Tóm tắt**: Tạo Bug WI-20 và dispatch cho Lead khắc phục lỗi dropdown chọn phạm vi tenant
 
 ## 1. Đã hoàn thành trong phiên
-- [x] Tạo và đóng Task 19: chuyển limit mặc định từ 25 sang 0 (không giới hạn), hiển thị ký hiệu ∞ trên Header và Table view của Aevum Kanban
+- [x] Tạo Bug WI-20 trên Harness DB
+- [x] Chạy pipeline research cho Lead
+- [x] Spawn Lead agent (7af86690-b3a0-46e9-b33b-f91ae0ef4499)
 
 ## 2. File đã tạo / chỉnh sửa
-- `projects/Aevum/packages/backend/server/src/core/auth/kanban-store.ts`
-- `projects/Aevum/packages/frontend/core/src/desktop/pages/workspace/kanban/index.tsx`
+- `bmad/rooms/supervisor/latest_handoff.md`
+- `docs/AGENT_PROGRESS.md`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: Chuẩn hóa hiển thị SLPC Harness Kanban
-- **Bàn giao hành động tiếp**: User refresh trang web để kiểm tra hiển thị ô Target / Limit mới
+- **Trọng tâm hiện tại**: Điều phối xử lý Bug WI-20 trên trang data-raw
+- **Bàn giao hành động tiếp**: Theo dõi Lead phân tích kiến trúc, giao subtask cho Peer và tiến độ review
 

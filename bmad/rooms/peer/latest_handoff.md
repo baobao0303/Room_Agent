@@ -1,16 +1,16 @@
 # BIÊN BẢN BÀN GIAO: Peer
 
-- **Thời gian**: `2026-10-19 09:30:13 +0700`
+- **Thời gian**: `2026-10-19 09:40:11 +0700`
 - **Agent bàn giao**: `Peer`
-- **Tóm tắt**: Thu nhỏ chiều rộng dropdown Lịch sử ghi chú từ 480px xuống 340px chuẩn Figma 1318:14221
+- **Tóm tắt**: Cập nhật width dropdown Lịch sử ghi chú thành 400px
 
 ## 1. Đã hoàn thành trong phiên
-- [x] Giảm width dropdown lịch sử ghi chú từ 480px xuống 340px, tinh chỉnh padding và font kích thước compact chuẩn Figma Node 1318:14221, pass 52/52 tests
+- [x] Đổi width dropdown lịch sử ghi chú thành 400px (w-[400px]), pass 52/52 tests
 
 ## 2. File đã tạo / chỉnh sửa
 - `customer-list.component.html`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: [Supervisor] Cap nhat Target Limit thanh Khong gioi han tren Aevum Kanban
-- **Bàn giao hành động tiếp**: Chờ User kiểm tra lại kích thước
+- **Trọng tâm hiện tại**: Chuẩn hóa hiển thị SLPC Harness Kanban
+- **Bàn giao hành động tiếp**: Chờ User nghiệm thu trực quan
 - [ ] Không còn

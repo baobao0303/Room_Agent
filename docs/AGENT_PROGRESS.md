@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-19 09:31:58 +0700`
+- **Cập nhật lần cuối**: `2026-10-19 09:41:51 +0700`
 - **Agent cập nhật gần nhất**: `Supervisor`
-- **Trọng tâm hiện tại**: Chuẩn hóa hiển thị SLPC Harness Kanban
+- **Trọng tâm hiện tại**: Điều phối xử lý Bug WI-20 trên trang data-raw
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > User refresh trang web để kiểm tra hiển thị ô Target / Limit mới
+  > Theo dõi Lead phân tích kiến trúc, giao subtask cho Peer và tiến độ review
 
 ---
 
@@ -39,6 +39,13 @@
 - [x] Gắn tds-dropdown vào cột Ghi chú để popup mở ngay dưới cell, loại bỏ hoàn toàn tds-modal căn giữa màn hình, loại bỏ viền button quanh icon và mũi tên popover, pass 52/52 tests
 - [x] Giảm width dropdown lịch sử ghi chú từ 480px xuống 340px, tinh chỉnh padding và font kích thước compact chuẩn Figma Node 1318:14221, pass 52/52 tests
 - [x] Tạo và đóng Task 19: chuyển limit mặc định từ 25 sang 0 (không giới hạn), hiển thị ký hiệu ∞ trên Header và Table view của Aevum Kanban
+- [x] Tăng width dropdown lịch sử ghi chú lên 500px theo yêu cầu, đổi placement thành bottomRight để dropdown mở hướng về bên trái tránh bị che khuất ở mép phải màn hình, pass 52/52 tests
+- [x] Áp dụng chính xác typography Figma: icon avatar 16x16, gap-1 (4px), title dùng Body/body-2-semibold + Alias/color/text/primary, metadata dùng Body/body-3-regular + Alias/color/text/quaternary, pass 52/52 tests
+- [x] Áp dụng padding khung 9px (p-[9px]), padding ngoài 16px (p-4), footer padding 16px (p-4) và loại bỏ border-t ở footer, nút Đóng min-w-[100px] h-[34px], pass 52/52 tests
+- [x] Đổi width dropdown lịch sử ghi chú thành 400px (w-[400px]), pass 52/52 tests
+- [x] Tạo Bug WI-20 trên Harness DB
+- [x] Chạy pipeline research cho Lead
+- [x] Spawn Lead agent (7af86690-b3a0-46e9-b33b-f91ae0ef4499)
 
 ---
 
@@ -51,6 +58,52 @@
 ---
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
+
+### Phiên #20 — `2026-10-19 09:41:51 +0700` | **Supervisor**
+- **Tóm tắt**: Tạo Bug WI-20 và dispatch cho Lead khắc phục lỗi dropdown chọn phạm vi tenant
+- **Đã thực hiện**:
+  - Tạo Bug WI-20 trên Harness DB
+  - Chạy pipeline research cho Lead
+  - Spawn Lead agent (7af86690-b3a0-46e9-b33b-f91ae0ef4499)
+- **File đã tạo/cập nhật**: `bmad/rooms/supervisor/latest_handoff.md`, `docs/AGENT_PROGRESS.md`
+- **Bàn giao bước tiếp theo**: Theo dõi Lead phân tích kiến trúc, giao subtask cho Peer và tiến độ review
+
+### Phiên #19 — `2026-10-19 09:41:29 +0700` | **Lead (Auto Research+Gen)**
+- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Lead: Phân tích và khắc phục Bug WI-20 trên trang http://localhost:4200/#/1784471989/data-raw: Dropdown chọn phạm vi tenant (Theo Tenant-id / Tất cả) bị hiển thị ngang hàng khi mở menu trong raw-event-list.component.html. Chuyển layout sang flex flex-col, căn chỉnh item full-width chuẩn TDS UI.
+- **Đã thực hiện**:
+  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.md
+  - Generated 5-Stage ISTQB Unit Test Suite -> tools/research/gen_test_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.spec.ts
+  - Generated Role Execution Brief -> tools/research/gen_brief_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.md
+- **File đã tạo/cập nhật**: `tools/research/research_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.md`, `tools/research/gen_test_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.spec.ts`, `tools/research/gen_brief_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.md`
+- **Bàn giao bước tiếp theo**: Profile Lead tiếp tục hoàn thiện task dựa trên tools/research/research_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.md và tools/research/gen_brief_lead_ph_n_t_ch_v_kh_c_ph_c_bug_wi_20.md.
+
+### Phiên #18 — `2026-10-19 09:40:11 +0700` | **Peer**
+- **Tóm tắt**: Cập nhật width dropdown Lịch sử ghi chú thành 400px
+- **Đã thực hiện**:
+  - Đổi width dropdown lịch sử ghi chú thành 400px (w-[400px]), pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`
+- **Bàn giao bước tiếp theo**: Chờ User nghiệm thu trực quan
+
+### Phiên #17 — `2026-10-19 09:38:39 +0700` | **Peer**
+- **Tóm tắt**: Cập nhật padding khung 9px, padding ngoài 16px, footer padding 16px và bỏ đường border trên của footer
+- **Đã thực hiện**:
+  - Áp dụng padding khung 9px (p-[9px]), padding ngoài 16px (p-4), footer padding 16px (p-4) và loại bỏ border-t ở footer, nút Đóng min-w-[100px] h-[34px], pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`
+- **Bàn giao bước tiếp theo**: Chờ User nghiệm thu trực quan
+
+### Phiên #16 — `2026-10-19 09:37:34 +0700` | **Peer**
+- **Tóm tắt**: Cập nhật style item ghi chú chuẩn Figma: avatar 16x16, gap 4px, title body-2-semibold, text quaternary body-3-regular
+- **Đã thực hiện**:
+  - Áp dụng chính xác typography Figma: icon avatar 16x16, gap-1 (4px), title dùng Body/body-2-semibold + Alias/color/text/primary, metadata dùng Body/body-3-regular + Alias/color/text/quaternary, pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`
+- **Bàn giao bước tiếp theo**: Chờ User nghiệm thu trực quan
+
+### Phiên #15 — `2026-10-19 09:32:29 +0700` | **Peer**
+- **Tóm tắt**: Cập nhật width Lịch sử ghi chú thành 500px và đổi placement sang bottomRight chống tràn màn hình
+- **Đã thực hiện**:
+  - Tăng width dropdown lịch sử ghi chú lên 500px theo yêu cầu, đổi placement thành bottomRight để dropdown mở hướng về bên trái tránh bị che khuất ở mép phải màn hình, pass 52/52 tests
+- **File đã tạo/cập nhật**: `customer-list.component.html`
+- **Bàn giao bước tiếp theo**: Chờ User nghiệm thu trực quan
 
 ### Phiên #14 — `2026-10-19 09:31:58 +0700` | **Supervisor**
 - **Tóm tắt**: Cập nhật hiển thị Target / Limit thành Không giới hạn (∞) trên bảng SLPC Harness Aevum
