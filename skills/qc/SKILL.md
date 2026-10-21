@@ -41,6 +41,17 @@ python3 tools/qc_test_generator.py \
   - `Stage 4 (Mock Contract)`: Thiết lập mock data cách ly, chống hardcode fake passes.
   - `Stage 5 (Coverage Gate)`: Kiểm tra độ phủ 100% REQ, TP và symbols.
 
+### Bước 2.5: Cổng Kiểm Tra Nghiêm Ngặt Kiểu Dữ Liệu & Ranh Giới Schema (Type Safety & Strict DTO Gate)
+Trước khi chạy test và duyệt đóng task, QC BẮT BUỘC phải rà soát mã nguồn / git diff qua các tiêu chí an toàn:
+1. **Zero `any` / Zero `unknown`**:
+   - Khi DTO/Interface đã có sẵn trong codebase (VD: `Employee`, `ShopUserDto`), cấm tuyệt đối việc Peer dùng `any`, `unknown`, `(x as any)`.
+   - Nếu phát hiện dù chỉ 1 dòng `any` trong code sản phẩm ➔ **Lập tức REJECT, tạo Bug gán cho Peer**.
+2. **Anti-Sloppy Fallbacks (`||`)**:
+   - Cấm chuỗi fallback `||` không chắc chắn (như `emp.id || emp.shopUserId`, `displayName || name || ''`). Phải map tường minh đúng trường theo schema DTO.
+3. **Store & Dependency Verification**:
+   - Kiểm tra các root store (`MemberStore`, `AccountStore`): Cấm bọc `new Optional()` vô căn cứ trong `deps` của provider.
+   - Cấm inject raw HTTP service khi đã có store quản trị tập trung.
+
 ### Bước 3: Đánh giá kết quả & Quyết định đóng mở trên Harness DB
 - **Nếu toàn bộ tests PASS và Coverage đạt 100%**:
   ```bash

@@ -23,9 +23,9 @@ Bộ kỹ năng này quy định quy chuẩn, danh mục kiểm tra (checklist) 
 
 ---
 
-## 2. Checklist 5 Điểm Bắt Buộc Của Lead Dev (5-Point Review Gate)
+## 2. Checklist 7 Điểm Bắt Buộc Của Lead Dev (7-Point Review Gate)
 
-Trước khi cho phép Task chuyển sang bước kiểm định độc lập của QC, Lead Dev bắt buộc phải đối soát qua 5 tiêu chí:
+Trước khi cho phép Task chuyển sang bước kiểm định độc lập của QC, Lead Dev bắt buộc phải đối soát qua 7 tiêu chí:
 
 ### A. Ranh giới Sở hữu Đơn nhất (Single-Ownership Invariant)
 - **Quy tắc**: 100% file thay đổi phải nằm trọn trong module được giao (VD: Task CDP chỉ được sửa trong `apps/mfe-cdp/...`).
@@ -55,6 +55,19 @@ Trước khi cho phép Task chuyển sang bước kiểm định độc lập c�
   * Các import module cũ không còn sử dụng.
   * Các `@ViewChild` mồ côi không có lệnh gọi.
   * Các biến, hàm private không còn nơi nào invoke.
+
+### F. Tái Sử Dụng Store & State Sẵn Có (Store Reuse Gate - Anti-Rogue HTTP Call)
+- **Quy tắc**: Tuyệt đối KHÔNG inject raw API service (như `MemberService`, `AccountService`) để gọi lại server và viết hàm mapping thủ công khi **codebase đã có Signal Store / NgRx Store quản trị tập trung (như `MemberStore`, `AccountStore`)**.
+- **Kiểm tra**:
+  * Đã tra cứu xem feature/entity đó có store trong `libs/features/*/stores/` chưa?
+  * Nếu đã có Store `{ providedIn: 'root' }`, BẮT BUỘC inject Store và tái sử dụng computed signals (`memberStore.employeeList()`, `memberStore.totalEmployees()`).
+  * Cấm tạo các luồng tải mạng song song phân mảnh state của hệ thống.
+
+### G. Chuẩn Hóa Kiểu Dữ Liệu Chặt Chẽ (Strict Typing Gate - Zero `any`, Zero `unknown`, Zero Sloppy Fallbacks `||`)
+- **Quy tắc**: Khi DTO, Model, Interface đã tồn tại trong codebase:
+  * **CẤM TUYỆT ĐỐI** dùng `any`, `unknown`, `as any` trong mã nguồn sản phẩm. Dù chỉ 1 dòng `any` cũng bị **REJECT NGAY LẬP TỨC**.
+  * **CẤM** chuỗi fallback `||` không chắc chắn (như `emp.id || emp.shopUserId`, `displayName || name || ''`). Phải map tường minh đúng trường theo DTO contract (`emp.shopUserId`, `emp.accountUserId ?? String(emp.shopUserId)`).
+  * **CẤM** dùng `new Optional()` trong `deps` cho các Store/Service cốt lõi đã `{ providedIn: 'root' }`. Phải inject trực tiếp bắt buộc.
 
 ---
 

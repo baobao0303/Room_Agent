@@ -18,6 +18,7 @@ from pathlib import Path
 
 HEX_PATTERN = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 EXCLUDED_PATTERNS = ["#fff", "#ffffff", "#000", "#000000"]  # Cho phép màu đen trắng thuần nếu cần
+SECRET_PATTERN = re.compile(r"""(?:sk-[a-zA-Z0-9_\-]{16,}|ghp_[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z\-_]{35})""")
 
 
 def check_staged_changes():
@@ -27,6 +28,17 @@ def check_staged_changes():
 
     if not staged_files:
         sys.exit(0)
+
+    # 1.5. Chặn rò rỉ Source Repositories (Anti-Source-Leak Fence)
+    leaked_projects = [f for f in staged_files if f.startswith("projects/") or f == "projects"]
+    if leaked_projects:
+        print("⛔ [SOURCE REPO LEAK PREVENTION CHẶN COMMIT]:", file=sys.stderr)
+        print("   Phát hiện thư mục projects/ bị stage! Tuyệt đối CẤM commit submodule mã nguồn vào Room_Agent.", file=sys.stderr)
+        for lp in leaked_projects[:5]:
+            print(f"   - {lp}", file=sys.stderr)
+        print("\nHướng dẫn khắc phục:", file=sys.stderr)
+        print("   Chạy ngay: git restore --staged projects/", file=sys.stderr)
+        sys.exit(1)
 
     # 2. Kiểm tra Rào Cản Vai Trò (Role Fence)
     current_agent = os.environ.get("AI_AGENT", "").strip().lower() or os.environ.get("HERMES_PROFILE", "").strip().lower()
@@ -58,6 +70,17 @@ def check_staged_changes():
 
         # Chỉ kiểm tra những dòng MỚI THÊM (+)
         if line.startswith("+") and not line.startswith("+++"):
+            # 3.1. Quét Secret API Keys (Anti-Secret-Leak Fence)
+            sec_matches = SECRET_PATTERN.findall(line)
+            if sec_matches and not current_file.endswith(".gitleaks.toml"):
+                print("⛔ [SECURITY LEAK PREVENTION CHẶN COMMIT]:", file=sys.stderr)
+                print(f"   Phát hiện API Key / Token trong file staged: {current_file}", file=sys.stderr)
+                print(f"   Dòng: {line.strip()}", file=sys.stderr)
+                print("\nHướng dẫn khắc phục:", file=sys.stderr)
+                print("   1. Xóa sạch token/key hardcode và dùng os.environ.get('...', '')", file=sys.stderr)
+                print("   2. Không bao giờ commit secret vào kho mã nguồn!", file=sys.stderr)
+                sys.exit(1)
+
             matches = HEX_PATTERN.findall(line)
             for m in matches:
                 if m.lower() not in EXCLUDED_PATTERNS and not ("url(" in line or "data:image" in line):
