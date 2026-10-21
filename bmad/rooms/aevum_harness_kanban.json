@@ -101,17 +101,87 @@
   ],
   "rows": [
     {
+      "id": "row_3913",
+      "fields": {
+        "title": "[WiOnPOS] - Tích hợp lại trang Customer và Menu Sidebar vào App Shell",
+        "id": "3913",
+        "type": "Epic",
+        "state": "Closed",
+        "priority": "P1",
+        "assigned_to_profile": "lead",
+        "created_by_profile": "supervisor",
+        "parent_item_id": "",
+        "updated_at": "2026-10-21 16:32:02"
+      }
+    },
+    {
+      "id": "row_3911",
+      "fields": {
+        "title": "[AppShell] - Tích hợp shopUserList$ vào WI_USER_CONTEXT từ MemberService",
+        "id": "3911",
+        "type": "Epic",
+        "state": "Closed",
+        "priority": "P1",
+        "assigned_to_profile": "lead",
+        "created_by_profile": "supervisor",
+        "parent_item_id": "",
+        "updated_at": "2026-10-21 16:32:00"
+      }
+    },
+    {
       "id": "row_3924",
       "fields": {
         "title": "[AppShell/Sidebar] - Thêm menu wion-customer và từ điển i18n shell",
         "id": "3924",
         "type": "Task",
-        "state": "Resolved",
+        "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "qc",
+        "assigned_to_profile": "lead",
         "created_by_profile": "supervisor",
         "parent_item_id": "3913",
-        "updated_at": "2026-10-21 16:29:28"
+        "updated_at": "2026-10-21 16:29:41"
+      }
+    },
+    {
+      "id": "row_3934",
+      "fields": {
+        "title": "[AppShell/Sidebar]: TC-3924-03 sidebar.component.spec.ts pass 100% khi render navigation sections",
+        "id": "3934",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "QC",
+        "created_by_profile": "QC",
+        "parent_item_id": "3924",
+        "updated_at": "2026-10-21 16:29:40"
+      }
+    },
+    {
+      "id": "row_3933",
+      "fields": {
+        "title": "[AppShell/Sidebar]: TC-3924-02 tu dien shell.json chua key WION_CUSTOMER khi hien thi vi va en",
+        "id": "3933",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P1",
+        "assigned_to_profile": "QC",
+        "created_by_profile": "QC",
+        "parent_item_id": "3924",
+        "updated_at": "2026-10-21 16:29:38"
+      }
+    },
+    {
+      "id": "row_3932",
+      "fields": {
+        "title": "[AppShell/Sidebar]: TC-3924-01 menu wion-customer co icon tdsi-user-list-fill khi render sidebar",
+        "id": "3932",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P1",
+        "assigned_to_profile": "QC",
+        "created_by_profile": "QC",
+        "parent_item_id": "3924",
+        "updated_at": "2026-10-21 16:29:36"
       }
     },
     {
@@ -297,20 +367,6 @@
       }
     },
     {
-      "id": "row_3911",
-      "fields": {
-        "title": "[AppShell] - Tích hợp shopUserList$ vào WI_USER_CONTEXT từ MemberService",
-        "id": "3911",
-        "type": "Epic",
-        "state": "Resolved",
-        "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "supervisor",
-        "parent_item_id": "",
-        "updated_at": "2026-10-21 16:17:20"
-      }
-    },
-    {
       "id": "row_3920",
       "fields": {
         "title": "[AppShell/Context]: TC-SUL-05 unit test context.provider.spec.ts pass 100% khi test suite chay",
@@ -378,20 +434,6 @@
         "created_by_profile": "QC",
         "parent_item_id": "3912",
         "updated_at": "2026-10-21 16:03:33"
-      }
-    },
-    {
-      "id": "row_3913",
-      "fields": {
-        "title": "[WiOnPOS] - Tích hợp lại trang Customer và Menu Sidebar vào App Shell",
-        "id": "3913",
-        "type": "Epic",
-        "state": "Active",
-        "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "supervisor",
-        "parent_item_id": "",
-        "updated_at": "2026-10-21 15:57:56"
       }
     },
     {
@@ -757,49 +799,7 @@
         "parent_item_id": "",
         "updated_at": "2026-10-21 15:29:55"
       }
-    },
-    {
-      "id": "row_3906",
-      "fields": {
-        "title": "[AppShell/Manifest] - Gỡ bỏ gatewayUrl khỏi khối default trong 4 manifest",
-        "id": "3906",
-        "type": "Task",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "supervisor",
-        "parent_item_id": "",
-        "updated_at": "2026-10-21 15:19:09"
-      }
-    },
-    {
-      "id": "row_3910",
-      "fields": {
-        "title": "[AppShell/Manifest]: TC-RM-DEF-GW-04 qa default block da go gatewayUrl khi doc config",
-        "id": "3910",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3906",
-        "updated_at": "2026-10-21 15:19:08"
-      }
-    },
-    {
-      "id": "row_3909",
-      "fields": {
-        "title": "[AppShell/Manifest]: TC-RM-DEF-GW-03 production default block da go gatewayUrl khi doc config",
-        "id": "3909",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3906",
-        "updated_at": "2026-10-21 15:19:06"
-      }
     }
   ],
-  "synced_at": "2026-10-21 16:29:32"
+  "synced_at": "2026-10-21 16:32:11"
 }

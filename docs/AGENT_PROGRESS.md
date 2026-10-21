@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-21 16:30:41 +0700`
-- **Agent cập nhật gần nhất**: `QC`
-- **Trọng tâm hiện tại**: [QC] Independent Quality Gate & Test Architect
+- **Cập nhật lần cuối**: `2026-10-21 16:32:22 +0700`
+- **Agent cập nhật gần nhất**: `Supervisor`
+- **Trọng tâm hiện tại**: [Supervisor] Final Closure of Epics #3911 and #3913
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Chờ Lead Dev / Supervisor tổng kết Epic #3913 hoặc bàn giao task tiếp theo
+  > Sẵn sàng nhận Epic/Task hoặc yêu cầu mới từ User
 
 ---
 
@@ -898,6 +898,11 @@
 - [x] 3. Thẩm tra vi/shell.json ('Khách hàng WiOnPOS') và en/shell.json ('WiOnPOS Customer')
 - [x] 4. Chạy Jest unit test sidebar.component.spec.ts đạt 9/9 PASS (100%)
 - [x] 5. Đóng 3 Testcases (#3932..#3934), chuyển Task #3924 sang Closed bàn giao Lead Dev và đồng bộ Orca Board
+- [x] 1. Đã commit an toàn repo Room_Agent (commit ec5d5ac) không lộ source projects/ theo đúng chỉ đạo
+- [x] 2. QC đã nghiệm thu độc lập và đóng cả 4 Tasks con (#3912, #3914, #3923, #3924)
+- [x] 3. Supervisor nghiệm thu đóng cả 2 Epics (#3911, #3913)
+- [x] 4. Đồng bộ 100% cột COMPLETED trên Orca Board và Aevum Kanban
+- [x] 5. Mã nguồn frontend nằm an toàn trong working tree
 
 ---
 
@@ -915,7 +920,18 @@
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
 
-> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 538 phiên được lưu trong `.harness_progress.json`).
+> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 539 phiên được lưu trong `.harness_progress.json`).
+
+### Phiên #539 — `2026-10-21 16:32:22 +0700` | **Supervisor**
+- **Tóm tắt**: Commit Room_Agent an toàn không lộ source; QC nghiệm thu và đóng hoàn tất Epics #3911 & #3913
+- **Đã thực hiện**:
+  - 1. Đã commit an toàn repo Room_Agent (commit ec5d5ac) không lộ source projects/ theo đúng chỉ đạo
+  - 2. QC đã nghiệm thu độc lập và đóng cả 4 Tasks con (#3912, #3914, #3923, #3924)
+  - 3. Supervisor nghiệm thu đóng cả 2 Epics (#3911, #3913)
+  - 4. Đồng bộ 100% cột COMPLETED trên Orca Board và Aevum Kanban
+  - 5. Mã nguồn frontend nằm an toàn trong working tree
+- **File đã tạo/cập nhật**: `AGENTS.md`, `docs/spec/shop-user-list-context-spec.md`, `bmad/rooms/aevum_harness_kanban.json`
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận Epic/Task hoặc yêu cầu mới từ User
 
 ### Phiên #538 — `2026-10-21 16:30:41 +0700` | **QC**
 - **Tóm tắt**: Nghiệm thu độc lập 5-Stage ISTQB Task #3924: Lead Dev APPROVED, menu wion-customer chuẩn TDS icon tdsi-user-list-fill, i18n vi/en đầy đủ, unit test 9/9 PASS, Task #3924 Closed
@@ -1090,15 +1106,6 @@
   - 4. Chuyển Task #3912 sang Closed bàn giao Lead Dev và đồng bộ Orca Board
 - **File đã tạo/cập nhật**: `apps/app-shell/src/app/pages/setting/provider/context.provider.ts`, `apps/app-shell/src/app/pages/setting/provider/context.provider.spec.ts`
 - **Bàn giao bước tiếp theo**: Chờ Lead Dev / Supervisor tổng kết Epic #3911 hoặc bàn giao task tiếp theo
-
-### Phiên #519 — `2026-10-21 16:19:22 +0700` | **Peer (Auto Research+Gen)**
-- **Tóm tắt**: Chạy tự động pipeline Research + Gen cho profile Peer: Work Item #3924 [Task]: [AppShell/Sidebar] - Thêm menu wion-customer và từ điển i18n shell
-1. Target Files: apps/app-shell/src/app/layouts/sidebar/sidebar.mock.ts, apps/app-shell/public/assets/i18n/vi/shell.json, apps/app-shell/public/assets/i18n/en/shell.json. 2. Anchors/Lines: Nhóm management trong sidebar.mock.ts; SHELL.SIDEBAR.MANAGEMENT trong 2 file shell.json. 3. Concrete Changes: Thêm menu item wion-customer (icon tdsi-user-list-fill, routerLink ['customer']); thêm key WION_CUSTOMER vào vi ('Khách hàng WiOnPOS') và en ('WiOnPOS Customer'). 4. AC: Menu hiển thị icon tdsi-user-list-fill chuẩn TDS UI, sidebar.component.spec.ts pass 100%. 5. Test: npx nx test app-shell --testFile=sidebar.component.spec.ts.
-- **Đã thực hiện**:
-  - Research Report generated via Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader) -> tools/research/research_peer_work_item_3924_task_appshell_si.md
-  - Generated Role Execution Brief -> tools/research/gen_brief_peer_work_item_3924_task_appshell_si.md
-- **File đã tạo/cập nhật**: `tools/research/research_peer_work_item_3924_task_appshell_si.md`, `tools/research/gen_brief_peer_work_item_3924_task_appshell_si.md`
-- **Bàn giao bước tiếp theo**: Profile Peer tiếp tục hoàn thiện task dựa trên tools/research/research_peer_work_item_3924_task_appshell_si.md và tools/research/gen_brief_peer_work_item_3924_task_appshell_si.md.
 
 ---
 
