@@ -10,11 +10,24 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = Path(os.environ.get("PASEO_CONFIG", Path.home() / ".paseo" / "config.json"))
 PROFILES_DIR = Path(os.environ.get("PASEO_PROFILES_DIR", PROJECT_ROOT / "profiles"))
-PROFILE_FILES = ["supervisor.md", "lead.md", "peer.md", "qc.md"]
+PROFILE_FILES = [
+    "supervisor.md",
+    "lead.md",
+    "peer.md",
+    "peer_2.md",
+    "peer_3.md",
+    "peer_4.md",
+    "peer_design.md",
+    "qc.md"
+]
 DEFAULT_IDS = {
     "Supervisor": "agent_profile_supervisor_slp",
     "Lead": "agent_profile_lead_slp",
     "Peer": "agent_profile_peer_slp",
+    "Peer Dev 2": "agent_profile_peer2_slp",
+    "Peer Dev 3": "agent_profile_peer3_slp",
+    "Peer Dev 4": "agent_profile_peer4_slp",
+    "Peer Design": "agent_profile_peer_design",
     "QC": "agent_profile_qc_slpc",
 }
 
@@ -23,7 +36,7 @@ DEFAULT_DEPARTMENT_PROFILES = [
         "id": "agent_profile_lead_ba",
         "name": "Lead BA",
         "provider": "antigravity",
-        "model": "gemini-4-argon-high",
+        "model": "gemini-3.8-flash-high",
         "modeId": "full-access",
         "thinkingOptionId": "high",
         "notes": (
@@ -36,7 +49,7 @@ DEFAULT_DEPARTMENT_PROFILES = [
         "id": "agent_profile_peer_ba",
         "name": "Peer BA",
         "provider": "antigravity",
-        "model": "gemini-4-argon-high",
+        "model": "gemini-3.8-flash-high",
         "modeId": "full-access",
         "thinkingOptionId": "high",
         "notes": (
@@ -48,7 +61,7 @@ DEFAULT_DEPARTMENT_PROFILES = [
         "id": "agent_profile_lead_design",
         "name": "Lead design",
         "provider": "antigravity",
-        "model": "gemini-4-argon-high",
+        "model": "gemini-3.8-flash-high",
         "modeId": "full-access",
         "thinkingOptionId": "high",
         "notes": (
@@ -60,7 +73,7 @@ DEFAULT_DEPARTMENT_PROFILES = [
         "id": "agent_profile_peer_design",
         "name": "Peer Design",
         "provider": "antigravity",
-        "model": "gemini-4-argon-high",
+        "model": "gemini-3.8-flash-high",
         "modeId": "full-access",
         "thinkingOptionId": "high",
         "notes": (
@@ -72,7 +85,7 @@ DEFAULT_DEPARTMENT_PROFILES = [
         "id": "agent_profile_lead_dev",
         "name": "Lead Dev",
         "provider": "antigravity",
-        "model": "gemini-4-argon-high",
+        "model": "gemini-3.8-flash-high",
         "modeId": "full-access",
         "thinkingOptionId": "high",
         "notes": (
@@ -84,7 +97,7 @@ DEFAULT_DEPARTMENT_PROFILES = [
         "id": "agent_profile_peer_dev",
         "name": "Peer Dev",
         "provider": "antigravity",
-        "model": "gemini-4-argon-high",
+        "model": "gemini-3.8-flash-high",
         "modeId": "full-access",
         "thinkingOptionId": "high",
         "notes": (
@@ -182,7 +195,7 @@ def patch():
                 "id": meta.get("id", DEFAULT_IDS.get(name, f"agent_profile_{name.lower()}_slp")),
                 "name": name,
                 "provider": meta.get("provider", os.environ.get("PASEO_PROVIDER", "antigravity")),
-                "model": model or "gemini-4-argon-high",
+                "model": model or "gemini-3.8-flash-high",
                 "modeId": meta.get("modeId", "full-access"),
                 "thinkingOptionId": meta.get("thinkingOptionId", "high"),
                 "notes": body,

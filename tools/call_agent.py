@@ -7,6 +7,7 @@ import sys
 import json
 import argparse
 import subprocess
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -64,7 +65,7 @@ def main():
 
     profile_name = profile["name"]
     provider = profile.get("provider", "antigravity")
-    model = profile.get("model", "gemini-4-argon-high")
+    model = profile.get("model", "gemini-3.8-flash-high")
     mode = profile.get("modeId", "full-access")
     thinking = profile.get("thinkingOptionId", "high")
     instructions = profile.get("notes", "")
@@ -73,12 +74,18 @@ def main():
     sender_room = resolve_room(sender_role)
     target_room = resolve_room(profile_name)
 
-    # 1. Write SLP Handoff Memo to bmad/rooms/<sender_room>/
+    # 1. Write SLP Handoff Memo to bmad/rooms/<sender_room>/ and task namespace
     bmad_dir = PROJECT_ROOT / "bmad" / "rooms" / sender_room
     bmad_dir.mkdir(parents=True, exist_ok=True)
     ts_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ts_file = datetime.now().strftime("%Y%m%d_%H%M%S")
     item_str = f"#{args.item_id}" if args.item_id else "N/A"
+
+    task_handoff_path = None
+    if args.item_id:
+        task_dir = PROJECT_ROOT / "bmad" / "rooms" / "tasks" / str(args.item_id)
+        task_dir.mkdir(parents=True, exist_ok=True)
+        task_handoff_path = task_dir / f"handoff_{sender_room}.md"
 
     goal_str = args.goal or args.prompt
     constraints_str = args.constraints or "Tuân thủ TDS UI tokens, Angular 18 Standalone, không nạp thêm lib thừa (YAGNI), bảo đảm single-ownership."
@@ -120,16 +127,24 @@ def main():
     try:
         (bmad_dir / "latest_handoff.md").write_text(memo_content, encoding="utf-8")
         (bmad_dir / f"handoff_{args.item_id or 'general'}_{ts_file}.md").write_text(memo_content, encoding="utf-8")
+        if task_handoff_path:
+            task_handoff_path.write_text(memo_content, encoding="utf-8")
+            (task_handoff_path.parent / "latest_handoff.md").write_text(memo_content, encoding="utf-8")
+            print(f"[SLP Room] Đã ghi biên bản cô lập theo Task: {task_handoff_path.relative_to(PROJECT_ROOT)}")
         print(f"[SLP Room] Đã ghi biên bản bàn giao: bmad/rooms/{sender_room}/latest_handoff.md")
     except Exception as exc:
         print(f"[Warning] Không thể ghi memo bmad: {exc}", file=sys.stderr)
 
+    primary_memo_file = str(task_handoff_path) if task_handoff_path else f"{PROJECT_ROOT}/bmad/rooms/{sender_room}/latest_handoff.md"
+    isolation_note = f"\n🔒 TASK NAMESPACE ISOLATION: You are strictly scoped to Task #{args.item_id}. Read only task files in `{PROJECT_ROOT}/bmad/rooms/tasks/{args.item_id}/` to avoid context collision with other concurrent agents.\n" if args.item_id else ""
+
     room_block = (
         f"\n\n=== SLPC MULTI-AGENT ROOM HANDOFF (MANDATORY READ FIRST) ===\n"
+        f"{isolation_note}"
         f"A formal handoff memo has been registered by `{sender_role}` in:\n"
-        f"  - `{PROJECT_ROOT}/bmad/rooms/{sender_room}/latest_handoff.md`\n\n"
+        f"  - `{primary_memo_file}`\n\n"
         f"You MUST:\n"
-        f"1. Read `{PROJECT_ROOT}/bmad/rooms/{sender_room}/latest_handoff.md` for your 3-part delegation (Ultimate Goal, Hard Constraints, Suggested Path).\n"
+        f"1. Read `{primary_memo_file}` for your 3-part delegation (Ultimate Goal, Hard Constraints, Suggested Path).\n"
         f"2. Obey Single-Ownership Invariant: you own only your assigned module/scope. No cross-editing other modules.\n"
         f"3. If the suggested path fails in practice, exercise your Right to Challenge with empirical evidence (`python3 tools/call_agent.py --from-profile \"{profile_name}\" --profile \"{sender_role}\" --challenge --evidence \"...\"`).\n"
         f"4. When finished, record your handoff via `python3 tools/agent_progress.py log --agent \"{profile_name}\" ...` (auto-saves to `bmad/rooms/{target_room}/latest_handoff.md`) and transition the Work Item state on Harness DB.\n"
@@ -185,6 +200,20 @@ def main():
         if pre_gen_block:
             print(pre_gen_block)
         sys.exit(0)
+
+    # Nếu đang chạy trong Orca và đã có sẵn terminal tab cho profile này, bắn lệnh trực tiếp
+    if shutil.which("orca"):
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from orca_slpc_bridge import find_live_terminal_for_role  # type: ignore
+            target_term = find_live_terminal_for_role(profile_name)
+            if target_term:
+                print(f"🎯 [Orca Direct Dispatch]: Tìm thấy live terminal của {profile_name} ({target_term}). Bắn lệnh trực tiếp...")
+                subprocess.run(["orca", "terminal", "send", "--terminal", target_term, "--text", f"{task_body}\n{room_block}", "--enter"], check=True)
+                print(f"✅ Đã gửi lệnh trực tiếp tới {profile_name} trên Orca Workspace Board!")
+                sys.exit(0)
+        except Exception as e:
+            print(f"[Notice] Orca direct dispatch fallback sang paseo run: {e}", file=sys.stderr)
 
     print(f"Calling {profile_name} ({provider}/{model})...")
     res = subprocess.run(cmd, capture_output=True, text=True)

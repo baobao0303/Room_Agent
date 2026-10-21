@@ -2,6 +2,33 @@
 
 Không gian làm việc cho các Agent và Tool tích hợp của Paseo.
 
+---
+
+## ⚡ CÀI ĐẶT 1 BƯỚC KHI VỀ NHÀ (ONE-COMMAND SETUP)
+
+Khi clone repository về máy nhà hoặc máy mới, chỉ cần chạy **1 lệnh duy nhất**:
+
+```bash
+./setup.sh
+```
+
+Hoặc vừa cài đặt môi trường, vừa tự động mở sẵn toàn bộ **8 Agent tabs** trên Orca Desktop:
+
+```bash
+./setup.sh --launch
+```
+
+### Script tự động thực hiện trọn gói:
+1. **Kiểm tra công cụ**: Tự động nhận diện `orca`, `hermes`, `python3`, `git`.
+2. **Cấu hình `.env`**: Khởi tạo `.env` với model chuẩn `ag/gemini-3.8-flash-high`.
+3. **Liên kết 83+ Skills & 3 Sub-Agents**: Tự động symlink vào `~/.hermes/skills/`, nạp sub-agents vào `~/.claude/agents/`, `~/.paseo/`, `~/.codex/`.
+4. **Đồng bộ 8 Profiles SLPC**: Nạp `Supervisor`, `Lead Dev`, `Peer Dev 1..4`, `Peer Design`, `QC` vào `~/.paseo/config.json`.
+5. **Cài đặt Git Pre-Commit Guard**: Tự động kích hoạt hook bảo vệ token màu TDS và thẩm quyền.
+6. **Đồng bộ Harness DB & Aevum Kanban**: Tự động kích hoạt cơ chế Local Fallback nếu Floci offline.
+7. **Khởi chạy Multi-Agent Room**: (Khi dùng cờ `--launch` hoặc chạy `./scripts/launch_room.sh`).
+
+---
+
 ## 1. Cấu trúc thư mục
 
 ```text

@@ -154,6 +154,15 @@ class HarnessManager:
         # Validate format first
         self.validate_work_item(wi_type, title, description)
 
+        # Rào cản vai trò: Chỉ Quản lý (Supervisor/Lead) mới được tạo Epic
+        if wi_type.lower() == "epic":
+            creator = (created_by_profile or "").strip().lower()
+            if creator in ("peer", "peer dev", "peer ba", "peer design"):
+                raise PermissionError(
+                    f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{created_by_profile}' là DEV ONLY. "
+                    "Nghiêm cấm Dev tự ý tạo Epic! Chỉ Supervisor hoặc Lead mới nắm quyền quản lý phạm vi."
+                )
+
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if self.backend == "floci":
@@ -201,6 +210,15 @@ class HarnessManager:
 
     def update_state(self, item_id: int, target_state: str, assigned_to: Optional[str] = None, assigned_to_profile: Optional[str] = None) -> Dict[str, Any]:
         """Update work item lifecycle state with State Machine transition check."""
+        # Rào cản phân quyền nghiêm ngặt: Peer là DEV ONLY, tuyệt đối cấm đóng task sang 'Closed'
+        if target_state.lower() == "closed":
+            caller_prof = (assigned_to_profile or "").strip().lower()
+            if caller_prof in ("peer", "peer dev", "peer ba", "peer design"):
+                raise PermissionError(
+                    f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{assigned_to_profile}' là DEV ONLY. "
+                    "Nghiêm cấm Dev tự tiện đóng Task sang 'Closed'! Chỉ QC hoặc Lead mới có quyền nghiệm thu và đóng Task."
+                )
+
         if self.backend == "floci":
             current_item = self.floci_db.get_work_item(item_id)
             if not current_item:
@@ -221,6 +239,11 @@ class HarnessManager:
                 cleaned = cleanup_task_room(item_id)
                 if cleaned > 0:
                     print(f"[bmad/rooms] Task #{item_id} Closed -> Đã dọn dẹp {cleaned} file biên bản trong bmad/rooms/.")
+            try:
+                from orca_harness_bridge import sync_state_to_orca  # type: ignore
+                sync_state_to_orca(str(item_id), target_state)
+            except Exception:
+                pass
             return {
                 "success": True,
                 "id": item_id,

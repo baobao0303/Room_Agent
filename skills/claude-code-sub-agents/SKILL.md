@@ -28,6 +28,39 @@ Skill này cung cấp các **Sub-Agent chuyên biệt** để các Role trong h�
 
 ---
 
+## 3. Quy Trình 3 Sub-Agents Review Chéo Công Việc Các Agent Khác (Cross-Agent Review Protocol)
+
+Khi bất kỳ Agent nào (như Peer Dev, Lead Dev) hoàn thành một commit hoặc thay đổi code, 3 Sub-Agents được kích hoạt song song để kiểm định toàn diện từ 3 lăng kính độc lập:
+
+```text
+                     [Commit / Code Diff của Agent]
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+1. gemini-codebase-analyzer   2. strategic-architect    3. slpc-qc-verifier
+   (Tác động toàn cục &       (Tuân thủ Kiến trúc &     (Chất lượng Thực nghiệm &
+    Rò rỉ Dead Code)           Lazy Senior Dev)          Bao phủ 17 UI Standards)
+         │                         │                         │
+         └─────────────────────────┼─────────────────────────┘
+                                   ▼
+                    [Biên bản Review Tổng hợp ➔ Lead]
+```
+
+### Chi tiết nhiệm vụ Review của từng Sub-Agent:
+1. **`gemini-codebase-analyzer` (Codebase Impact & Dead Code Reviewer)**:
+   - Quét toàn bộ monorepo xem thay đổi có gây hiệu ứng cánh bướm (Blast Radius), vỡ import ở module khác không.
+   - Tìm kiếm code thừa / import rác bị bỏ quên sau khi refactor (như module cũ chưa gỡ bỏ).
+2. **`strategic-reasoning-architect` (Architecture & Constraint Reviewer)**:
+   - Thẩm định tính tối giản (YAGNI, Lazy Senior Dev) - xóa trước thêm sau.
+   - Kiểm tra ràng buộc Single-Ownership: Không sửa chéo sang file của module khác.
+   - Kiểm tra tiêu chuẩn giao diện: Không có mã màu hex cứng (`#...`), 100% dùng token TDS UI, giữ `ChangeDetectionStrategy.OnPush`.
+3. **`slpc-qc-verifier` (Quality Gate & Test Coverage Reviewer)**:
+   - Chạy test suite thực tế (`npm test`), xác nhận tỷ lệ PASS 100%.
+   - Rà soát độ bao phủ theo 17 Hạng mục Chuẩn Web UI (Checkbox, Table sort/filter, Expand row, Drawer footer, Empty states).
+   - Kiểm tra các ca biên (null, undefined, mảng rỗng).
+
+---
+
 ## 2. Cách phối hợp Sub-Agents trong 4 Role SLPC (`Supervisor -> Lead -> Peer -> QC`)
 
 ```text

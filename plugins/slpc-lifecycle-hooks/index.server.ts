@@ -18,7 +18,7 @@ function enforceSupervisorArgonModel<T extends Record<string, unknown>>(req: T):
     return req;
   }
   const currentModel = String(req.model ?? (req.config as Record<string, unknown> | undefined)?.model ?? "");
-  const targetModel = currentModel.startsWith("gemini-4-argon") ? currentModel : "gemini-4-argon-high";
+  const targetModel = currentModel.startsWith("gemini-3.8-flash") ? currentModel : "gemini-3.8-flash-high";
   const next: Record<string, unknown> = {
     ...req,
     provider: "antigravity",

@@ -128,3 +128,15 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 4
 4. **Session Continuity & Handoff Rule**:
    - Khi User yêu cầu *"làm tiếp"* hoặc *"báo cáo những gì đã làm"*, Agent bắt buộc đọc `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) trước tiên.
    - Trước khi kết thúc phiên hoặc dừng chờ User, Agent bắt buộc cập nhật tiến độ vào `docs/AGENT_PROGRESS.md` qua `python3 tools/agent_progress.py log ...`.
+5. **Zero-Search Task Specification Standard (Quy chuẩn Mô tả Task Zero-Search)**:
+   - Khi Supervisor tạo Epic/Task hoặc Lead phân rã Task cho Peer Dev / Peer Design, trường `description` và biên bản bàn giao BẮT BUỘC phải đủ 5 thông tin định danh, tuyệt đối cấm mô tả 1 dòng mơ hồ khiến Peer phải chạy bộ công cụ tìm kiếm (`search_files`, `rg`, `find`):
+     1. **Target Files**: Đường dẫn file cụ thể (Single-Ownership).
+     2. **Anchors / Line Numbers**: Tên hàm, class, selector, hoặc block code cần can thiệp.
+     3. **Concrete Changes**: Logic chi tiết, kiểu dữ liệu, token TDS hoặc payload JSON cụ thể.
+     4. **Acceptance Criteria (AC)**: Tiêu chuẩn nghiệm thu định lượng (pass test suite nào, verify điều kiện gì).
+     5. **Zero-Search Mandate**: Peer chỉ việc mở đúng file đích bằng `read_file`, chỉnh sửa bằng `patch`, và chạy test bằng `terminal`. Peer có quyền VETO từ chối task nếu mô tả thiếu thông tin định vị.
+6. **Strict Typing Gate: Zero `any`, Zero `unknown`, Zero Sloppy Fallbacks (`||`)**:
+   - Khi DTO và Model đã có sẵn trong codebase (như `Employee`, `ShopUserDto`), cấm tuyệt đối việc Peer dùng `any`, `unknown`, `as any` hoặc lạm dụng chuỗi fallback `||` không chắc chắn (ví dụ: `a || b || c`).
+   - Phải map tường minh từng thuộc tính theo đúng schema DTO đã khai báo (`item.shopUserId`, `item.accountUserId ?? String(item.shopUserId)`, `item.name`).
+   - Cấm dùng `new Optional()` cho các Service/Store cốt lõi đã `{ providedIn: 'root' }` (như `MemberStore`). Dependency bắt buộc phải inject trực tiếp vào `deps`.
+   - **Quality Gate của QC**: QC BẮT BUỘC phải rà soát diff của Peer. Nếu phát hiện dù chỉ 1 chữ `any`, `unknown` hoặc fallback chắp vá, QC lập tức REJECT nộp lại cho Peer sửa, cấm duyệt đóng task.
