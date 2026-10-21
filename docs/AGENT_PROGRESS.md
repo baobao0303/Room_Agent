@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-21 16:32:22 +0700`
+- **Cập nhật lần cuối**: `2026-10-21 16:37:42 +0700`
 - **Agent cập nhật gần nhất**: `Supervisor`
-- **Trọng tâm hiện tại**: [Supervisor] Final Closure of Epics #3911 and #3913
+- **Trọng tâm hiện tại**: [Supervisor] Remove projects from Git tracking & Push to GitHub
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Sẵn sàng nhận Epic/Task hoặc yêu cầu mới từ User
+  > Sẵn sàng nhận lệnh tiếp theo từ User
 
 ---
 
@@ -903,6 +903,11 @@
 - [x] 3. Supervisor nghiệm thu đóng cả 2 Epics (#3911, #3913)
 - [x] 4. Đồng bộ 100% cột COMPLETED trên Orca Board và Aevum Kanban
 - [x] 5. Mã nguồn frontend nằm an toàn trong working tree
+- [x] 1. Chạy git rm -r --cached projects gỡ bỏ Aevum và wicx-crm-fe khỏi git index
+- [x] 2. Giữ nguyên 100% dữ liệu local trên đĩa
+- [x] 3. Commit 850a0f5 xóa submodules projects/
+- [x] 4. Đẩy thành công git push origin main lên GitHub
+- [x] 5. Folder projects đã biến mất hoàn toàn trên GitHub
 
 ---
 
@@ -920,7 +925,18 @@
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
 
-> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 539 phiên được lưu trong `.harness_progress.json`).
+> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 540 phiên được lưu trong `.harness_progress.json`).
+
+### Phiên #540 — `2026-10-21 16:37:42 +0700` | **Supervisor**
+- **Tóm tắt**: Xóa bỏ hoàn toàn theo dõi folder projects trên Git và đẩy lên GitHub chống lộ source
+- **Đã thực hiện**:
+  - 1. Chạy git rm -r --cached projects gỡ bỏ Aevum và wicx-crm-fe khỏi git index
+  - 2. Giữ nguyên 100% dữ liệu local trên đĩa
+  - 3. Commit 850a0f5 xóa submodules projects/
+  - 4. Đẩy thành công git push origin main lên GitHub
+  - 5. Folder projects đã biến mất hoàn toàn trên GitHub
+- **File đã tạo/cập nhật**: `.gitignore`
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận lệnh tiếp theo từ User
 
 ### Phiên #539 — `2026-10-21 16:32:22 +0700` | **Supervisor**
 - **Tóm tắt**: Commit Room_Agent an toàn không lộ source; QC nghiệm thu và đóng hoàn tất Epics #3911 & #3913
@@ -1096,16 +1112,6 @@
   - 5. Tạo Epic #3913 và phân bổ 3 task con (#3914, #3923, #3924) cho Peer 1, Peer 3, Peer 4 song song tích hợp lại WiOnPOS Customer (manifest, routes, sidebar)
 - **File đã tạo/cập nhật**: `AGENTS.md`, `docs/spec/shop-user-list-context-spec.md`, `projects/wicx-crm-fe/docs/spec-shop-user-list-context.md`, `bmad/rooms/aevum_harness_kanban.json`
 - **Bàn giao bước tiếp theo**: Giám sát 4 Peer Dev thi công, Lead Dev review nghiêm ngặt và QC nghiệm thu độc lập
-
-### Phiên #520 — `2026-10-21 16:19:40 +0700` | **QC**
-- **Tóm tắt**: Nghiệm thu độc lập 5-Stage ISTQB Task #3912 hoàn tất: Đã kiểm chứng xóa sạch 100% any, xóa || chắp vá, enforce MemberStore contract, đóng 3 Bugs và đóng Task #3912 sang Closed
-- **Đã thực hiện**:
-  - 1. Tái kiểm tra context.provider.ts theo chỉ thị Supervisor: xác nhận 100% sạch any, kiểu Employee chuẩn DTO, không còn || chắp vá, MemberStore là dependency bắt buộc
-  - 2. Chạy Jest unit tests: context.provider.spec.ts pass 9/9 (100%), app.routes.spec.ts pass 12/12 (100%)
-  - 3. Đóng toàn bộ 3 Bugs liên quan (#3915, #3921, #3922)
-  - 4. Chuyển Task #3912 sang Closed bàn giao Lead Dev và đồng bộ Orca Board
-- **File đã tạo/cập nhật**: `apps/app-shell/src/app/pages/setting/provider/context.provider.ts`, `apps/app-shell/src/app/pages/setting/provider/context.provider.spec.ts`
-- **Bàn giao bước tiếp theo**: Chờ Lead Dev / Supervisor tổng kết Epic #3911 hoặc bàn giao task tiếp theo
 
 ---
 

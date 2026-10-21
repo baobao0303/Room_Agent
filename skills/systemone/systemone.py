@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 
 ENDPOINT = os.environ.get("SYSTEMONE_URL", "http://100.124.36.46:20128/v1/systemone")
-API_KEY = os.environ.get("SYSTEMONE_KEY", "sk-142d5f48d188dcb1-igedxf-7876d5f9")
+API_KEY = os.environ.get("SYSTEMONE_KEY", "")
 DEFAULT_MODEL = os.environ.get("SYSTEMONE_MODEL", "oc/jev-1.13-free")
 
 

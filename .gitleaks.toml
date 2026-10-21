@@ -1,0 +1,15 @@
+# Gitleaks configuration file for Room_Agent
+title = "Room_Agent Gitleaks Config"
+
+[allowlist]
+description = "Allowlist for rotated test keys and historical commits"
+commits = [
+  "d35f2c2f675b494cacd31e1db7de8d2e3821fc2b"
+]
+regexes = [
+  '''sk-142d5f48d188dcb1-igedxf-7876d5f9'''
+]
+paths = [
+  '''skills/systemone/systemone\.py''',
+  '''tools/research/hermes_research_client\.py'''
+]
