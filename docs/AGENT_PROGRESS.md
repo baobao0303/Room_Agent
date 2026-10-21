@@ -8,11 +8,11 @@
 
 ## 1. Trạng thái Tổng quan Hiện tại (Current Snapshot)
 
-- **Cập nhật lần cuối**: `2026-10-21 16:43:07 +0700`
+- **Cập nhật lần cuối**: `2026-10-21 16:53:15 +0700`
 - **Agent cập nhật gần nhất**: `Supervisor`
-- **Trọng tâm hiện tại**: [Supervisor] Fix GitHub Actions CI Gitleaks failure
+- **Trọng tâm hiện tại**: [Supervisor] Upgrade Skills & Security Guards
 - **Hành động kế tiếp (Khi User bảo "làm tiếp")**:
-  > Theo dõi GitHub Actions CI xanh và sẵn sàng nhận lệnh mới từ User
+  > Sẵn sàng nhận nhiệm vụ mới từ User
 
 ---
 
@@ -912,6 +912,10 @@
 - [x] 2. Tạo .gitleaks.toml allowlist commit lịch sử d35f2c2
 - [x] 3. Chạy test backend và pre-commit guard đạt 100% pass
 - [x] 4. Commit d247e77 và push thành công lên origin main
+- [x] 1. Nâng cấp skills/lead-review/SKILL.md lên 7-Point Review Gate (bổ sung cổng Store Reuse Gate và Strict Typing Gate)
+- [x] 2. Nâng cấp skills/qc/SKILL.md bổ sung Bước 2.5 Cổng kiểm tra nghiêm ngặt kiểu dữ liệu & schema (cấm any, unknown, || chắp vá, Optional vô lý)
+- [x] 3. Nâng cấp scripts/git_pre_commit_guard.py tự động chặn stage projects/ và quét secret API key
+- [x] 4. Commit f4307b1 và push sạch sẽ lên origin main
 
 ---
 
@@ -929,7 +933,17 @@
 
 ## 4. Nhật Ký Bàn Giao Phiên Làm Việc (Session Handoff Log)
 
-> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 541 phiên được lưu trong `.harness_progress.json`).
+> Lưu ý: Hiển thị 20 phiên gần nhất (tổng số: 542 phiên được lưu trong `.harness_progress.json`).
+
+### Phiên #542 — `2026-10-21 16:53:15 +0700` | **Supervisor**
+- **Tóm tắt**: Bổ sung hoàn thiện 3 kỹ năng cốt lõi: 7-Point Review Gate, QC Strict DTO, và Anti-Leak Pre-commit Guard
+- **Đã thực hiện**:
+  - 1. Nâng cấp skills/lead-review/SKILL.md lên 7-Point Review Gate (bổ sung cổng Store Reuse Gate và Strict Typing Gate)
+  - 2. Nâng cấp skills/qc/SKILL.md bổ sung Bước 2.5 Cổng kiểm tra nghiêm ngặt kiểu dữ liệu & schema (cấm any, unknown, || chắp vá, Optional vô lý)
+  - 3. Nâng cấp scripts/git_pre_commit_guard.py tự động chặn stage projects/ và quét secret API key
+  - 4. Commit f4307b1 và push sạch sẽ lên origin main
+- **File đã tạo/cập nhật**: `skills/lead-review/SKILL.md`, `skills/qc/SKILL.md`, `scripts/git_pre_commit_guard.py`
+- **Bàn giao bước tiếp theo**: Sẵn sàng nhận nhiệm vụ mới từ User
 
 ### Phiên #541 — `2026-10-21 16:43:07 +0700` | **Supervisor**
 - **Tóm tắt**: Xóa hardcode secret trong systemone.py và cấu hình .gitleaks.toml fix lỗi CI GitHub Actions
@@ -1107,13 +1121,6 @@
   - 1. Thẩm định 5 tiêu chí kiến trúc đạt 100%
   - 2. Xuất báo cáo gửi Supervisor
   - 3. Chuyển Task #3912 sang Resolved
-- **Bàn giao bước tiếp theo**: Chờ Lead Dev phê duyệt review hoặc giao task tiếp theo
-
-### Phiên #522 — `2026-10-21 16:21:33 +0700` | **Peer Dev 2**
-- **Tóm tắt**: Thi công Task #3912: Refactor context.provider.ts theo chuẩn Strict Typing
-- **Đã thực hiện**:
-  - 1. Đã xóa sạch 100% các từ khóa any, unknown, as any trong context.provider.ts và context.provider.spec.ts. 2. Nhúng chuẩn Employee DTO từ @wicx/features/member và loại bỏ toàn bộ chuỗi fallback lỏng lẻo (emp.shopUserId, emp.accountUserId ?? String(emp.shopUserId), emp.name, emp.roleName ?? ''). 3. Bỏ new Optional() tại MemberStore trong deps (inject trực tiếp MemberStore cùng LocalStorage, AccountStore). 4. Đồng bộ mockMemberStore trong context.provider.spec.ts. 5. Chạy pass 100% unit tests context.provider.spec.ts (9/9 PASS), toàn bộ app-shell (242/242 PASS), rsbuild build hoàn tất 0 lỗi. 6. Nộp code diff qua orca_slpc_bridge.py bàn giao cho Lead Dev review.
-- **File đã tạo/cập nhật**: `apps/app-shell/src/app/pages/setting/provider/context.provider.ts`, `apps/app-shell/src/app/pages/setting/provider/context.provider.spec.ts`
 - **Bàn giao bước tiếp theo**: Chờ Lead Dev phê duyệt review hoặc giao task tiếp theo
 
 ---
