@@ -17,11 +17,11 @@
   },
   "peer": {
     "role": "peer",
-    "status": "working",
+    "status": "idle",
     "task_id": "2",
-    "activity": "Active [Authentication] – Khách hàn",
-    "last_ping_ts": 1792648652.6721954,
-    "last_ping_str": "2026-10-22 12:57:32"
+    "activity": "Standby - Veto/Report Story #2",
+    "last_ping_ts": 1792648764.001535,
+    "last_ping_str": "2026-10-22 12:59:24"
   },
   "peer2": {
     "role": "peer2",
@@ -67,8 +67,8 @@
     "role": "pm",
     "status": "idle",
     "task_id": null,
-    "activity": "Standby",
-    "last_ping_ts": 1792646222.0195389,
-    "last_ping_str": "2026-10-22 12:17:02"
+    "activity": "Standby - PM Gatekeeper",
+    "last_ping_ts": 1792648969.4443307,
+    "last_ping_str": "2026-10-22 13:02:49"
   }
 }

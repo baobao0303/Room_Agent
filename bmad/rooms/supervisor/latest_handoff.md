@@ -1,20 +1,16 @@
 # BIÊN BẢN BÀN GIAO: Supervisor
 
-- **Thời gian**: `2026-10-22 12:47:02 +0700`
+- **Thời gian**: `2026-10-22 13:11:14 +0700`
 - **Agent bàn giao**: `Supervisor`
-- **Tóm tắt**: Đã phát lệnh và kiểm tra xác nhận: toàn bộ 8 Agent trên Orca đã đọc trực tiếp AGENTS.md và Profile vai trò, cam kết tuân thủ 100% quy trình điều hành SLPPC
+- **Tóm tắt**: Đã cập nhật toàn diện README.md: đồng bộ mô hình SLPPC 9 Agent, Native Rust CLI v0.1.14, Dual-Store Learning, Anti-Leak Sentinel và Flow Guard
 
 ## 1. Đã hoàn thành trong phiên
-- [x] Toàn bộ 8 Agent (PM, Lead, Peer 1, Peer 2, Peer 3, Peer 4, Design, QC) đã đọc trực tiếp AGENTS.md (Mục 2 & 4) và profile cá nhân trên terminal Orca, phản hồi xác nhận cam kết rào cản vai trò (cấm Lead ôm code, cấm Dev tự đóng task, cấm bypass PM, 100% Zero-Search, 100% Strict Typing)
+- [x] Cập nhật README.md: mô hình 5 cổng kiểm soát SLPPC, bổ sung PM Agent & Security Sentinel, hướng dẫn công cụ tools/harness_learning_search.py, slppc_flow_guard.py, anti_leak_sentinel.py, quy chuẩn Zero-Search và Strict Typing
 
 ## 2. File đã tạo / chỉnh sửa
-- `AGENTS.md`
-- `profiles/pm.md`
-- `profiles/lead.md`
-- `profiles/peer*.md`
-- `profiles/qc.md`
+- `README.md`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: [SLPPC Alignment] Full Room Workflow Directives Broadcast & Confirmation
-- **Bàn giao hành động tiếp**: Sẵn sàng nhận chỉ thị / Epic mới từ User theo đúng chu trình 5 cổng SLPPC
+- **Trọng tâm hiện tại**: [Documentation] README.md Synchronized with SLPPC v0.1.14
+- **Bàn giao hành động tiếp**: Sẵn sàng nhận chỉ thị tiếp theo từ User
 
