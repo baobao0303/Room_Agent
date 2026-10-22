@@ -1,0 +1,34 @@
+name: SLPPC Governance & Anti-Leak Sentinel Guard
+
+on:
+  push:
+    branches: [ main, "feat/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  governance-and-security-audit:
+    name: SLPPC Flow & Anti-Leak Compliance Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Open-Source Anti-Leak Sentinel
+        run: |
+          python3 scripts/anti_leak_sentinel.py
+
+      - name: Run SLPPC Flow & Role Trespass Guard
+        run: |
+          python3 tools/slppc_flow_guard.py
+
+      - name: Run Learning Knowledge Quality Audit
+        run: |
+          python3 tools/harness_learning_search.py audit --threshold 0.60

@@ -17,47 +17,62 @@
 
 ---
 
-## 2. Team Multi-Agent Roles & Workflow Gates (SLPC)
+## 2. Team Multi-Agent Roles & Workflow Gates (SLPPC)
 
-Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 4 cổng kiểm soát SLPC:
+Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 5 cổng kiểm soát SLPPC:
 
 ```text
 [Yêu cầu từ User]
        │
        ▼
-1. Supervisor (Scope & Intent Guard) ──► Phân tích scope, tạo Epic/Task trên Harness DB
+1. Supervisor (Scope & Intent Guard) ──► Phân tích scope, tiếp nhận ý định User
        │
        ▼
-2. Lead (Architect & Technical PM) ────► Thiết kế kiến trúc, API contract, phân rã task
+2. PM Agent (Feasibility & Alignment) ─► Thẩm định Khả thi / Phù hợp qua Kev System One (<50ms)
        │
        ▼
-3. Peer (Code Executor / Dev) ────────► Lập trình tính năng (Angular 18/TDS), viết Unit Test
+3. Lead (Architect & Technical PM) ────► Thiết kế kiến trúc, tra cứu bài học cũ, phân rã Zero-Search
        │
        ▼
-4. QC (Quality Gate & Test Architect) ─► Sinh testcase ISTQB 5-Stage, nghiệm thu độc lập
+4. Peer (Code Executor / Dev 1..4) ───► Lập trình theo spec, tuân thủ Angular 18/TDS, nộp Resolved
+       │
+       ▼
+5. QC (Quality Gate & Test Architect) ─► Sinh testcase ISTQB 5-Stage, độc quyền nghiệm thu & Closed
        │
        ▼
 [Task CLOSED]
 ```
 
-### Chi tiết 4 vai trò SLPC:
-1. **Supervisor (`supervisor`)**: Scope & Intent Guard. Tiếp nhận yêu cầu từ User, phân tích phạm vi, tạo Epic/Task/Story trên Harness DB, điều phối Lead/Peer và kiểm soát chi phí/rủi ro.
-2. **Lead (`lead`)**: Technical Architect & PM. Phân tích tài liệu nghiệp vụ, thiết kế kiến trúc hệ thống, API Contract, duyệt giải pháp kỹ thuật và phân rã task cho Peer.
-3. **Peer (`peer`)**: Code Executor (Developer). Hiện thực hóa mã nguồn theo spec, tuân thủ Angular 18 + TDS UI Design System, viết unit test và chuyển task sang `Resolved`.
-4. **QC (`qc`)**: Independent Quality Gate & Test Architect. Nghiệm thu độc lập, sinh testcase theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria và đóng task (`Resolved ➔ Closed`).
+### Chi tiết vai trò SLPPC, Cố vấn PM & An ninh Sentinel:
+1. **Supervisor (`supervisor`)**: Scope & Intent Guard. Tiếp nhận yêu cầu từ User, phân tích phạm vi, tạo Epic/Task/Story trên Harness DB (`--engine auto`), điều phối PM/Lead/Peer và kiểm soát chi phí/rủi ro.
+2. **PM Agent (`pm`)**: Product Manager & Decision Arbiter (Kev System One Engine). Cố vấn định lượng ngầm cho Supervisor & Lead Dev: đánh giá mức độ **Khả thi (Feasibility)** và mức độ **Phù hợp (Alignment)**, tính điểm rủi ro và phân luồng sub-50ms trước khi phân rã task. Chặn đứng lỗi `pm_bypass`.
+3. **Lead (`lead`)**: Technical Architect & PM. Phân tích tài liệu nghiệp vụ, tra cứu bài học kinh nghiệm qua `harness learn query`, thiết kế kiến trúc hệ thống, API Contract, duyệt giải pháp kỹ thuật và phân rã task Zero-Search cho Peer. Nghiêm cấm tự ý code (`role_trespass`).
+4. **Peer (`peer`, `peer2`, `peer3`, `peer4`)**: Code Executor (Developer). Hiện thực hóa mã nguồn theo spec, tuân thủ Angular 18 + TDS UI Design System, viết unit test và chuyển task sang `Resolved`. Nghiêm cấm tự tiện đóng task (`premature_close`).
+5. **QC (`qc`)**: Independent Quality Gate & Test Architect. Độc quyền quyền hạn chuyển trạng thái task sang `Closed`. Nghiệm thu độc lập, sinh testcase theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria, ghi nhận bài học kinh nghiệm vào `harness learn record`, và chạy `tools/slppc_flow_guard.py audit` bảo đảm 100% tuân thủ quy trình trước khi đóng Epic.
+6. **Security Sentinel (`security`)**: Continuous Anti-Leak Gatekeeper & Open-Source Auditor. Giám sát liên tục chống lộ API spec tính năng, luồng nghiệp vụ FE, địa chỉ công ty và secrets; sở hữu quyền VETO chặn đứng mọi commit/push vi phạm.
 
 ---
 
 ## 3. Available Tools & Skills Index
 
 ### A. Harness Manager Tool (`tools/harness_manager.py` / Skill `harness-ops`)
-- **Lưu trữ**: Floci DynamoDB endpoint `http://<FLOCI_HOST>:14566` (tables `harness_work_items`, `harness_stories`, `harness_tools`, `harness_metadata`).
+- **Lưu trữ**: Floci DynamoDB endpoint `http://<FLOCI_HOST>:14566` (tables `harness_work_items`, `harness_stories`, `harness_tools`, `harness_metadata`) và SQLite local (`harness.db`).
+- **Engine**: Hỗ trợ cờ `--engine {auto,floci,rust,sqlite}` (mặc định: `auto`).
 - **Lệnh thực thi**:
   - Xem ma trận kiểm thử: `./scripts/harness query matrix`
   - Xem backlog đa chiều: `./scripts/harness query backlog [--sprint <sprint>] [--source remote|local] [--top 25]`
-  - Xem thống kê: `./scripts/harness query stats`
+  - Xem thống kê: `python3 tools/harness_manager.py [--engine auto] stats` | `./scripts/harness query stats`
   - Đồng bộ lại từ REMOTE: `./scripts/harness sync-remote`
-  - Thêm mới / Cập nhật trạng thái: `python3 tools/harness_manager.py add ...` | `python3 tools/harness_manager.py update ...`
+  - Thêm mới / Cập nhật trạng thái: `python3 tools/harness_manager.py [--engine auto] add ...` | `python3 tools/harness_manager.py [--engine auto] update ...`
+
+### A2. SLPPC Flow Guard & Automated Violation Auditor (`tools/slppc_flow_guard.py`)
+- **Mục đích**: Canh gác tự động rào cản thẩm quyền 5 vai trò SLPPC, ngăn chặn `role_trespass` (Lead ôm code), `pm_bypass` (bỏ qua cổng PM), `premature_close` (Dev tự đóng task), `vague_specs` (giao task cẩu thả).
+- **Biên bản vi phạm**: Lưu tự động và vĩnh viễn tại `bmad/rooms/violations/violation_<task_id>_<from>_to_<to>_<timestamp>.md`.
+- **Lệnh thực thi**: `python3 tools/slppc_flow_guard.py audit [--json]`
+
+### A3. Harness Native Rust Bridge (`tools/harness_rust.py`)
+- **Mục đích**: Cầu nối Python gọi trực tiếp binary Rust native v0.1.14 (`scripts/bin/harness-cli`) và mô hình quyết định Kev System One.
+- **Hàm cốt lõi**: `supervise_task(text)` (sub-50ms routing), `record_lesson(...)` (ghi đồng thời SQLite + DynamoDB), `query_lessons(domain)` (truy vấn bẫy lỗi).
 
 ### B. REMOTE ACME MCP Server (`tools/remote_mcp_server.py`)
 - **Server**: `remote-crm` (cấu hình trong `~/.gemini/config/mcp_config.json`).
@@ -140,3 +155,7 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 4
    - Phải map tường minh từng thuộc tính theo đúng schema DTO đã khai báo (`item.shopUserId`, `item.accountUserId ?? String(item.shopUserId)`, `item.name`).
    - Cấm dùng `new Optional()` cho các Service/Store cốt lõi đã `{ providedIn: 'root' }` (như `MemberStore`). Dependency bắt buộc phải inject trực tiếp vào `deps`.
    - **Quality Gate của QC**: QC BẮT BUỘC phải rà soát diff của Peer. Nếu phát hiện dù chỉ 1 chữ `any`, `unknown` hoặc fallback chắp vá, QC lập tức REJECT nộp lại cho Peer sửa, cấm duyệt đóng task.
+7. **Anti-Leak & Sensitive Data Gate (Quy chuẩn Chống Lộ Dữ Liệu Nhạy Cảm & Địa Chỉ Thực Tế)**:
+   - Tuyệt đối cấm đưa tên công ty nội bộ, địa chỉ thực tế (số nhà, tên đường, cụm/lô khu công nghiệp, quận huyện), số điện thoại, email cá nhân, mã số thuế hoặc API token vào mã nguồn, tài liệu spec mẫu, commit Git hoặc Pull Request công khai.
+   - Bắt buộc tích hợp và kích hoạt script quét tự động (`scripts/check-sensitive-info.py` hoặc CI Action `security-scan.yml`) fail-closed trước khi merge.
+   - Với các dự án Rust: Bắt buộc chạy `cargo fmt --check` trước khi push để đảm bảo release pipeline không bị gãy format.

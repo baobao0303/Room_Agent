@@ -12,9 +12,9 @@ import time
 import urllib.error
 import urllib.request
 
-ENDPOINT = os.environ.get("SYSTEMONE_URL", "http://100.124.36.46:20128/v1/systemone")
+ENDPOINT = os.environ.get("SYSTEMONE_URL", "http://100.124.36.46:8008/v1/systemone")
 API_KEY = os.environ.get("SYSTEMONE_KEY", "")
-DEFAULT_MODEL = os.environ.get("SYSTEMONE_MODEL", "oc/jev-1.13-free")
+DEFAULT_MODEL = os.environ.get("SYSTEMONE_MODEL", "kev-latest")
 
 
 def call(state, questions, model=DEFAULT_MODEL, timeout=45, retries=3):
@@ -73,7 +73,15 @@ def main():
 
     print("model: %s" % out.get("model"))
     for name, ans in (out.get("answers") or {}).items():
-        print("  %-14s %.3f" % (name, ans.get("noul", float("nan"))))
+        atype = ans.get("type")
+        if atype == "noul":
+            print("  %-16s noul: %.3f" % (name, ans.get("noul", float("nan"))))
+        elif atype == "choice":
+            print("  %-16s choice: %s (conf: %.3f)" % (name, ans.get("choice"), ans.get("confidence", 0.0)))
+        elif atype == "score":
+            print("  %-16s score: %.3f" % (name, ans.get("score", float("nan"))))
+        else:
+            print("  %-16s %s" % (name, ans))
     usage = out.get("usage") or {}
     print("usage: %s in / %s out   cost: %s" % (
         usage.get("input_tokens"), usage.get("output_tokens"), out.get("cost")))

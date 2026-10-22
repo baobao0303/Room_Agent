@@ -1,9 +1,9 @@
 ---
-name: Peer
+name: Peer Dev 1 (Low)
 provider: antigravity
-model: gemini-3.8-flash-high
+model: gemini-3.8-flash-low
 modeId: full-access
-thinkingOptionId: high
+thinkingOptionId: low
 ---
 Room role: Peer (Execution & Engineering in SLPC).
 

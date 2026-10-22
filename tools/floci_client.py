@@ -289,17 +289,46 @@ class FlociHarnessDB:
                     {"AttributeName": "token", "AttributeType": "S"},
                     {"AttributeName": "skill_name", "AttributeType": "S"}
                 ]
+            },
+            "harness_experience": {
+                "KeySchema": [{"AttributeName": "id", "KeyType": "HASH"}],
+                "AttributeDefinitions": [
+                    {"AttributeName": "id", "AttributeType": "S"},
+                    {"AttributeName": "domain", "AttributeType": "S"},
+                    {"AttributeName": "created_at", "AttributeType": "S"},
+                    {"AttributeName": "work_item_id", "AttributeType": "S"}
+                ],
+                "GlobalSecondaryIndexes": [
+                    {
+                        "IndexName": "domain-index",
+                        "KeySchema": [
+                            {"AttributeName": "domain", "KeyType": "HASH"},
+                            {"AttributeName": "created_at", "KeyType": "RANGE"}
+                        ],
+                        "Projection": {"ProjectionType": "ALL"}
+                    },
+                    {
+                        "IndexName": "workitem-index",
+                        "KeySchema": [
+                            {"AttributeName": "work_item_id", "KeyType": "HASH"}
+                        ],
+                        "Projection": {"ProjectionType": "ALL"}
+                    }
+                ]
             }
         }
 
         for table_name, schema in schemas.items():
             if table_name not in existing_tables:
-                self.ddb_client.create_table(
-                    TableName=table_name,
-                    KeySchema=schema["KeySchema"],
-                    AttributeDefinitions=schema["AttributeDefinitions"],
-                    BillingMode="PAY_PER_REQUEST"
-                )
+                create_kwargs = {
+                    "TableName": table_name,
+                    "KeySchema": schema["KeySchema"],
+                    "AttributeDefinitions": schema["AttributeDefinitions"],
+                    "BillingMode": "PAY_PER_REQUEST"
+                }
+                if "GlobalSecondaryIndexes" in schema:
+                    create_kwargs["GlobalSecondaryIndexes"] = schema["GlobalSecondaryIndexes"]
+                self.ddb_client.create_table(**create_kwargs)
                 created_tables.append(table_name)
 
         try:
@@ -876,4 +905,193 @@ class FlociHarnessDB:
             "by_type": type_counts,
             "by_iteration": iteration_counts
         }
+
+    def init_experience_table(self) -> Dict[str, Any]:
+        """Khởi tạo bảng harness_experience trên DynamoDB nếu chưa tồn tại."""
+        schema = {
+            "TableName": "harness_experience",
+            "KeySchema": [{"AttributeName": "id", "KeyType": "HASH"}],
+            "AttributeDefinitions": [
+                {"AttributeName": "id", "AttributeType": "S"},
+                {"AttributeName": "domain", "AttributeType": "S"},
+                {"AttributeName": "created_at", "AttributeType": "S"},
+                {"AttributeName": "work_item_id", "AttributeType": "S"}
+            ],
+            "GlobalSecondaryIndexes": [
+                {
+                    "IndexName": "domain-index",
+                    "KeySchema": [
+                        {"AttributeName": "domain", "KeyType": "HASH"},
+                        {"AttributeName": "created_at", "KeyType": "RANGE"}
+                    ],
+                    "Projection": {"ProjectionType": "ALL"}
+                },
+                {
+                    "IndexName": "workitem-index",
+                    "KeySchema": [
+                        {"AttributeName": "work_item_id", "KeyType": "HASH"}
+                    ],
+                    "Projection": {"ProjectionType": "ALL"}
+                }
+            ],
+            "BillingMode": "PAY_PER_REQUEST"
+        }
+        if not self._is_online():
+            return {"status": "offline", "message": "DynamoDB endpoint offline, using local store"}
+
+        existing_tables = self.ddb_client.list_tables().get("TableNames", [])
+        if "harness_experience" not in existing_tables:
+            self.ddb_client.create_table(**schema)
+            return {"status": "created", "table": "harness_experience"}
+
+        # Check existing table description and add missing GSIs if needed
+        desc = self.ddb_client.describe_table(TableName="harness_experience")["Table"]
+        existing_gsis = {g["IndexName"] for g in desc.get("GlobalSecondaryIndexes", [])}
+        target_gsis = {"domain-index", "workitem-index"}
+
+        # If old index name exists and target names don't match, recreate table cleanly in local dev DynamoDB
+        if not target_gsis.issubset(existing_gsis):
+            try:
+                # Scan items to preserve
+                table = self.ddb_resource.Table("harness_experience")
+                saved_items = table.scan().get("Items", [])
+                self.ddb_client.delete_table(TableName="harness_experience")
+                time.sleep(0.5)
+                self.ddb_client.create_table(**schema)
+                time.sleep(0.5)
+                new_table = self.ddb_resource.Table("harness_experience")
+                for it in saved_items:
+                    # ensure string work_item_id if exists
+                    if "work_item_id" in it and not isinstance(it["work_item_id"], str):
+                        it["work_item_id"] = str(it["work_item_id"])
+                    new_table.put_item(Item=it)
+                return {"status": "recreated_with_gsi", "table": "harness_experience", "migrated_items": len(saved_items)}
+            except Exception as e:
+                return {"status": "error", "message": f"Failed to recreate table: {e}"}
+
+        return {"status": "exists", "table": "harness_experience"}
+
+    def put_experience(self, exp_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Lưu một bản ghi kinh nghiệm vào DynamoDB và local store fallback."""
+        import uuid
+        import hashlib
+        from datetime import datetime
+
+        item = dict(exp_dict)
+        if not item.get("id"):
+            item["id"] = str(uuid.uuid4())
+        if not item.get("created_at"):
+            item["created_at"] = datetime.now().isoformat()
+        if not item.get("pattern_hash"):
+            pattern_raw = f"{item.get('domain', '')}:{item.get('cue', '')}:{item.get('lesson', '')}"
+            item["pattern_hash"] = hashlib.sha256(pattern_raw.encode("utf-8")).hexdigest()[:16]
+
+        if "work_item_id" in item and item["work_item_id"] is not None:
+            item["work_item_id"] = str(item["work_item_id"])
+
+        if self._is_online():
+            try:
+                table = self.ddb_resource.Table("harness_experience")
+                table.put_item(Item=item)
+            except Exception:
+                pass
+
+        try:
+            store = _load_local_store()
+            store.setdefault("experiences", [])
+            # replace or append
+            store["experiences"] = [e for e in store["experiences"] if e.get("id") != item["id"]]
+            store["experiences"].append(item)
+            _save_local_store(store)
+        except Exception:
+            pass
+
+        return item
+
+    def record_experience(
+        self,
+        domain: str,
+        cue: str,
+        lesson: str,
+        evidence: str,
+        confidence: str = "high",
+        work_item_id: Optional[str | int] = None
+    ) -> Dict[str, Any]:
+        """Record a learned experience in DynamoDB harness_experience (and local store fallback)."""
+        item = {
+            "domain": domain,
+            "cue": cue,
+            "lesson": lesson,
+            "evidence": evidence,
+            "confidence": confidence.lower(),
+        }
+        if work_item_id is not None:
+            item["work_item_id"] = str(work_item_id)
+        return self.put_experience(item)
+
+    def query_experiences(
+        self,
+        domain: Optional[str] = None,
+        limit: int = 20,
+        work_item_id: Optional[str | int] = None
+    ) -> List[Dict[str, Any]]:
+        """Query experiences by domain or work_item_id using GSI (O(1) query, ZERO table scan)."""
+        online = self._is_online()
+        if online and domain:
+            try:
+                table = self.ddb_resource.Table("harness_experience")
+                # Try domain-index first, fallback to domain-created_at-index
+                index_to_use = "domain-index"
+                try:
+                    resp = table.query(
+                        IndexName=index_to_use,
+                        KeyConditionExpression=Key("domain").eq(domain),
+                        ScanIndexForward=False,
+                        Limit=limit
+                    )
+                except Exception:
+                    resp = table.query(
+                        IndexName="domain-created_at-index",
+                        KeyConditionExpression=Key("domain").eq(domain),
+                        ScanIndexForward=False,
+                        Limit=limit
+                    )
+                items = [DecimalEncoder.decode(i) for i in resp.get("Items", [])]
+                if items:
+                    return items
+            except Exception:
+                pass
+
+        if online and work_item_id is not None:
+            try:
+                table = self.ddb_resource.Table("harness_experience")
+                resp = table.query(
+                    IndexName="workitem-index",
+                    KeyConditionExpression=Key("work_item_id").eq(str(work_item_id)),
+                    Limit=limit
+                )
+                items = [DecimalEncoder.decode(i) for i in resp.get("Items", [])]
+                if items:
+                    return items
+            except Exception:
+                pass
+
+        if online and not domain and work_item_id is None:
+            try:
+                table = self.ddb_resource.Table("harness_experience")
+                resp = table.scan(Limit=limit)
+                items = [DecimalEncoder.decode(i) for i in resp.get("Items", [])]
+                if items:
+                    return items
+            except Exception:
+                pass
+
+        # Fallback local store
+        store = _load_local_store()
+        exps = store.get("experiences", [])
+        if domain:
+            exps = [e for e in exps if e.get("domain") == domain]
+        if work_item_id is not None:
+            exps = [e for e in exps if str(e.get("work_item_id")) == str(work_item_id)]
+        return exps[-limit:]
 

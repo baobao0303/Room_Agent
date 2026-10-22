@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 tools/tds_search.py - High-precision Search & Component Lookup for TMT Design System (TDS).
-Target Gateway: https://tds.tmtco.org/
+Target Gateway: https://tds.tds.local/
 Catalog: 92+ Components, Directives, Design Tokens & Modules in TDS UI.
 """
 
@@ -14,9 +14,9 @@ import urllib.error
 import re
 from typing import List, Dict, Any, Optional
 
-GATEWAY_BASE_URL = "https://tds.tmtco.org"
+GATEWAY_BASE_URL = "https://tds.tds.local"
 
-# Complete verified catalog extracted directly from https://tds.tmtco.org/
+# Complete verified catalog extracted directly from https://tds.tds.local/
 TDS_CATALOG: List[Dict[str, Any]] = [
     # 1. Button Suite
     {"name": "Button (Default)", "slug": "button-base", "category": "Button", "module": "TdsButtonModule", "selector": "[tds-button]", "link": "/components/button-base/vi", "desc": "Nút bấm tiêu chuẩn (Primary, Secondary, Success, Danger, Warning, Info).", "keywords": ["button", "nut", "click", "btn", "action", "primary"]},
@@ -102,7 +102,7 @@ TDS_CATALOG: List[Dict[str, Any]] = [
 ]
 
 def check_gateway_health() -> bool:
-    """Kiểm tra kết nối trực tiếp tới cổng gateway https://tds.tmtco.org/"""
+    """Kiểm tra kết nối trực tiếp tới cổng gateway https://tds.tds.local/"""
     try:
         req = urllib.request.Request(GATEWAY_BASE_URL, headers={"User-Agent": "TdsSearchTool/1.0"})
         with urllib.request.urlopen(req, timeout=3) as resp:
@@ -178,13 +178,13 @@ def format_card(res: Dict[str, Any], is_first: bool = False) -> str:
 🌐 Gateway : \033[4;34m{res['url']}\033[0m"""
 
 def main():
-    parser = argparse.ArgumentParser(description="TDS Search Tool - Tra cứu component TMT Design System qua https://tds.tmtco.org/")
+    parser = argparse.ArgumentParser(description="TDS Search Tool - Tra cứu component TMT Design System qua https://tds.tds.local/")
     parser.add_argument("query", nargs="?", default="", help="Từ khóa tìm kiếm (vd: button, table, modal, datepicker, upload...)")
     parser.add_argument("--category", "-c", help="Lọc theo danh mục (Button, Layout, Navigation, Data entry, Data display, Feedback, Guide)")
     parser.add_argument("--limit", "-n", type=int, default=5, help="Số lượng kết quả tối đa (mặc định: 5)")
     parser.add_argument("--json", action="store_true", help="Xuất kết quả định dạng JSON cho AI Agent")
     parser.add_argument("--list-categories", action="store_true", help="Liệt kê toàn bộ danh mục TDS có trên website")
-    parser.add_argument("--ping", action="store_true", help="Kiểm tra trạng thái kết nối tới cổng gateway https://tds.tmtco.org/")
+    parser.add_argument("--ping", action="store_true", help="Kiểm tra trạng thái kết nối tới cổng gateway https://tds.tds.local/")
 
     args = parser.parse_args()
 
@@ -202,7 +202,7 @@ def main():
         if args.json:
             print(json.dumps(categories, indent=2))
         else:
-            print("📂 DANH MỤC THÀNH PHẦN TRÊN https://tds.tmtco.org/:")
+            print("📂 DANH MỤC THÀNH PHẦN TRÊN https://tds.tds.local/:")
             for cat in categories:
                 count = sum(1 for item in TDS_CATALOG if item["category"] == cat)
                 print(f"  • {cat:<15} ({count} components)")

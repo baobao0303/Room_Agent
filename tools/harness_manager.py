@@ -9,6 +9,8 @@ import os
 import sys
 import json
 import sqlite3
+import shutil
+import subprocess
 import argparse
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -56,7 +58,9 @@ ALLOWED_PROFILES = [
     "Supervisor",
     "Lead",
     "Peer",
-    "QC"
+    "QC",
+    "PM",
+    "Security"
 ]
 
 def cleanup_task_room(item_id: int) -> int:
@@ -82,13 +86,113 @@ def cleanup_task_room(item_id: int) -> int:
             pass
     return removed_count
 
+def send_orca_notification(role: str, message: str) -> bool:
+    """Send real-time prompt to the live Orca terminal for a role (with ping check & auto-compact)."""
+    try:
+        if BASE_DIR not in sys.path:
+            sys.path.insert(0, BASE_DIR)
+        try:
+            from agent_context_manager import safe_send_agent_message  # type: ignore
+        except ImportError:
+            from tools.agent_context_manager import safe_send_agent_message  # type: ignore
+        return safe_send_agent_message(role, message)
+    except Exception:
+        return False
+
+
+def auto_dispatch_agent(
+    item_id: int,
+    wi_type: str,
+    title: str,
+    target_state: str,
+    assigned_to: Optional[str] = None,
+    assigned_to_profile: Optional[str] = None,
+    prev_state: Optional[str] = None
+):
+    """Automatically wake up and notify the relevant SLPPC agents on state changes."""
+    # Chống spam: Không gửi broadcast notification khi testcase nhỏ lẻ thay đổi
+    if wi_type.lower() in ("testcase",):
+        return
+
+    # 1. Update heartbeat ping
+    try:
+        if BASE_DIR not in sys.path:
+            sys.path.insert(0, BASE_DIR)
+        try:
+            from agent_heartbeat import record_ping  # type: ignore
+        except ImportError:
+            from tools.agent_heartbeat import record_ping  # type: ignore
+        caller_role = (assigned_to_profile or assigned_to or "peer").lower()
+        if "peer" in caller_role or "dev" in caller_role or "design" in caller_role:
+            rec_role = "peer"
+            for p in ["peer4", "peer3", "peer2", "design"]:
+                if p in caller_role.replace("-", "").replace("_", ""):
+                    rec_role = p
+                    break
+        elif "lead" in caller_role:
+            rec_role = "lead"
+        elif "qc" in caller_role:
+            rec_role = "qc"
+        else:
+            rec_role = caller_role.split()[0]
+        record_ping(rec_role, "working" if target_state == "Active" else "idle", task_id=str(item_id), activity=f"{target_state} {title[:28]}")
+    except Exception:
+        pass
+
+    state_lower = target_state.lower()
+    
+    # CASE 1: Peer nộp code xong (target_state == "Resolved")
+    # -> Báo ngay cho LEADER (Review 7-Point) VÀ QC (Test 5-Stage ISTQB)
+    if state_lower == "resolved":
+        msg_lead = f"📢 [PEER BÁO CÁO REVIEW]: Peer đã hoàn thành {wi_type} #{item_id}: '{title}' (Resolved). Hãy thực thi 7-Point Lead Review."
+        msg_qc = f"📢 [QC SẴN SÀNG TEST]: {wi_type} #{item_id}: '{title}' đã Resolved. Hãy sinh 5-Stage ISTQB test matrix và nghiệm thu độc lập."
+        send_orca_notification("lead", msg_lead)
+        send_orca_notification("qc", msg_qc)
+        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo cho Lead Dev và QC về Work Item #{item_id} (Resolved).")
+
+    # CASE 2: Giao việc thi công (target_state == "Active" hoặc "Accepted")
+    # -> Báo ngay cho Peer được gán
+    elif state_lower in ("active", "accepted"):
+        target_peer = (assigned_to_profile or assigned_to or "").lower()
+        if any(k in target_peer for k in ("peer", "design", "dev")):
+            peer_role = "peer"
+            for p in ["peer4", "peer3", "peer2", "design"]:
+                if p in target_peer.replace("-", "").replace("_", ""):
+                    peer_role = p
+                    break
+            msg_peer = f"📢 [NHIỆM VỤ MỚI]: Bạn được phân công {wi_type} #{item_id}: '{title}' ({target_state}). Đọc spec tại Harness DB / bmad/rooms/ và bắt đầu thi công!"
+            send_orca_notification(peer_role, msg_peer)
+            print(f"🔔 [Auto-Dispatch]: Đã tự động đánh thức {peer_role.upper()} thi công Work Item #{item_id}.")
+
+    # CASE 3: QC hoặc Lead đóng task (target_state == "Closed")
+    # -> Báo cho Lead và Supervisor
+    elif state_lower == "closed":
+        msg_done = f"📢 [NGHIỆM THU ĐÃ ĐÓNG]: {wi_type} #{item_id}: '{title}' đã được nghiệm thu và CLOSED thành công."
+        send_orca_notification("lead", msg_done)
+        send_orca_notification("supervisor", msg_done)
+        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Lead và Supervisor.")
+
 class HarnessManager:
-    def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH):
-        self.backend = backend
+    def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH, engine: str = "auto"):
+        self.engine = engine
+        if engine == "floci":
+            self.backend = "floci"
+        elif engine == "rust":
+            self.backend = "rust"
+        elif engine == "sqlite":
+            self.backend = "sqlite"
+        else:
+            self.backend = backend
+
         self.db_path = db_path
         if self.backend == "floci":
-            self.floci_db = FlociHarnessDB()
-            self.floci_db.init_schema()
+            try:
+                self.floci_db = FlociHarnessDB()
+                self.floci_db.init_schema()
+            except Exception:
+                self.backend = "sqlite"
+                with open(os.path.join(BASE_DIR, "scripts/schema/full_schema.sql")) as f, self._get_sqlite_db() as conn:
+                    conn.executescript(f.read())
         else:
             with open(os.path.join(BASE_DIR, "scripts/schema/full_schema.sql")) as f, self._get_sqlite_db() as conn:
                 conn.executescript(f.read())
@@ -97,6 +201,20 @@ class HarnessManager:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
+        # Auto-migrate missing columns in legacy work_item table
+        try:
+            cur = conn.cursor()
+            cols = {r[1] for r in cur.execute("PRAGMA table_info(work_item);").fetchall()}
+            if cols:
+                if "source" not in cols:
+                    cur.execute("ALTER TABLE work_item ADD COLUMN source TEXT NOT NULL DEFAULT 'local';")
+                if "created_by_profile" not in cols:
+                    cur.execute("ALTER TABLE work_item ADD COLUMN created_by_profile TEXT;")
+                if "assigned_to_profile" not in cols:
+                    cur.execute("ALTER TABLE work_item ADD COLUMN assigned_to_profile TEXT;")
+                conn.commit()
+        except Exception:
+            pass
         return conn
 
     def get_allowed_profiles(self) -> List[str]:
@@ -163,6 +281,27 @@ class HarnessManager:
                     "Nghiêm cấm Dev tự ý tạo Epic! Chỉ Supervisor hoặc Lead mới nắm quyền quản lý phạm vi."
                 )
 
+        # 1. Tự động chuẩn hóa assigned_to_profile nếu chỉ truyền assigned_to (chạy trước rào cản vai trò)
+        if not assigned_to_profile and assigned_to:
+            lower_to = assigned_to.strip().lower()
+            if any(l in lower_to for l in ("lead", "supervisor")):
+                assigned_to_profile = "lead" if "lead" in lower_to else "supervisor"
+            elif any(p in lower_to for p in ("peer", "dev", "design")):
+                assigned_to_profile = "peer"
+            elif "qc" in lower_to:
+                assigned_to_profile = "qc"
+            elif "pm" in lower_to:
+                assigned_to_profile = "pm"
+
+        # 2. Rào cản vai trò: Cấm gán Task thi công mã nguồn cho Quản lý (Lead / Supervisor)
+        effective_assignee = (assigned_to_profile or assigned_to or "").strip().lower()
+        if wi_type.lower() == "task":
+            if any(r in effective_assignee for r in ("lead", "supervisor")) or assigned_to_profile in ("lead", "supervisor"):
+                raise PermissionError(
+                    f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{effective_assignee}' là QUẢN LÝ / KIẾN TRÚC. "
+                    "Nghiêm cấm gán Task thi công cho Lead/Supervisor! Task bắt buộc phải gán cho Peer (Peer 1..4) hoặc QC."
+                )
+
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if self.backend == "floci":
@@ -188,6 +327,7 @@ class HarnessManager:
                 "updated_at": now_str
             }
             saved = self.floci_db.put_work_item(item)
+            auto_dispatch_agent(saved["id"], wi_type, title, "New", assigned_to, assigned_to_profile)
             return {"success": True, "id": saved["id"], "type": wi_type, "title": title, "state": "New", "storage": "floci-dynamodb"}
 
         # SQLite fallback
@@ -205,7 +345,8 @@ class HarnessManager:
                 iteration_path, tags, acceptance_criteria, source, created_by_profile, assigned_to_profile
             ))
             conn.commit()
-            item_id = cursor.lastrowid
+            item_id = int(cursor.lastrowid or 0)
+            auto_dispatch_agent(item_id, wi_type, title, "New", assigned_to, assigned_to_profile)
             return {"success": True, "id": item_id, "type": wi_type, "title": title, "state": "New", "storage": "sqlite"}
 
     def update_state(self, item_id: int, target_state: str, assigned_to: Optional[str] = None, assigned_to_profile: Optional[str] = None) -> Dict[str, Any]:
@@ -226,6 +367,16 @@ class HarnessManager:
 
             current_state = current_item.get("state", "New")
             wi_type = current_item.get("type", "Task")
+            title = current_item.get("title", f"Work Item #{item_id}")
+
+            # Rào cản vai trò (PM Gate): Cấm gán hoặc kích hoạt Task thi công cho Lead/Supervisor (ngoại trừ khi đóng Closed)
+            effective_assignee = (assigned_to_profile or assigned_to or current_item.get("assigned_to_profile") or current_item.get("assigned_to") or "").strip().lower()
+            if wi_type.lower() == "task" and target_state.lower() != "closed":
+                if any(r in effective_assignee for r in ("lead", "supervisor")):
+                    raise PermissionError(
+                        f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{effective_assignee}' là QUẢN LÝ / KIẾN TRÚC. "
+                        "Nghiêm cấm gán hoặc kích hoạt Task thi công cho Lead/Supervisor! Task bắt buộc phải gán cho Peer (Peer 1..4) hoặc QC."
+                    )
 
             if wi_type in VALID_TRANSITIONS:
                 allowed = VALID_TRANSITIONS[wi_type].get(current_state, [])
@@ -244,6 +395,17 @@ class HarnessManager:
                 sync_state_to_orca(str(item_id), target_state)
             except Exception:
                 pass
+            
+            auto_dispatch_agent(
+                item_id=item_id,
+                wi_type=wi_type,
+                title=title,
+                target_state=target_state,
+                assigned_to=assigned_to or current_item.get("assigned_to"),
+                assigned_to_profile=assigned_to_profile or current_item.get("assigned_to_profile"),
+                prev_state=current_state
+            )
+
             return {
                 "success": True,
                 "id": item_id,
@@ -256,12 +418,22 @@ class HarnessManager:
         # SQLite fallback
         with self._get_sqlite_db() as conn:
             cursor = conn.cursor()
-            row = cursor.execute("SELECT id, type, state FROM work_item WHERE id = ?", (item_id,)).fetchone()
+            row = cursor.execute("SELECT id, type, state, title, assigned_to, assigned_to_profile FROM work_item WHERE id = ?", (item_id,)).fetchone()
             if not row:
                 raise ValueError(f"Work item #{item_id} not found in SQLite.")
 
             current_state = row["state"]
             wi_type = row["type"]
+            title = row["title"]
+
+            # Rào cản vai trò (PM Gate - SQLite branch): Cấm gán hoặc kích hoạt Task thi công cho Lead/Supervisor (ngoại trừ khi đóng Closed)
+            sqlite_effective = (assigned_to_profile or assigned_to or row["assigned_to_profile"] or row["assigned_to"] or "").strip().lower()
+            if wi_type.lower() == "task" and target_state.lower() != "closed":
+                if any(r in sqlite_effective for r in ("lead", "supervisor")):
+                    raise PermissionError(
+                        f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{sqlite_effective}' là QUẢN LÝ / KIẾN TRÚC. "
+                        "Nghiêm cấm gán hoặc kích hoạt Task thi công cho Lead/Supervisor! Task bắt buộc phải gán cho Peer (Peer 1..4) hoặc QC."
+                    )
 
             if wi_type in VALID_TRANSITIONS:
                 allowed = VALID_TRANSITIONS[wi_type].get(current_state, [])
@@ -284,6 +456,17 @@ class HarnessManager:
             conn.commit()
             if target_state.lower() == "closed":
                 cleanup_task_room(item_id)
+
+            auto_dispatch_agent(
+                item_id=item_id,
+                wi_type=wi_type,
+                title=title,
+                target_state=target_state,
+                assigned_to=assigned_to or row["assigned_to"],
+                assigned_to_profile=assigned_to_profile or row["assigned_to_profile"],
+                prev_state=current_state
+            )
+
             return {"success": True, "id": item_id, "previous_state": current_state, "new_state": target_state, "assigned_to": assigned_to, "storage": "sqlite"}
 
     def delete_work_item(self, item_id: int) -> Dict[str, Any]:
@@ -336,15 +519,21 @@ class HarnessManager:
 
     def get_stats(self) -> Dict[str, Any]:
         if self.backend == "floci":
-            return self.floci_db.get_stats()
+            stats = self.floci_db.get_stats()
+            stats["engine"] = self.engine
+            return stats
 
         with self._get_sqlite_db() as conn:
             cursor = conn.cursor()
             by_type = {r[0]: r[1] for r in cursor.execute("SELECT type, COUNT(*) FROM work_item GROUP BY type")}
-            return {"total_work_items": sum(by_type.values()), "by_type": by_type}
+            stats = {"engine": self.backend, "total_work_items": sum(by_type.values()), "by_type": by_type}
+            if self.backend == "rust":
+                stats["native_binary"] = os.path.exists(os.path.join(BASE_DIR, "scripts/bin/harness-cli"))
+            return stats
 
 def main():
     parser = argparse.ArgumentParser(description="Harness Operating Framework Manager Tool (Floci / DynamoDB)")
+    parser.add_argument("--engine", choices=["auto", "floci", "rust", "sqlite"], default="auto", help="Execution engine (default: auto)")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subcommand: add
@@ -393,7 +582,7 @@ def main():
     subparsers.add_parser("profiles", help="List available Paseo Agent Profiles")
 
     args = parser.parse_args()
-    mgr = HarnessManager()
+    mgr = HarnessManager(engine=args.engine)
 
     try:
         if args.command == "profiles":

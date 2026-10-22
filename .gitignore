@@ -67,6 +67,8 @@ target/
 **/target/
 
 # 5. OS & IDE Configuration
+.claude/
+*/.claude/
 .DS_Store
 Thumbs.db
 .idea/
@@ -96,8 +98,6 @@ scratch/
 /.harness_hooks.jsonl
 
 # 9. Auto-generated research & test briefs
-tools/research/gen_brief_*
-tools/research/research_*
-tools/research/gen_test_*
-tools/research/detailcustomer_*
-tools/research/qc_5stage_*
+tools/research/
+bmad/rooms/tasks/
+bmad/rooms/*/handoff_*.md

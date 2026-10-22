@@ -65,13 +65,12 @@
         "description": "Thư viện nền tảng chia sẻ i18n resolver, provideWII18n, EventBus cross-MFE."
       },
       {
-        "id": "harness-ui",
-        "label": "Harness SLPC Live Dashboard",
-        "type": "tooling-ui",
-        "port": 8765,
-        "entry": "harness-ui",
-        "tech": "Astro + Tailwind + JS Islands + Python API backend",
-        "description": "Bảng điều khiển trực quan hóa thời gian thực: Bàn cờ Caro (Work Items), SLPC 4-Role Agents, Sổ cái Tiến độ và QC Workbench."
+        "id": "harness-cli-v0114",
+        "label": "Harness Native CLI & SLPPC Engine (v0.1.14)",
+        "type": "native-cli",
+        "entry": "scripts/bin/harness-cli",
+        "tech": "Rust (Tokio, SQLite, DynamoDB, Kev System One)",
+        "description": "Bộ công cụ CLI bản địa hoá điều hành SLPPC, tự học khép kín và phân luồng rủi ro sub-50ms."
       },
       {
         "id": "agent-supervisor",
@@ -165,10 +164,10 @@
         "description": "CDP kế thừa i18n và runtime providers từ @wicx/core"
       },
       {
-        "source": "harness-ui",
+        "source": "harness-cli-v0114",
         "target": "app-shell",
-        "kind": "monitoring",
-        "description": "Dashboard giám sát trực quan trạng thái và tiến độ toàn hệ thống"
+        "kind": "governance",
+        "description": "Điều phối công việc và kiểm soát chất lượng qua Floci DynamoDB và SQLite"
       }
     ]
   }
