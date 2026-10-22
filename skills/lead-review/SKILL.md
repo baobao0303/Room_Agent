@@ -23,9 +23,9 @@ Bộ kỹ năng này quy định quy chuẩn, danh mục kiểm tra (checklist) 
 
 ---
 
-## 2. Checklist 7 Điểm Bắt Buộc Của Lead Dev (7-Point Review Gate)
+## 2. Checklist 8 Điểm Bắt Buộc Của Lead Dev (8-Point Review Gate)
 
-Trước khi cho phép Task chuyển sang bước kiểm định độc lập của QC, Lead Dev bắt buộc phải đối soát qua 7 tiêu chí:
+Trước khi cho phép Task chuyển sang bước kiểm định độc lập của QC, Lead Dev bắt buộc phải đối soát qua 8 tiêu chí:
 
 ### A. Ranh giới Sở hữu Đơn nhất (Single-Ownership Invariant)
 - **Quy tắc**: 100% file thay đổi phải nằm trọn trong module được giao (VD: Task CDP chỉ được sửa trong `apps/mfe-cdp/...`).
@@ -68,6 +68,18 @@ Trước khi cho phép Task chuyển sang bước kiểm định độc lập c�
   * **CẤM TUYỆT ĐỐI** dùng `any`, `unknown`, `as any` trong mã nguồn sản phẩm. Dù chỉ 1 dòng `any` cũng bị **REJECT NGAY LẬP TỨC**.
   * **CẤM** chuỗi fallback `||` không chắc chắn (như `emp.id || emp.shopUserId`, `displayName || name || ''`). Phải map tường minh đúng trường theo DTO contract (`emp.shopUserId`, `emp.accountUserId ?? String(emp.shopUserId)`).
   * **CẤM** dùng `new Optional()` trong `deps` cho các Store/Service cốt lõi đã `{ providedIn: 'root' }`. Phải inject trực tiếp bắt buộc.
+
+### H. Cổng Chống Lộ Dữ Liệu Nhạy Cảm & Địa Chỉ Thực Tế (Anti-Leak & Sensitive Data Gate)
+- **Quy tắc**: Tuyệt đối KHÔNG đưa thông tin nhạy cảm vào codebase, tài liệu spec, commit Git hoặc Pull Request:
+  * **Tên công ty nội bộ, dự án khách hàng**: Không hardcode tên công ty, domain nội bộ (`tfs.*`, `*.dev.local`).
+  * **Địa chỉ thực tế & địa danh cụ thể**: Tuyệt đối xóa sạch số nhà, tên đường, cụm/lô khu công nghiệp, quận huyện khỏi tài liệu/spec mẫu.
+  * **Thông tin định danh cá nhân (PII)**: Số điện thoại, email cá nhân, mã số thuế nội bộ.
+  * **Secret Keys & Env Files**: Không commit file `.env` chứa credential thật, private keys, API keys.
+- **Kịch bản kiểm tra tự động (Automated Security Scan)**:
+  * Bắt buộc tích hợp script quét regex (như `check-sensitive-info.py`, `git_pre_commit_guard.py`) hoặc GitHub Actions workflow (`security-scan.yml`) fail-closed trước khi merge.
+- **Quy chuẩn Format Rust / TypeScript**:
+  * Với dự án Rust: Bắt buộc chạy `cargo fmt --check` và `cargo check` trước khi commit/push để tránh gãy release pipeline.
+  * Với dự án Angular/TS: Chạy lint và typecheck (`tsc --noEmit`) trước khi bàn giao.
 
 ---
 

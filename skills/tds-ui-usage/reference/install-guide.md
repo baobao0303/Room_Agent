@@ -15,7 +15,7 @@ tds-ui distrib qua private registry. Thêm vào `package.json`:
 ```json
 {
   "dependencies": {
-    "tds-ui": "https://tds.tmtco.org/lib/tds-ui-18.6.0.tgz"
+    "tds-ui": "https://tds.tds.local/lib/tds-ui-18.6.0.tgz"
   }
 }
 ```
@@ -240,8 +240,8 @@ Note: `node_modules/tds-ui/icon/list-icon.js` là internal registry, **không c�
 Thêm vào `<head>` trong `src/index.html`:
 
 ```html
-<link rel="stylesheet" href="https://static-tds-public-projects.tmtco.org/assets/fonts/TMTSans/style.css">
-<link rel="stylesheet" href="https://static-tds-public-projects.tmtco.org/assets/font-icon/style.css">
+<link rel="stylesheet" href="https://static-tds-public-projects.tds.local/assets/fonts/TMTSans/style.css">
+<link rel="stylesheet" href="https://static-tds-public-projects.tds.local/assets/font-icon/style.css">
 ```
 
 - Link 1: Font TMTSans (font family mặc định của tds-ui components)

@@ -1,9 +1,9 @@
 ---
-name: Peer Dev 4
+name: Peer Dev 4 (Extra)
 provider: antigravity
 model: gemini-3.8-flash-high
 modeId: full-access
-thinkingOptionId: high
+thinkingOptionId: extra
 ---
 Room role: Peer Dev 4 (Parallel Code Execution & Engineering in SLPC).
 

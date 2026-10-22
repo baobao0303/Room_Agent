@@ -3,64 +3,72 @@
     "role": "supervisor",
     "status": "idle",
     "task_id": "-",
-    "activity": "Monitoring SLPC team",
-    "last_ping_ts": 1792571307.4441242,
-    "last_ping_str": "2026-10-21 15:28:27"
+    "activity": "Supervising SLPPC Room",
+    "last_ping_ts": 1792646228.2873297,
+    "last_ping_str": "2026-10-22 12:17:08"
   },
   "lead": {
     "role": "lead",
-    "status": "working",
-    "task_id": "3924",
-    "activity": "Reviewing Peer code",
-    "last_ping_ts": 1792574947.001607,
-    "last_ping_str": "2026-10-21 16:29:07"
+    "status": "idle",
+    "task_id": "7",
+    "activity": "Standby - SQLite Task #7 already closed",
+    "last_ping_ts": 1792648355.2211108,
+    "last_ping_str": "2026-10-22 12:52:35"
   },
   "peer": {
     "role": "peer",
-    "status": "idle",
-    "task_id": "3924",
-    "activity": "Done code apps/app-shell/src/a",
-    "last_ping_ts": 1792574946.7863455,
-    "last_ping_str": "2026-10-21 16:29:06"
+    "status": "working",
+    "task_id": "2",
+    "activity": "Active [Authentication] – Khách hàn",
+    "last_ping_ts": 1792648652.6721954,
+    "last_ping_str": "2026-10-22 12:57:32"
   },
   "peer2": {
     "role": "peer2",
     "status": "idle",
-    "task_id": "3872",
-    "activity": "Submitted code for Task #3912, standby",
-    "last_ping_ts": 1792574499.7960181,
-    "last_ping_str": "2026-10-21 16:21:39"
+    "task_id": "4124",
+    "activity": "Standby",
+    "last_ping_ts": 1792646214.054105,
+    "last_ping_str": "2026-10-22 12:16:54"
   },
   "peer3": {
     "role": "peer3",
     "status": "idle",
-    "task_id": "3923",
-    "activity": "Hoàn thành Task #3923, nộp Lead review",
-    "last_ping_ts": 1792574720.305785,
-    "last_ping_str": "2026-10-21 16:25:20"
+    "task_id": "4119",
+    "activity": "Standby",
+    "last_ping_ts": 1792646220.0257268,
+    "last_ping_str": "2026-10-22 12:17:00"
   },
   "peer4": {
     "role": "peer4",
     "status": "idle",
-    "task_id": "3924",
-    "activity": "Task #3924 nộp cho Lead Review",
-    "last_ping_ts": 1792574961.0791068,
-    "last_ping_str": "2026-10-21 16:29:21"
+    "task_id": "4111",
+    "activity": "Standby",
+    "last_ping_ts": 1792646220.8070364,
+    "last_ping_str": "2026-10-22 12:17:00"
   },
   "qc": {
     "role": "qc",
     "status": "idle",
-    "task_id": "-",
-    "activity": "Standby Task #3924 closed",
-    "last_ping_ts": 1792575045.5522184,
-    "last_ping_str": "2026-10-21 16:30:45"
+    "task_id": "4251",
+    "activity": "Standby",
+    "last_ping_ts": 1792648350.9491365,
+    "last_ping_str": "2026-10-22 12:52:30"
   },
   "design": {
     "role": "design",
     "status": "idle",
     "task_id": "-",
     "activity": "Standby",
-    "last_ping_ts": 1792571324.281502,
-    "last_ping_str": "2026-10-21 15:28:44"
+    "last_ping_ts": 1792646220.248656,
+    "last_ping_str": "2026-10-22 12:17:00"
+  },
+  "pm": {
+    "role": "pm",
+    "status": "idle",
+    "task_id": null,
+    "activity": "Standby",
+    "last_ping_ts": 1792646222.0195389,
+    "last_ping_str": "2026-10-22 12:17:02"
   }
 }

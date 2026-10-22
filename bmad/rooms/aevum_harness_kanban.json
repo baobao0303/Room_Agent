@@ -101,705 +101,705 @@
   ],
   "rows": [
     {
-      "id": "row_3913",
+      "id": "row_4110",
       "fields": {
-        "title": "[WiOnPOS] - Tích hợp lại trang Customer và Menu Sidebar vào App Shell",
-        "id": "3913",
+        "title": "[Harness-Core] - Bo sung Kev vao supervision de bo tro lambda Issue 13",
+        "id": "4110",
         "type": "Epic",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
+        "assigned_to_profile": "qc",
         "created_by_profile": "supervisor",
         "parent_item_id": "",
-        "updated_at": "2026-10-21 16:32:02"
+        "updated_at": "2026-10-22 10:09:05"
       }
     },
     {
-      "id": "row_3911",
+      "id": "row_4109",
       "fields": {
-        "title": "[AppShell] - Tích hợp shopUserList$ vào WI_USER_CONTEXT từ MemberService",
-        "id": "3911",
+        "title": "[Harness-Core] - Nang cap tinh nang tu hoc cho harness Issue 12",
+        "id": "4109",
         "type": "Epic",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
+        "assigned_to_profile": "qc",
         "created_by_profile": "supervisor",
         "parent_item_id": "",
-        "updated_at": "2026-10-21 16:32:00"
+        "updated_at": "2026-10-22 10:09:04"
       }
     },
     {
-      "id": "row_3924",
+      "id": "row_4114",
       "fields": {
-        "title": "[AppShell/Sidebar] - Thêm menu wion-customer và từ điển i18n shell",
-        "id": "3924",
+        "title": "[Harness-Core/Peer1] - Supervision Service CLI Subcommand & Integration Tests",
+        "id": "4114",
         "type": "Task",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
+        "assigned_to_profile": "qc",
         "created_by_profile": "supervisor",
-        "parent_item_id": "3913",
-        "updated_at": "2026-10-21 16:29:41"
+        "parent_item_id": "4110",
+        "updated_at": "2026-10-22 10:09:03"
       }
     },
     {
-      "id": "row_3934",
+      "id": "row_4113",
       "fields": {
-        "title": "[AppShell/Sidebar]: TC-3924-03 sidebar.component.spec.ts pass 100% khi render navigation sections",
-        "id": "3934",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3924",
-        "updated_at": "2026-10-21 16:29:40"
-      }
-    },
-    {
-      "id": "row_3933",
-      "fields": {
-        "title": "[AppShell/Sidebar]: TC-3924-02 tu dien shell.json chua key WION_CUSTOMER khi hien thi vi va en",
-        "id": "3933",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3924",
-        "updated_at": "2026-10-21 16:29:38"
-      }
-    },
-    {
-      "id": "row_3932",
-      "fields": {
-        "title": "[AppShell/Sidebar]: TC-3924-01 menu wion-customer co icon tdsi-user-list-fill khi render sidebar",
-        "id": "3932",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3924",
-        "updated_at": "2026-10-21 16:29:36"
-      }
-    },
-    {
-      "id": "row_3923",
-      "fields": {
-        "title": "[AppShell/Routes] - Khai báo route customer nạp remote WiOnPOS kèm contexts",
-        "id": "3923",
+        "title": "[Harness-Core/Peer3] - Kev Fast-Path Decision Domain & Lambda Routing Policy",
+        "id": "4113",
         "type": "Task",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
+        "assigned_to_profile": "qc",
         "created_by_profile": "supervisor",
-        "parent_item_id": "3913",
-        "updated_at": "2026-10-21 16:29:28"
+        "parent_item_id": "4110",
+        "updated_at": "2026-10-22 10:09:03"
       }
     },
     {
-      "id": "row_3931",
+      "id": "row_4112",
       "fields": {
-        "title": "[AppShell/Routes]: TC-3923-03 app.routes.spec.ts pass 100% khi test route customer moi",
-        "id": "3931",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3923",
-        "updated_at": "2026-10-21 16:29:25"
-      }
-    },
-    {
-      "id": "row_3930",
-      "fields": {
-        "title": "[AppShell/Routes]: TC-3923-02 route customer nap loadRemoteMfeRoutes customer ./Routes khi dieu huong",
-        "id": "3930",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3923",
-        "updated_at": "2026-10-21 16:29:24"
-      }
-    },
-    {
-      "id": "row_3929",
-      "fields": {
-        "title": "[AppShell/Routes]: TC-3923-01 route customer duoc khai bao duoi :id khi khoi tao appRoutes",
-        "id": "3929",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3923",
-        "updated_at": "2026-10-21 16:29:22"
-      }
-    },
-    {
-      "id": "row_3914",
-      "fields": {
-        "title": "[AppShell/Manifest] - Khôi phục remote customer ver261019-3 trong 4 manifest",
-        "id": "3914",
+        "title": "[Harness-Core/Peer2] - Adaptive Transition Service & CLI Integration",
+        "id": "4112",
         "type": "Task",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "Lead Dev",
-        "parent_item_id": "3913",
-        "updated_at": "2026-10-21 16:29:15"
+        "assigned_to_profile": "qc",
+        "created_by_profile": "supervisor",
+        "parent_item_id": "4109",
+        "updated_at": "2026-10-22 10:09:01"
       }
     },
     {
-      "id": "row_3928",
+      "id": "row_4111",
       "fields": {
-        "title": "[AppShell/Manifest]: TC-3914-04 production manifest co remote customer ver261019-3 khi doc config",
-        "id": "3928",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3914",
-        "updated_at": "2026-10-21 16:29:12"
-      }
-    },
-    {
-      "id": "row_3927",
-      "fields": {
-        "title": "[AppShell/Manifest]: TC-3914-03 qa manifest co remote customer ver261019-3 khi doc config",
-        "id": "3927",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3914",
-        "updated_at": "2026-10-21 16:29:11"
-      }
-    },
-    {
-      "id": "row_3926",
-      "fields": {
-        "title": "[AppShell/Manifest]: TC-3914-02 staging manifest co remote customer ver261019-3 khi doc config",
-        "id": "3926",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3914",
-        "updated_at": "2026-10-21 16:29:09"
-      }
-    },
-    {
-      "id": "row_3925",
-      "fields": {
-        "title": "[AppShell/Manifest]: TC-3914-01 development manifest co remote customer ver261019-3 khi doc config",
-        "id": "3925",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3914",
-        "updated_at": "2026-10-21 16:29:06"
-      }
-    },
-    {
-      "id": "row_3912",
-      "fields": {
-        "title": "[AppShell/Context] - Tích hợp shopUserList$ vào WI_USER_CONTEXT",
-        "id": "3912",
+        "title": "[Harness-Core/Peer4] - Domain & DB Schema for Self-Learning Experience Store",
+        "id": "4111",
         "type": "Task",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "Lead Dev",
-        "parent_item_id": "3911",
-        "updated_at": "2026-10-21 16:24:08"
+        "assigned_to_profile": "qc",
+        "created_by_profile": "supervisor",
+        "parent_item_id": "4109",
+        "updated_at": "2026-10-22 10:09:01"
       }
     },
     {
-      "id": "row_3921",
+      "id": "row_4115",
       "fields": {
-        "title": "[Review]: Phat hien flawed_architecture when reviewed by Supervisor",
-        "id": "3921",
+        "title": "[Harness-Core]: cargo check fails on LearningStatus when compiling harness-cli",
+        "id": "4115",
         "type": "Bug",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "supervisor",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:22:57"
-      }
-    },
-    {
-      "id": "row_3915",
-      "fields": {
-        "title": "[Review]: Phat hien flawed_architecture when reviewed by Supervisor",
-        "id": "3915",
-        "type": "Bug",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "supervisor",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:19:11"
-      }
-    },
-    {
-      "id": "row_3922",
-      "fields": {
-        "title": "[Review]: Phat hien flawed_architecture when reviewed by QC",
-        "id": "3922",
-        "type": "Bug",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "peer",
+        "assigned_to_profile": "qc",
         "created_by_profile": "qc",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:18:43"
+        "parent_item_id": "4109",
+        "updated_at": "2026-10-22 10:09:00"
       }
     },
     {
-      "id": "row_3920",
+      "id": "row_3949",
       "fields": {
-        "title": "[AppShell/Context]: TC-SUL-05 unit test context.provider.spec.ts pass 100% khi test suite chay",
-        "id": "3920",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:03:39"
-      }
-    },
-    {
-      "id": "row_3919",
-      "fields": {
-        "title": "[AppShell/Context]: TC-SUL-04 cap nhat shopUserList$ khi event TENANT_CHANGED duoc emit",
-        "id": "3919",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:03:38"
-      }
-    },
-    {
-      "id": "row_3918",
-      "fields": {
-        "title": "[AppShell/Context]: TC-SUL-03 anh xa chuan DTO id, userId, role, isActive, totalUser khi mapEmployeeListToShopUsers",
-        "id": "3918",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:03:36"
-      }
-    },
-    {
-      "id": "row_3917",
-      "fields": {
-        "title": "[AppShell/Context]: TC-SUL-02 shopUserList$ phat Observable co shareReplay khi subscriber mount",
-        "id": "3917",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:03:35"
-      }
-    },
-    {
-      "id": "row_3916",
-      "fields": {
-        "title": "[AppShell/Context]: TC-SUL-01 WI_USER_CONTEXT du 3 thuoc tinh currentUser, user$, shopUserList$ khi provide",
-        "id": "3916",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3912",
-        "updated_at": "2026-10-21 16:03:33"
-      }
-    },
-    {
-      "id": "row_3853",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-06-04 giai phong tai nguyen subscription khi component MFE bi destroy",
-        "id": "3853",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P2",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:43"
-      }
-    },
-    {
-      "id": "row_3852",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-06-03 dong bo gia tri giua getter va observable khi subscriber truy cap muon",
-        "id": "3852",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:42"
-      }
-    },
-    {
-      "id": "row_3851",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-06-02 phan biet mang rong hop le voi chua khoi tao khi subscriber vao muon",
-        "id": "3851",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:40"
-      }
-    },
-    {
-      "id": "row_3850",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-06-01 Late Subscriber nhan ngay gia tri snapshot khi mount muon qua Replay",
-        "id": "3850",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:38"
-      }
-    },
-    {
-      "id": "row_3849",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-05-04 xu ly chuyen huong login hoac thong bao khi gap loi 401 hoac 403",
-        "id": "3849",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:37"
-      }
-    },
-    {
-      "id": "row_3848",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-05-03 xoa co loi errorStatus tren giao dien khi retry API thanh cong",
-        "id": "3848",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:35"
-      }
-    },
-    {
-      "id": "row_3847",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-05-02 Observable Context van duy tri stream khi API tra ve loi HTTP 500",
-        "id": "3847",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:33"
-      }
-    },
-    {
-      "id": "row_3846",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-05-01 danh sach van hien thi khi API phu bao loi (tranh bay forkJoin)",
-        "id": "3846",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:32"
-      }
-    },
-    {
-      "id": "row_3845",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-04-04 tao phien moi tinh khong ton du cache khi dang nhap lai",
-        "id": "3845",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:30"
-      }
-    },
-    {
-      "id": "row_3844",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-04-03 chan response den muon khoi phuc session khi da logout",
-        "id": "3844",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:28"
-      }
-    },
-    {
-      "id": "row_3843",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-04-02 dong bo dang xuat da tab khi nhan storage event tu tab khac",
-        "id": "3843",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:26"
-      }
-    },
-    {
-      "id": "row_3842",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-04-01 dang xuat cung tab xoa sach toan bo Context khi goi logout",
-        "id": "3842",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:25"
-      }
-    },
-    {
-      "id": "row_3841",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-03-04 cap nhat danh sach nhan vien shopUserList$ khi doi user cung shop",
-        "id": "3841",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:22"
-      }
-    },
-    {
-      "id": "row_3840",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-03-03 tach biet tuyet doi ShopUserDto.id va ShopUserDto.userId khi doc DTO",
-        "id": "3840",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:21"
-      }
-    },
-    {
-      "id": "row_3839",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-03-02 thu hoi quyen Admin ngay lap tuc khi doi sang tai khoan Thu ngan",
-        "id": "3839",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:19"
-      }
-    },
-    {
-      "id": "row_3838",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-03-01 tai lai User Context va Permissions khi doi tai khoan cung shopId",
-        "id": "3838",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:17"
-      }
-    },
-    {
-      "id": "row_3837",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-02-04 trang thai hoi tu dung ve Shop B khi toggle doi shop lien tuc",
-        "id": "3837",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P2",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:16"
-      }
-    },
-    {
-      "id": "row_3836",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-02-03 header HTTP shopId dong bo tuyet doi voi Shop B khi chuyen shop",
-        "id": "3836",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:14"
-      }
-    },
-    {
-      "id": "row_3835",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-02-02 chan phan hoi muon cua Shop A ghi de khi Shop B da nhan xong",
-        "id": "3835",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:12"
-      }
-    },
-    {
-      "id": "row_3834",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-02-01 huy in-flight request Shop A khi doi sang Shop B",
-        "id": "3834",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:10"
-      }
-    },
-    {
-      "id": "row_3833",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-01-04 dong bo ban dich i18n khi mo truc tiep URL remote MFE",
-        "id": "3833",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:09"
-      }
-    },
-    {
-      "id": "row_3832",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-01-03 redirect an toan ve select-shop khi shopId trong URL khong hop le",
-        "id": "3832",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:07"
-      }
-    },
-    {
-      "id": "row_3831",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-01-02 F5 reload khong dung timeout gia lap khi mang cham",
-        "id": "3831",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:05"
-      }
-    },
-    {
-      "id": "row_3830",
-      "fields": {
-        "title": "[WiOnPOS/Integration]: TC-INT-01-01 khoi tao context khi mo truc tiep URL kem shopId hop le",
-        "id": "3830",
-        "type": "Testcase",
-        "state": "Closed",
-        "priority": "P0",
-        "assigned_to_profile": "QC",
-        "created_by_profile": "QC",
-        "parent_item_id": "3829",
-        "updated_at": "2026-10-21 15:30:04"
-      }
-    },
-    {
-      "id": "row_3829",
-      "fields": {
-        "title": "[WiOnPOS Integration] - Nghiên cứu và thẩm thấu quy chuẩn Providers và Contexts",
-        "id": "3829",
-        "type": "Task",
-        "state": "Closed",
-        "priority": "P1",
-        "assigned_to_profile": "lead",
-        "created_by_profile": "supervisor",
-        "parent_item_id": "",
-        "updated_at": "2026-10-21 15:29:58"
-      }
-    },
-    {
-      "id": "row_3870",
-      "fields": {
-        "title": "[WiOnPOS Integration] - Tích hợp Remote Customer và Menu Sidebar vào App Shell",
-        "id": "3870",
+        "title": "[Harness2] - Reverse Engineering va Architectural Specification of Harness2 Framework",
+        "id": "3949",
         "type": "Epic",
         "state": "Closed",
         "priority": "P1",
-        "assigned_to_profile": "lead",
+        "assigned_to_profile": "qc",
         "created_by_profile": "supervisor",
         "parent_item_id": "",
-        "updated_at": "2026-10-21 15:29:55"
+        "updated_at": "2026-10-22 09:44:59"
+      }
+    },
+    {
+      "id": "row_4108",
+      "fields": {
+        "title": "[recursion]: [D3-Zero-Ground-Truth-Seam]: Cô lập hoàn toàn bộ đo Judge ra khỏi (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to to_dict",
+        "id": "4108",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:53"
+      }
+    },
+    {
+      "id": "row_4107",
+      "fields": {
+        "title": "[recursion]: [D3-Zero-Ground-Truth-Seam]: Cô lập hoàn toàn bộ đo Judge ra khỏi (equivalence_partitioning #3) when valid input is provided to to_dict",
+        "id": "4107",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:52"
+      }
+    },
+    {
+      "id": "row_4106",
+      "fields": {
+        "title": "[recursion]: [D3-Zero-Ground-Truth-Seam]: Cô lập hoàn toàn bộ đo Judge ra khỏi (boundary_value #2) when invalid/edge input or boundary violation is passed to to_dict",
+        "id": "4106",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:51"
+      }
+    },
+    {
+      "id": "row_4105",
+      "fields": {
+        "title": "[recursion]: [D3-Zero-Ground-Truth-Seam]: Cô lập hoàn toàn bộ đo Judge ra khỏi (boundary_value #1) when invalid/edge input or boundary violation is passed to to_dict",
+        "id": "4105",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:51"
+      }
+    },
+    {
+      "id": "row_4104",
+      "fields": {
+        "title": "[recursion]: [D2-Budget-Conservation-Formula]: Khóa chặt công thức bất biến R= (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to fell_back",
+        "id": "4104",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:50"
+      }
+    },
+    {
+      "id": "row_4103",
+      "fields": {
+        "title": "[recursion]: [D2-Budget-Conservation-Formula]: Khóa chặt công thức bất biến R= (equivalence_partitioning #3) when valid input is provided to fell_back",
+        "id": "4103",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:50"
+      }
+    },
+    {
+      "id": "row_4102",
+      "fields": {
+        "title": "[recursion]: [D2-Budget-Conservation-Formula]: Khóa chặt công thức bất biến R= (boundary_value #2) when invalid/edge input or boundary violation is passed to fell_back",
+        "id": "4102",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:49"
+      }
+    },
+    {
+      "id": "row_4101",
+      "fields": {
+        "title": "[recursion]: [D2-Budget-Conservation-Formula]: Khóa chặt công thức bất biến R= (boundary_value #1) when invalid/edge input or boundary violation is passed to fell_back",
+        "id": "4101",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:49"
+      }
+    },
+    {
+      "id": "row_4100",
+      "fields": {
+        "title": "[recursion]: [D1-Substrate-Decoupling]: Tách biệt hoàn toàn tầng Logic đệ quy  (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4100",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:48"
+      }
+    },
+    {
+      "id": "row_4099",
+      "fields": {
+        "title": "[recursion]: [D1-Substrate-Decoupling]: Tách biệt hoàn toàn tầng Logic đệ quy  (equivalence_partitioning #3) when valid input is provided to run_parallel",
+        "id": "4099",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:48"
+      }
+    },
+    {
+      "id": "row_4098",
+      "fields": {
+        "title": "[recursion]: [D1-Substrate-Decoupling]: Tách biệt hoàn toàn tầng Logic đệ quy  (boundary_value #2) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4098",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:47"
+      }
+    },
+    {
+      "id": "row_4097",
+      "fields": {
+        "title": "[recursion]: [D1-Substrate-Decoupling]: Tách biệt hoàn toàn tầng Logic đệ quy  (boundary_value #1) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4097",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:46"
+      }
+    },
+    {
+      "id": "row_4096",
+      "fields": {
+        "title": "[recursion]: Việc phân chia tập huấn luyện/kiểm thử (`split_tasks.py`) sử dụng (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to to_dict",
+        "id": "4096",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:46"
+      }
+    },
+    {
+      "id": "row_4095",
+      "fields": {
+        "title": "[recursion]: Việc phân chia tập huấn luyện/kiểm thử (`split_tasks.py`) sử dụng (equivalence_partitioning #3) when valid input is provided to to_dict",
+        "id": "4095",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:45"
+      }
+    },
+    {
+      "id": "row_4094",
+      "fields": {
+        "title": "[recursion]: Việc phân chia tập huấn luyện/kiểm thử (`split_tasks.py`) sử dụng (boundary_value #2) when invalid/edge input or boundary violation is passed to to_dict",
+        "id": "4094",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:44"
+      }
+    },
+    {
+      "id": "row_4093",
+      "fields": {
+        "title": "[recursion]: Việc phân chia tập huấn luyện/kiểm thử (`split_tasks.py`) sử dụng (boundary_value #1) when invalid/edge input or boundary violation is passed to to_dict",
+        "id": "4093",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:43"
+      }
+    },
+    {
+      "id": "row_4092",
+      "fields": {
+        "title": "[recursion]: Sử dụng bảng mã băm SHA-256 đối với 48 tệp mã nguồn bên thứ 3 (th (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4092",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:43"
+      }
+    },
+    {
+      "id": "row_4091",
+      "fields": {
+        "title": "[recursion]: Sử dụng bảng mã băm SHA-256 đối với 48 tệp mã nguồn bên thứ 3 (th (equivalence_partitioning #3) when valid input is provided to run_parallel",
+        "id": "4091",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:42"
+      }
+    },
+    {
+      "id": "row_4090",
+      "fields": {
+        "title": "[recursion]: Sử dụng bảng mã băm SHA-256 đối với 48 tệp mã nguồn bên thứ 3 (th (boundary_value #2) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4090",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:42"
+      }
+    },
+    {
+      "id": "row_4089",
+      "fields": {
+        "title": "[recursion]: Sử dụng bảng mã băm SHA-256 đối với 48 tệp mã nguồn bên thứ 3 (th (boundary_value #1) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4089",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:41"
+      }
+    },
+    {
+      "id": "row_4088",
+      "fields": {
+        "title": "[recursion]: **Anti-Leak Integrity Guard (`dependencies/ASSETS.json`)**: (boundary_value #4) when invalid/edge input or boundary violation is passed to run_sequential",
+        "id": "4088",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:41"
+      }
+    },
+    {
+      "id": "row_4087",
+      "fields": {
+        "title": "[recursion]: **Anti-Leak Integrity Guard (`dependencies/ASSETS.json`)**: (boundary_value #3) when invalid/edge input or boundary violation is passed to run_sequential",
+        "id": "4087",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:40"
+      }
+    },
+    {
+      "id": "row_4086",
+      "fields": {
+        "title": "[recursion]: **Anti-Leak Integrity Guard (`dependencies/ASSETS.json`)**: (decision_table #2) when invalid/edge input or boundary violation is passed to run_sequential",
+        "id": "4086",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:40"
+      }
+    },
+    {
+      "id": "row_4085",
+      "fields": {
+        "title": "[recursion]: **Anti-Leak Integrity Guard (`dependencies/ASSETS.json`)**: (decision_table #1) when valid input is provided to run_sequential",
+        "id": "4085",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:39"
+      }
+    },
+    {
+      "id": "row_4084",
+      "fields": {
+        "title": "[recursion]: **Deny-Parity & Tool Gating (`presets/settings/v1_14.json`)**: (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to fell_back",
+        "id": "4084",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:39"
+      }
+    },
+    {
+      "id": "row_4083",
+      "fields": {
+        "title": "[recursion]: **Deny-Parity & Tool Gating (`presets/settings/v1_14.json`)**: (equivalence_partitioning #3) when valid input is provided to fell_back",
+        "id": "4083",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:38"
+      }
+    },
+    {
+      "id": "row_4082",
+      "fields": {
+        "title": "[recursion]: **Deny-Parity & Tool Gating (`presets/settings/v1_14.json`)**: (boundary_value #2) when invalid/edge input or boundary violation is passed to fell_back",
+        "id": "4082",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:37"
+      }
+    },
+    {
+      "id": "row_4081",
+      "fields": {
+        "title": "[recursion]: **Deny-Parity & Tool Gating (`presets/settings/v1_14.json`)**: (boundary_value #1) when invalid/edge input or boundary violation is passed to fell_back",
+        "id": "4081",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:37"
+      }
+    },
+    {
+      "id": "row_4080",
+      "fields": {
+        "title": "[recursion]: Dựa trên công cụ REA và đối soát tệp cấu hình trong `projects/har (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to ok",
+        "id": "4080",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:36"
+      }
+    },
+    {
+      "id": "row_4079",
+      "fields": {
+        "title": "[recursion]: Dựa trên công cụ REA và đối soát tệp cấu hình trong `projects/har (equivalence_partitioning #3) when valid input is provided to ok",
+        "id": "4079",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:36"
+      }
+    },
+    {
+      "id": "row_4078",
+      "fields": {
+        "title": "[recursion]: Dựa trên công cụ REA và đối soát tệp cấu hình trong `projects/har (boundary_value #2) when invalid/edge input or boundary violation is passed to ok",
+        "id": "4078",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:35"
+      }
+    },
+    {
+      "id": "row_4077",
+      "fields": {
+        "title": "[recursion]: Dựa trên công cụ REA và đối soát tệp cấu hình trong `projects/har (boundary_value #1) when invalid/edge input or boundary violation is passed to ok",
+        "id": "4077",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:35"
+      }
+    },
+    {
+      "id": "row_4076",
+      "fields": {
+        "title": "[recursion]: Lưu vào Thư viện Miền R tại: `<runs_dir>/<namespace>/<domain>/har (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4076",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:34"
+      }
+    },
+    {
+      "id": "row_4075",
+      "fields": {
+        "title": "[recursion]: Lưu vào Thư viện Miền R tại: `<runs_dir>/<namespace>/<domain>/har (equivalence_partitioning #3) when valid input is provided to run_parallel",
+        "id": "4075",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:33"
+      }
+    },
+    {
+      "id": "row_4074",
+      "fields": {
+        "title": "[recursion]: Lưu vào Thư viện Miền R tại: `<runs_dir>/<namespace>/<domain>/har (boundary_value #2) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4074",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:32"
+      }
+    },
+    {
+      "id": "row_4073",
+      "fields": {
+        "title": "[recursion]: Lưu vào Thư viện Miền R tại: `<runs_dir>/<namespace>/<domain>/har (boundary_value #1) when invalid/edge input or boundary violation is passed to run_parallel",
+        "id": "4073",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:31"
+      }
+    },
+    {
+      "id": "row_4072",
+      "fields": {
+        "title": "[recursion]: Reflector LLM đối chiếu sự khác biệt giữa Harness được chọn và Ba (boundary_value #4) when invalid/edge input or boundary violation is passed to run_mode",
+        "id": "4072",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:30"
+      }
+    },
+    {
+      "id": "row_4071",
+      "fields": {
+        "title": "[recursion]: Reflector LLM đối chiếu sự khác biệt giữa Harness được chọn và Ba (boundary_value #3) when invalid/edge input or boundary violation is passed to run_mode",
+        "id": "4071",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:30"
+      }
+    },
+    {
+      "id": "row_4070",
+      "fields": {
+        "title": "[recursion]: Reflector LLM đối chiếu sự khác biệt giữa Harness được chọn và Ba (decision_table #2) when invalid/edge input or boundary violation is passed to run_mode",
+        "id": "4070",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:29"
+      }
+    },
+    {
+      "id": "row_4069",
+      "fields": {
+        "title": "[recursion]: Reflector LLM đối chiếu sự khác biệt giữa Harness được chọn và Ba (decision_table #1) when valid input is provided to run_mode",
+        "id": "4069",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:28"
+      }
+    },
+    {
+      "id": "row_4068",
+      "fields": {
+        "title": "[recursion]: Chọn ứng viên xuất sắc nhất và trích xuất lý do (<why>). (equivalence_partitioning #4) when invalid/edge input or boundary violation is passed to run_sequential",
+        "id": "4068",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:28"
+      }
+    },
+    {
+      "id": "row_4067",
+      "fields": {
+        "title": "[recursion]: Chọn ứng viên xuất sắc nhất và trích xuất lý do (<why>). (equivalence_partitioning #3) when valid input is provided to run_sequential",
+        "id": "4067",
+        "type": "Testcase",
+        "state": "Closed",
+        "priority": "P0",
+        "assigned_to_profile": "qc",
+        "created_by_profile": "QC",
+        "parent_item_id": "3949",
+        "updated_at": "2026-10-22 09:44:27"
       }
     }
   ],
-  "synced_at": "2026-10-21 16:32:11"
+  "synced_at": "2026-10-22 10:09:41"
 }

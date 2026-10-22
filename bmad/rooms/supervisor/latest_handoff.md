@@ -1,21 +1,20 @@
 # BIÊN BẢN BÀN GIAO: Supervisor
 
-- **Thời gian**: `2026-10-21 16:53:15 +0700`
+- **Thời gian**: `2026-10-22 12:47:02 +0700`
 - **Agent bàn giao**: `Supervisor`
-- **Tóm tắt**: Bổ sung hoàn thiện 3 kỹ năng cốt lõi: 7-Point Review Gate, QC Strict DTO, và Anti-Leak Pre-commit Guard
+- **Tóm tắt**: Đã phát lệnh và kiểm tra xác nhận: toàn bộ 8 Agent trên Orca đã đọc trực tiếp AGENTS.md và Profile vai trò, cam kết tuân thủ 100% quy trình điều hành SLPPC
 
 ## 1. Đã hoàn thành trong phiên
-- [x] 1. Nâng cấp skills/lead-review/SKILL.md lên 7-Point Review Gate (bổ sung cổng Store Reuse Gate và Strict Typing Gate)
-- [x] 2. Nâng cấp skills/qc/SKILL.md bổ sung Bước 2.5 Cổng kiểm tra nghiêm ngặt kiểu dữ liệu & schema (cấm any, unknown, || chắp vá, Optional vô lý)
-- [x] 3. Nâng cấp scripts/git_pre_commit_guard.py tự động chặn stage projects/ và quét secret API key
-- [x] 4. Commit f4307b1 và push sạch sẽ lên origin main
+- [x] Toàn bộ 8 Agent (PM, Lead, Peer 1, Peer 2, Peer 3, Peer 4, Design, QC) đã đọc trực tiếp AGENTS.md (Mục 2 & 4) và profile cá nhân trên terminal Orca, phản hồi xác nhận cam kết rào cản vai trò (cấm Lead ôm code, cấm Dev tự đóng task, cấm bypass PM, 100% Zero-Search, 100% Strict Typing)
 
 ## 2. File đã tạo / chỉnh sửa
-- `skills/lead-review/SKILL.md`
-- `skills/qc/SKILL.md`
-- `scripts/git_pre_commit_guard.py`
+- `AGENTS.md`
+- `profiles/pm.md`
+- `profiles/lead.md`
+- `profiles/peer*.md`
+- `profiles/qc.md`
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: [Supervisor] Upgrade Skills & Security Guards
-- **Bàn giao hành động tiếp**: Sẵn sàng nhận nhiệm vụ mới từ User
+- **Trọng tâm hiện tại**: [SLPPC Alignment] Full Room Workflow Directives Broadcast & Confirmation
+- **Bàn giao hành động tiếp**: Sẵn sàng nhận chỉ thị / Epic mới từ User theo đúng chu trình 5 cổng SLPPC
 

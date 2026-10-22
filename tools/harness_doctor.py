@@ -32,7 +32,7 @@ _HEAL_HISTORY: List[Dict[str, Any]] = []
 
 
 def _load_env():
-    for env_path in (BASE_DIR / ".env", BASE_DIR / "harness-ui" / ".env"):
+    for env_path in (BASE_DIR / ".env",):
         if not env_path.is_file():
             continue
         try:
@@ -144,7 +144,7 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
     latency_ms = int((time.time() - t0) * 1000)
 
     cfg_path = Path.home() / ".paseo" / "config.json"
-    required_roles = {"supervisor", "lead", "peer", "qc"}
+    required_roles = {"supervisor", "pm", "lead", "peer", "qc"}
     found_roles = set()
     cfg_valid = False
     if cfg_path.is_file():
@@ -384,37 +384,38 @@ def check_work_items_hygiene(auto_heal: bool = True) -> Dict[str, Any]:
         }
 
 
-def check_frontend_build(auto_heal: bool = True) -> Dict[str, Any]:
-    """6. Check Astro Frontend Build (harness-ui/dist/index.html)."""
-    index_file = BASE_DIR / "harness-ui" / "dist" / "index.html"
-    astro_dir = BASE_DIR / "harness-ui" / "dist" / "_astro"
+def check_native_binary_and_learning(auto_heal: bool = True) -> Dict[str, Any]:
+    """6. Check Native Rust Binary (scripts/bin/harness-cli) & Learning Store."""
+    binary_path = BASE_DIR / "scripts" / "bin" / "harness-cli"
     t0 = time.time()
 
-    exists = index_file.is_file() and astro_dir.is_dir()
+    exists = binary_path.is_file() and os.access(str(binary_path), os.X_OK)
     healed = None
-    if not exists and auto_heal and (BASE_DIR / "harness-ui" / "package.json").is_file():
-        try:
-            subprocess.run(
-                ["npm", "run", "build"],
-                cwd=str(BASE_DIR / "harness-ui"),
-                check=False,
-                timeout=60,
-            )
-            exists = index_file.is_file()
-            healed = _record_heal("frontend_build", "Chạy npm run build tái tạo harness-ui/dist/index.html", exists)
-        except Exception as e:
-            healed = _record_heal("frontend_build", "Build harness-ui", False, str(e))
+    if not exists and auto_heal:
+        source_bin = BASE_DIR / "projects" / "harness" / "target" / "release" / "harness-cli"
+        if source_bin.is_file():
+            binary_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(source_bin), str(binary_path))
+            binary_path.chmod(0o755)
+            exists = True
+            healed = _record_heal("native_binary", "Sao chép binary harness-cli release vào scripts/bin/", exists)
 
-    size_kb = round(index_file.stat().st_size / 1024, 1) if index_file.is_file() else 0
-    js_count = len(list(astro_dir.glob("*.js"))) if astro_dir.is_dir() else 0
+    version_str = "N/A"
+    if exists:
+        try:
+            res = subprocess.run([str(binary_path), "--version"], capture_output=True, text=True, timeout=5)
+            version_str = res.stdout.strip()
+        except Exception:
+            pass
+
     latency_ms = int((time.time() - t0) * 1000)
 
     return {
-        "id": "frontend_build",
-        "name": "Astro Frontend Bundle (harness-ui/dist)",
-        "status": "ok" if (exists and js_count > 0) else "error",
+        "id": "native_binary",
+        "name": "Harness Native CLI Binary & Self-Learning Engine",
+        "status": "ok" if exists else "warn",
         "latency_ms": latency_ms,
-        "summary": f"dist/index.html ({size_kb} KB) • {js_count} JS islands" if exists else "Thiếu bản build harness-ui/dist",
+        "summary": f"{version_str} ({round(binary_path.stat().st_size / (1024*1024), 1)} MB)" if exists else "Chưa có binary scripts/bin/harness-cli",
         "healed": healed,
     }
 
@@ -486,7 +487,7 @@ def run_doctor(auto_heal: bool = True, in_process: bool = False) -> Dict[str, An
         check_floci_and_local_db(auto_heal=auto_heal),
         check_codex_room_runtimes(auto_heal=auto_heal),
         check_work_items_hygiene(auto_heal=auto_heal),
-        check_frontend_build(auto_heal=auto_heal),
+        check_native_binary_and_learning(auto_heal=auto_heal),
         check_hooks_and_git(auto_heal=auto_heal),
         check_recent_error_logs(),
     ]

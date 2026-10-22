@@ -51,6 +51,10 @@ Trước khi chạy test và duyệt đóng task, QC BẮT BUỘC phải rà so�
 3. **Store & Dependency Verification**:
    - Kiểm tra các root store (`MemberStore`, `AccountStore`): Cấm bọc `new Optional()` vô căn cứ trong `deps` của provider.
    - Cấm inject raw HTTP service khi đã có store quản trị tập trung.
+4. **Anti-Leak & Sensitive Data Gate (Kiểm Tra Thông Tin Nhạy Cảm & Địa Chỉ Thực Tế)**:
+   - Rà soát toàn bộ diff và tài liệu: Cấm tuyệt đối tên công ty nội bộ, địa chỉ thực tế (số nhà, tên đường, khu công nghiệp, quận huyện), số điện thoại, token bí mật.
+   - Chạy scanner tự động (`scripts/check-sensitive-info.py` hoặc `git_pre_commit_guard.py`). Nếu phát hiện dù chỉ 1 pattern nhạy cảm ➔ **REJECT lập tức, tạo Bug P1**.
+   - Đối với dự án Rust: Bắt buộc chạy `cargo fmt --check` để đảm bảo không bị gãy release pipeline.
 
 ### Bước 3: Đánh giá kết quả & Quyết định đóng mở trên Harness DB
 - **Nếu toàn bộ tests PASS và Coverage đạt 100%**:

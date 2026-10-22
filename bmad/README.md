@@ -14,7 +14,7 @@ bmad/
 ├── modules/                      # Tóm tắt vai trò, API & công nghệ từng phân hệ
 │   ├── app-shell.md              # Host Shell (Layout, Auth Guard, Menu, Remote Loader)
 │   ├── mfe-cdp.md                # Micro-Frontend CDP (Khách hàng, Customer 360, Raw Event)
-│   ├── harness-ui.md             # Harness SLPC Live Dashboard (:8765, Astro + Bàn cờ Caro)
+│   ├── harness-cli.md            # Native Rust Harness CLI (v0.1.14)
 │   └── tds-ui.md                 # Thư viện Design System (Components, Tokens, Grid)
 ├── flows/                        # Luồng dữ liệu & tương tác người dùng
 │   └── customer-360-flow.md      # Luồng điều hướng click mở /customers/:id

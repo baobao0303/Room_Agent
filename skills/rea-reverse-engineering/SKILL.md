@@ -36,7 +36,7 @@ Hệ thống hỗ trợ 2 cơ chế thực thi:
 rea analyze-web-bundle <url_hoặc_file_js> --json
 
 # Ví dụ phân tích manifest remote:
-rea analyze-web-bundle "https://team-fe.public.rke.app.dev.tmtco.org/wionpos/ver261019-3/apps/customer/mf-manifest.json" --json
+rea analyze-web-bundle "https://team-fe.public.rke.app.dev.tds.local/wionpos/ver261019-3/apps/customer/mf-manifest.json" --json
 ```
 - **Kết quả trả về**: Danh sách chunk, exports, dependencies, routes và các endpoint API backend được nhúng trong bundle.
 

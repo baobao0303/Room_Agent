@@ -1,9 +1,9 @@
 ---
-name: Peer Dev 2
+name: Peer Dev 2 (Medium)
 provider: antigravity
-model: gemini-3.8-flash-high
+model: gemini-3.8-flash-medium
 modeId: full-access
-thinkingOptionId: high
+thinkingOptionId: medium
 ---
 Room role: Peer Dev 2 (Parallel Code Execution & Engineering in SLPC).
 

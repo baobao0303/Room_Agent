@@ -34,16 +34,27 @@ usage: 304 in / 37 out   cost: 0
 Use `-m <model>` to switch models. Env overrides: `SYSTEMONE_URL`,
 `SYSTEMONE_KEY`, `SYSTEMONE_MODEL`.
 
-## Hard constraints
+## Endpoint & Types
 
-- **Only `type: "noul"` works.** Every other type (`bool`, `number`, `text`,
-  `choice`, `score`, `enum`, `scale`, `label`) returns 400 or 422.
-- **Use the `-free` model.** `oc/jev-1.13` returns 401 rate-limited;
-  `ocz/jev-1.13` returns 402 insufficient funds. `oc/jev-1.13-free` and
-  `ocz/jev-1.13-free` both work.
-- **`stream`, `tools`, `system`, and `messages` are all rejected** with
-  400 `Invalid request`. Both `state` and `questions` are required fields.
-- No question history: each call is stateless, so re-send full context in `state`.
+Endpoint: `http://100.124.36.46:8008/v1/systemone` (Model: `kev-latest`).
+
+Payload structure requires `state` (context string) and `questions` (map of question objects).
+
+Supported question types:
+1. `noul`: Binary Yes/No confidence `0.0 - 1.0`.
+   - Schema: `{"type": "noul", "instructions": "..."}`
+   - Response: `{"type": "noul", "noul": <float>}`
+2. `choice`: Multi-class routing/classification.
+   - Schema: `{"type": "choice", "instructions": "...", "criteria": {"<key>": "<desc>"}}`
+   - Response: `{"type": "choice", "choice": "<key>", "confidence": <float>, "probabilities": {...}}`
+3. `score`: Discrete/continuous milestone evaluation.
+   - Schema: `{"type": "score", "instructions": "...", "criteria": ["0: ...", "1: ..."]}`
+   - Response: `{"type": "score", "score": <float>, "legend": {...}}`
+
+## Constraints
+
+- `stream`, `tools`, `system`, and `messages` rejected with 400.
+- Stateless: pass complete context in `state`.
 
 ## Reading the score
 

@@ -53,7 +53,7 @@ CDK phải cùng major version với Angular core (18.x).
 **Giải pháp:** Xem `reference/install-guide.md` Section 5. Add 2 CDN link vào `<head>`:
 
 ```html
-<link rel="stylesheet" href="https://static-tds-public-projects.tmtco.org/assets/font-icon/style.css">
+<link rel="stylesheet" href="https://static-tds-public-projects.tds.local/assets/font-icon/style.css">
 ```
 
 ### Pipe date/i18n báo lỗi
