@@ -17,11 +17,11 @@
   },
   "peer": {
     "role": "peer",
-    "status": "idle",
-    "task_id": "7",
-    "activity": "Standby - Task #7 Closed",
-    "last_ping_ts": 1792648354.3722765,
-    "last_ping_str": "2026-10-22 12:52:34"
+    "status": "working",
+    "task_id": "2",
+    "activity": "Active [Authentication] – Khách hàn",
+    "last_ping_ts": 1792648652.6721954,
+    "last_ping_str": "2026-10-22 12:57:32"
   },
   "peer2": {
     "role": "peer2",

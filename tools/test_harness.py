@@ -48,7 +48,7 @@ def run_tests():
         wi_type="Task",
         title="Auth Module - Tích hợp Google OAuth SDK",
         priority="P2",
-        assigned_to="lead_dev",
+        assigned_to="peer_dev_1",
         parent_id=story_id
     )
     task_id = task.get("id")

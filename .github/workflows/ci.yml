@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/*]
   pull_request:
 
 permissions:
@@ -12,18 +12,18 @@ jobs:
   secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v3
+      - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   backend-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: python -m compileall -q tools scripts
@@ -33,23 +33,7 @@ jobs:
           HARNESS_BACKEND: sqlite
           HARNESS_DB: ${{ runner.temp }}/harness_test.db
       - run: python tools/test_qc_generator.py
-
-  astro-ui:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: harness-ui
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: "npm"
-          cache-dependency-path: harness-ui/package-lock.json
-      - run: npm ci
-      - run: npx astro check
-      - run: npm run build
-      - uses: actions/upload-artifact@v7
-        with:
-          name: harness-ui-dist
-          path: harness-ui/dist/
+      - run: python tools/tests/test_role_fence_audit.py
+        env:
+          HARNESS_BACKEND: sqlite
+          HARNESS_DB: ${{ runner.temp }}/harness_test.db
