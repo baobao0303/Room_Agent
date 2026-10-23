@@ -9,6 +9,14 @@ cd "$SCRIPT_DIR"
 
 echo "=== [ORCA SLPC MULTI-AGENT ROOM LAUNCHER] ==="
 
+# RTK (Rust Token Killer) Check & Path Setup
+if command -v rtk &> /dev/null || [ -f "$HOME/.local/bin/rtk" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+    echo "⚡ [RTK Active]: Rust Token Killer v$(rtk --version 2>/dev/null | awk '{print $2}') sẵn sàng, nén 60-90% bash output."
+else
+    echo "⚠️  [RTK Missing]: Khuyến nghị cài đặt RTK (curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh) để tiết kiệm 70% token."
+fi
+
 if ! command -v orca &> /dev/null; then
     echo "⚠️  Lệnh 'orca' chưa có trong PATH. Hãy thêm ~/.config/orca/linux-orca-cli-shim hoặc mở Orca Desktop."
     exit 1
@@ -116,6 +124,9 @@ for role in pm lead peer peer2 peer3 peer4 design qc; do
         if [ -n "$reasoning" ]; then
             orca terminal send --terminal "$handle" --text "/reasoning $reasoning" --enter &>/dev/null || true
         fi
+
+        # Issue #5: Nạp cấu hình RTK proxy per-profile
+        orca terminal send --terminal "$handle" --text "source \"$SCRIPT_DIR/scripts/rtk_profile_env.sh\" \"$role\"" --enter &>/dev/null || true
 
         # Lưu registry
         python3 -c "

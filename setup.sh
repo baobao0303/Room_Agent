@@ -49,6 +49,13 @@ else
     echo "  ⚠️  Chưa tìm thấy 'hermes' trong PATH."
 fi
 
+if command -v rtk &> /dev/null || [ -f "$HOME/.local/bin/rtk" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+    echo "  ✅ Tìm thấy Rust Token Killer (RTK): $(rtk --version 2>/dev/null || echo 'v1.0.1')"
+else
+    echo "  ⚠️  Chưa cài đặt RTK (khuyến nghị: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh)."
+fi
+
 # 3. Khởi tạo file môi trường .env
 echo "⚙️  [2/6] Kiểm tra cấu hình .env..."
 if [ ! -f .env ]; then
@@ -76,10 +83,10 @@ fi
 echo "📂 [3/6] Cấu hình thư mục, Skills & Sub-Agents..."
 mkdir -p ~/.hermes/skills ~/.hermes/profiles
 mkdir -p ~/.claude/agents ~/.paseo/claude-config/agents ~/.codex/skills/claude-code-sub-agents
-mkdir -p "$SCRIPT_DIR/bmad/rooms/supervisor" "$SCRIPT_DIR/bmad/rooms/lead" \
-         "$SCRIPT_DIR/bmad/rooms/peer" "$SCRIPT_DIR/bmad/rooms/qc" \
-         "$SCRIPT_DIR/bmad/rooms/tasks" "$SCRIPT_DIR/bmad/rooms/archive" \
-         "$SCRIPT_DIR/bmad/rooms/violations"
+mkdir -p "$SCRIPT_DIR/bmad/rooms/supervisor" "$SCRIPT_DIR/bmad/rooms/pm" \
+         "$SCRIPT_DIR/bmad/rooms/lead" "$SCRIPT_DIR/bmad/rooms/peer" \
+         "$SCRIPT_DIR/bmad/rooms/qc" "$SCRIPT_DIR/bmad/rooms/tasks" \
+         "$SCRIPT_DIR/bmad/rooms/archive" "$SCRIPT_DIR/bmad/rooms/violations"
 
 # Liên kết toàn bộ 80+ skills từ thư mục skills/
 if [ -d "$SCRIPT_DIR/skills" ]; then
@@ -104,7 +111,7 @@ if [ -d "$SCRIPT_DIR/.claude/agents" ]; then
 fi
 
 # 5. Cập nhật Profiles & Paseo Daemon
-echo "🤖 [4/6] Đồng bộ Profiles SLPC (Supervisor, Lead, Peer 1..4, Peer Design, QC)..."
+echo "🤖 [4/6] Đồng bộ Profiles SLPPC (Supervisor, PM, Lead, Peer 1..4, Peer Design, QC, Security)..."
 python3 "$SCRIPT_DIR/patch_paseo.py"
 
 # Cài đặt Git Pre-commit Guard (Chặn hardcoded hex & vượt quyền)
@@ -137,13 +144,13 @@ echo "  ✅ Đồng bộ Aevum Kanban snapshot thành công."
 echo "🎯 [6/6] Sẵn sàng vận hành hệ thống!"
 echo "======================================================================"
 echo "✨ SETUP HOÀN TẤT 100%! CÁC LỆNH HỮU ÍCH KHI SỬ DỤNG:"
-echo "  1. Khởi chạy 8 Agent tabs trên Orca:  ./scripts/launch_room.sh"
+echo "  1. Khởi chạy 9 Agent tabs trên Orca:  ./scripts/launch_room.sh"
 echo "  2. Tra cứu Kanban / Backlog:          ./scripts/harness query backlog"
 echo "  3. Kiểm tra nhịp tim Agent:           python3 tools/agent_heartbeat.py status"
 echo "  4. Khởi động Aevum App (:8080 :3010): ./scripts/start_aevum.sh"
 echo "======================================================================"
 
 if [[ "$1" == "--launch" || "$1" == "-l" ]]; then
-    echo "🚀 Tự động kích hoạt toàn bộ 8 Agent tabs qua scripts/launch_room.sh..."
+    echo "🚀 Tự động kích hoạt toàn bộ 9 Agent tabs qua scripts/launch_room.sh..."
     bash "$SCRIPT_DIR/scripts/launch_room.sh"
 fi

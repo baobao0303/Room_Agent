@@ -33,7 +33,6 @@ WEB_DASHBOARD_FILE = BASE_DIR / "tools/web/skill_dashboard.html"
 TARGET_DIRS = [
     Path(os.path.expanduser("~/.claude/skills")),
     Path(os.path.expanduser("~/.paseo/skills")),
-    BASE_DIR / ".claude/skills",
     Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills"),
 ]
 
@@ -103,7 +102,12 @@ def get_all_skills() -> List[Dict[str, Any]]:
     if MASTER_REGISTRY.is_dir():
         for item in MASTER_REGISTRY.iterdir():
             if item.is_dir():
-                add_skill_entry(item, "Master Registry", "master", is_master=True)
+                if (item / "SKILL.md").exists():
+                    add_skill_entry(item, "Master Registry", "master", is_master=True)
+                else:
+                    for sub_item in item.iterdir():
+                        if sub_item.is_dir() and (sub_item / "SKILL.md").exists():
+                            add_skill_entry(sub_item, f"Master Registry ({item.name})", "master", is_master=True)
 
     # 2. Existing in Paseo Project .agents/skills
     proj_skills = Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills")

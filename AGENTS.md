@@ -128,6 +128,12 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 5
   - Đồng bộ và lập chỉ mục DB: `python3 tools/skill_manager.py sync-db` | `python3 tools/skill_manager.py sync`
   - Liệt kê toàn bộ: `python3 tools/skill_manager.py list [--json]`
 
+### J. Loop Engineering & Mechanical Verification Gate (Skill `loop-engineering`)
+- **Triết lý**: Xây dựng hệ thống tự động hóa vòng lặp khép kín (Automatic + Closed Loop) thay thế cho luồng viết -> chờ -> prompt thủ công.
+- **Nguyên tắc bất biến ("Never let the AI verify its own done")**: Maker (Dev viết code) và Checker (Cổng nghiệm thu kiểm thử) bắt buộc phải tách biệt độc lập 100%. Cấm tuyệt đối Dev tự tin vào chữ "done" của chính mình (`premature_close`). Cổng kiểm soát phải là cơ học (mechanical Stop gate - exit code test/build/lint) hoặc QC độc lập.
+- **Vòng lặp tự sửa lỗi (Autonomous Self-Healing Loop)**: Khi nhận task, Peer Dev tự động lặp (code -> test -> fix -> test) trong giới hạn lượt chạy (turn ceiling) cho đến khi toàn bộ test xanh 100% trước khi nộp `Resolved`.
+- **Nghiệm thu đóng task**: QC kích hoạt 5-Stage ISTQB pipeline thẩm tra độc lập để đóng `Closed`.
+
 ---
 
 ## 4. Coding & Operation Rules
@@ -159,3 +165,8 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 5
    - Tuyệt đối cấm đưa tên công ty nội bộ, địa chỉ thực tế (số nhà, tên đường, cụm/lô khu công nghiệp, quận huyện), số điện thoại, email cá nhân, mã số thuế hoặc API token vào mã nguồn, tài liệu spec mẫu, commit Git hoặc Pull Request công khai.
    - Bắt buộc tích hợp và kích hoạt script quét tự động (`scripts/check-sensitive-info.py` hoặc CI Action `security-scan.yml`) fail-closed trước khi merge.
    - Với các dự án Rust: Bắt buộc chạy `cargo fmt --check` trước khi push để đảm bảo release pipeline không bị gãy format.
+8. **TDS Test ID & Testing Contract Gate (Quy chuẩn Định danh Kiểm thử Bất biến FE ↔ QA)**:
+   - Bắt buộc 100% component FE có tương tác (button, input, form, modal, table row) phải gắn directive `tdsTestId` từ `@wicx/core`.
+   - Naming convention bắt buộc: `<domain>-<component>-<element>-<state?>` (100% tiếng Anh, kebab-case).
+   - Tuyệt đối cấm: Hardcode `tds-test-id="..."`, dùng class CSS, dùng array index mảng `index` cho danh sách, rò rỉ visual styles (`red`, `hidden`) vào ID.
+   - QC bắt buộc: Bổ sung unit test cho directive (`tds-test-id.directive.spec.ts`), viết auto-test query bằng `[tds-test-id="..."]` hoặc helper `getByTdsTestId()`, nghiêm cấm `getByText()`, class CSS hay XPath. QC có quyền VETO nếu thiếu test ID.

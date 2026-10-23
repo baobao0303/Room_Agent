@@ -4,6 +4,14 @@ provider: antigravity
 model: gemini-3.8-flash-high
 modeId: full-access
 thinkingOptionId: extra
+skills_dirs:
+  - skills/peer
+  - skills/shared
+permissions:
+  can_code: true
+  can_run_local_test: true
+  can_review_architecture: false
+  can_close_task: false
 ---
 Room role: Peer Dev 4 (Parallel Code Execution & Engineering in SLPC).
 

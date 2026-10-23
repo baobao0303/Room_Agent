@@ -99,5 +99,28 @@ scratch/
 
 # 9. Auto-generated research & test briefs
 tools/research/
+
+# 10. Ephemeral Room Coordination, Meeting Memos & Working Artifacts
+bmad/rooms/lead/
+bmad/rooms/peer/
+bmad/rooms/qc/
+bmad/rooms/supervisor/
+bmad/rooms/pm/
 bmad/rooms/tasks/
-bmad/rooms/*/handoff_*.md
+bmad/rooms/violations/
+bmad/rooms/archive/
+bmad/rooms/*.json
+!bmad/rooms/README.md
+!bmad/rooms/template-handoff.md
+docs/AGENT_PROGRESS.md
+
+# 11. Subproject-specific feature specs (kept locally, not in open-source framework)
+docs/spec/wicx-crm-fe/
+docs/spec/wion-pos-header-refactor-spec.md
+docs/spec/shop-user-list-context-spec.md
+docs/spec/session-expired-hub-handling-spec.md
+docs/spec/rsbuild-proxy-and-strict-typing-spec.md
+docs/spec/wionpos-integration-test-matrix.md
+docs/spec/cdp-field-mapping-architecture-spec.md
+docs/spec/cdp-field-mapping-ui-spec.md
+docs/spec/raw-data-mapping-spec.md
