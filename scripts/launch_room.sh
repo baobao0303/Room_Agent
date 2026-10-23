@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# scripts/launch_room.sh - Khởi chạy và liên kết 8 Agent Tabs trong Orca Workspace
+# scripts/launch_room.sh - Khởi chạy Agent Tabs thường trực trong Orca Workspace
+# Theo kiến trúc Ephemeral Sub-Agent:
+# - Persistent Tabs: PM, Lead (Supervisor là terminal gọi lệnh)
+# - Ephemeral Sub-Agents: Peer 1..4, Design, QC kích hoạt theo task on-demand
 # ==============================================================================
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== [ORCA SLPC MULTI-AGENT ROOM LAUNCHER] ==="
+echo "=== [ORCA SLPC MULTI-AGENT ROOM LAUNCHER (EPHEMERAL ARCHITECTURE)] ==="
 
 # RTK (Rust Token Killer) Check & Path Setup
 if command -v rtk &> /dev/null || [ -f "$HOME/.local/bin/rtk" ]; then
@@ -34,49 +37,25 @@ REG_FILE="$SCRIPT_DIR/bmad/rooms/agent_terminals.json"
 HB_FILE="$SCRIPT_DIR/bmad/rooms/heartbeats.json"
 mkdir -p "$SCRIPT_DIR/bmad/rooms"
 
-# Khai báo 8 agent cần spawn dưới Supervisor (Supervisor chính là terminal hiện tại hoặc launcher)
+# Chỉ duy trì 2 Agent thường trực (PM và Lead). Peer và QC là Ephemeral Sub-Agents spawn on-demand.
 declare -A AGENTS=(
     ["pm"]="[PM Agent] Product Manager & Decision Arbiter in SLPPC. Chuyên trách đánh giá Feasibility và Alignment qua Kev System One (<50ms), kiểm soát AC và kiểm tra bẫy lỗi cũ từ Harness Learn."
-    ["lead"]="[Lead Dev] Architect & PM. Chuyên trách kiến trúc, phân rã task và review code qua 5 tiêu chí."
-    ["peer"]="[Peer Dev 1] Code Executor. Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ["peer2"]="[Peer Dev 2] Code Executor. Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ["peer3"]="[Peer Dev 3] Code Executor. Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ["peer4"]="[Peer Dev 4] Code Executor. Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ["design"]="[Peer Design] UI/UX & Tokens. Chuyên trách tra cứu token TDS, Figma node mapping, SCSS/CSS design tokens."
-    ["qc"]="[QC] 5-Stage ISTQB Verifier. Chuyên trách sinh test matrix, nghiệm thu độc lập và đóng task."
+    ["lead"]="[Lead Dev] Architect & Technical PM. Chuyên trách kiến trúc, phân rã task Zero-Search 5 thành phần, dispatch Ephemeral Sub-Agents (Peer/QC) và review code qua 5 tiêu chí."
 )
 
 declare -A TITLES=(
     ["pm"]="[PM] Feasibility & Alignment"
     ["lead"]="[Lead Dev] Architect & PM"
-    ["peer"]="[Peer Dev 1 - Low] Code Executor"
-    ["peer2"]="[Peer Dev 2 - Medium] Code Executor"
-    ["peer3"]="[Peer Dev 3 - High] Code Executor"
-    ["peer4"]="[Peer Dev 4 - Extra] Code Executor"
-    ["design"]="[Peer Design] UI/UX & Tokens"
-    ["qc"]="[QC] 5-Stage ISTQB Verifier"
 )
 
 declare -A MODELS=(
     ["pm"]="ag/gemini-3.8-flash-high"
     ["lead"]="ag/gemini-3.8-flash-high"
-    ["peer"]="ag/gemini-3.8-flash-low"
-    ["peer2"]="ag/gemini-3.8-flash-medium"
-    ["peer3"]="ag/gemini-3.8-flash-high"
-    ["peer4"]="ag/gemini-3.8-flash-high"
-    ["design"]="ag/gemini-3.8-flash-high"
-    ["qc"]="ag/gemini-3.8-flash-high"
 )
 
 declare -A REASONINGS=(
     ["pm"]="high"
     ["lead"]="high"
-    ["peer"]="low"
-    ["peer2"]="medium"
-    ["peer3"]="high"
-    ["peer4"]="max"
-    ["design"]="high"
-    ["qc"]="high"
 )
 
 # Đọc registry hiện tại nếu có
@@ -92,9 +71,9 @@ if not reg.exists():
     reg.write_text('{}')
 "
 
-echo "🚀 Bắt đầu khởi động các Agent Tabs..."
+echo "🚀 Bắt đầu khởi động các Persistent Agent Tabs (PM, Lead)..."
 
-for role in pm lead peer peer2 peer3 peer4 design qc; do
+for role in pm lead; do
     prompt="${AGENTS[$role]}"
     title="${TITLES[$role]}"
     echo "--- Khởi chạy: $title ($role) ---"

@@ -163,12 +163,13 @@ Script thực hiện toàn bộ 6 khâu cài đặt:
 - Đồng bộ các Profile SLPPC vào `~/.paseo/config.json` qua `patch_paseo.py`.
 - Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB).
 
-### Bước 4: Khởi Chạy Các Agent Tabs Trong Phòng Ban
+### Bước 4: Khởi Chạy Các Agent Tabs Thường Trực Trong Phòng Ban
 ```bash
-# Khởi chạy 8 Agent Tabs độc lập (PM, Lead, Peer 1..4, Design, QC)
+# Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành.
+# Peer 1..4, Design, QC là Ephemeral Sub-Agents kích hoạt on-demand khi có task.
 ./scripts/launch_room.sh
 
-# Hoặc vừa setup vừa launch chỉ với 1 cờ:
+# Hoặc vừa setup vừa launch:
 ./setup.sh --launch
 ```
 

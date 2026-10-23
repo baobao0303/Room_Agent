@@ -140,17 +140,17 @@ except Exception as e:
 python3 "$SCRIPT_DIR/tools/aevum_harness_bridge.py" &>/dev/null || true
 echo "  ✅ Đồng bộ Aevum Kanban snapshot thành công."
 
-# 7. Tuỳ chọn Khởi chạy Toàn bộ Agent Tabs
+# 7. Tuỳ chọn Khởi chạy Agent Tabs thường trực (PM, Lead)
 echo "🎯 [6/6] Sẵn sàng vận hành hệ thống!"
 echo "======================================================================"
 echo "✨ SETUP HOÀN TẤT 100%! CÁC LỆNH HỮU ÍCH KHI SỬ DỤNG:"
-echo "  1. Khởi chạy 9 Agent tabs trên Orca:  ./scripts/launch_room.sh"
-echo "  2. Tra cứu Kanban / Backlog:          ./scripts/harness query backlog"
-echo "  3. Kiểm tra nhịp tim Agent:           python3 tools/agent_heartbeat.py status"
-echo "  4. Khởi động Aevum App (:8080 :3010): ./scripts/start_aevum.sh"
+echo "  1. Khởi chạy 2 Agent tabs thường trực (PM, Lead): ./scripts/launch_room.sh"
+echo "  2. Ephemeral Sub-Agents (Peer, QC):              Spawn tự động on-demand khi giao việc"
+echo "  3. Tra cứu Kanban / Backlog:                     ./scripts/harness query backlog"
+echo "  4. Quét Zombie Sub-Agents & Watchdog:            python3 tools/zombie_reaper.py --dry-run"
 echo "======================================================================"
 
 if [[ "$1" == "--launch" || "$1" == "-l" ]]; then
-    echo "🚀 Tự động kích hoạt toàn bộ 9 Agent tabs qua scripts/launch_room.sh..."
+    echo "🚀 Tự động kích hoạt Persistent Agent tabs (PM, Lead) qua scripts/launch_room.sh..."
     bash "$SCRIPT_DIR/scripts/launch_room.sh"
 fi
