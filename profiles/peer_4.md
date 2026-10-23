@@ -1,9 +1,9 @@
 ---
-name: Peer Dev 4 (Extra)
+name: Peer Dev 4 (Low)
 provider: antigravity
-model: gemini-3.8-flash-high
+model: gemini-3.8-flash-low
 modeId: full-access
-thinkingOptionId: extra
+thinkingOptionId: low
 skills_dirs:
   - skills/peer
   - skills/shared

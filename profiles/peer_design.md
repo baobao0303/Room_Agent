@@ -1,9 +1,9 @@
 ---
 name: Peer Design
 provider: antigravity
-model: gemini-3.8-flash-high
+model: gemini-3.8-flash-medium
 modeId: full-access
-thinkingOptionId: high
+thinkingOptionId: medium
 skills_dirs:
   - skills/peer
   - skills/shared

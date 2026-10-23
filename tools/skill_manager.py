@@ -33,8 +33,11 @@ WEB_DASHBOARD_FILE = BASE_DIR / "tools/web/skill_dashboard.html"
 TARGET_DIRS = [
     Path(os.path.expanduser("~/.claude/skills")),
     Path(os.path.expanduser("~/.paseo/skills")),
-    Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills"),
+    Path(os.path.expanduser("~/.hermes/skills")),
 ]
+_paseo_project_skills = Path(os.environ.get("PASEO_AGENTS_SKILLS", Path.home() / "Desktop" / "Paseo_Project" / ".agents" / "skills"))
+if _paseo_project_skills.is_dir():
+    TARGET_DIRS.append(_paseo_project_skills)
 
 
 def ensure_dirs():
@@ -110,7 +113,7 @@ def get_all_skills() -> List[Dict[str, Any]]:
                             add_skill_entry(sub_item, f"Master Registry ({item.name})", "master", is_master=True)
 
     # 2. Existing in Paseo Project .agents/skills
-    proj_skills = Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills")
+    proj_skills = _paseo_project_skills
     if proj_skills.is_dir():
         for item in proj_skills.iterdir():
             if item.is_dir():
@@ -188,7 +191,7 @@ def sync_skills() -> Dict[str, Any]:
 
     # Step 1: Collect from external directories into Master Registry if not present
     source_candidates = [
-        Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills"),
+        _paseo_project_skills,
         Path(os.path.expanduser("~/.claude/skills")),
         Path(os.path.expanduser("~/.paseo/skills")),
         Path(os.path.expanduser("~/.codex/skills")),
@@ -227,8 +230,8 @@ def sync_skills() -> Dict[str, Any]:
                     except Exception as e:
                         errors.append(f"Không thể sao chép {item.name} vào Master: {str(e)}")
 
-    # Step 2: Build target directories list (do NOT scatter into bmad/rooms)
-    active_targets = list(TARGET_DIRS)
+    # Step 2: Build target directories list (only existing target directories)
+    active_targets = [t for t in TARGET_DIRS if t.is_dir()]
 
     # Step 3: Scan all master skills across profile directories (skills/<profile>/<skill>)
     all_master_skills = [s for s in MASTER_REGISTRY.rglob("*") if s.is_dir() and (s / "SKILL.md").exists()]

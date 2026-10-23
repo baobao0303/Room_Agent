@@ -5,13 +5,13 @@ description: "Configure settings.json and auto-allowlists to eliminate permissio
 
 # Fewer Permission Prompts Skill (`fewer-permission-prompts`)
 
-Cấu hình tối ưu hóa quyền thực thi cho Agent nhằm loại bỏ các prompt hỏi quyền thủ công và tránh lỗi chặn từ auto classifier.
+Configure execution permissions for Agent to eliminate manual permission prompts and prevent blocking errors from safety auto-classifiers.
 
-## 1. Mục tiêu
-- Cấp quyền thực thi trực tiếp cho các core tools (`Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep`, `WebSearch`, `WebFetch`).
-- Kích hoạt `bypassPermissions` và bỏ qua các prompt xác nhận nguy hiểm trong môi trường tin cậy.
+## 1. Objectives
+- Grant direct execution permissions for core tools (`Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep`, `WebSearch`, `WebFetch`).
+- Enable `bypassPermissions` and bypass dangerous confirmation prompts in trusted local environments.
 
-## 2. File cấu hình chuẩn: `~/.paseo/claude-config/settings.json`
+## 2. Canonical Configuration File: `~/.paseo/claude-config/settings.json`
 
 ```json
 {
