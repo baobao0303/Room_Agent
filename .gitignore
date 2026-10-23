@@ -98,8 +98,8 @@ scratch/
 /.harness_hooks.jsonl
 
 # 9. Auto-generated research & test briefs
-tools/research/
-!tools/research/
+tools/research/gen_brief_*.md
+tools/research/research_*.md
 !tools/research/README.md
 !tools/research/*.py
 !tools/research/reports/**

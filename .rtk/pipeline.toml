@@ -1,0 +1,10 @@
+schema_version = 1
+
+[pipeline]
+name    = "slppc-root"
+extends = ["rtk:default", "rtk:posthook"]
+enabled = true
+
+[guards]
+never_worse = true
+min_size = 512

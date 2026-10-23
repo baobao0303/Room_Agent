@@ -10,6 +10,7 @@ import subprocess
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 CONFIG_PATH = Path.home() / ".paseo" / "config.json"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -31,6 +32,19 @@ def get_profiles():
         data = json.load(f)
     profiles = data.get("daemon", {}).get("agentProfiles", [])
     return {p["name"].lower(): p for p in profiles}
+
+def print_hook_banner(status: str, role: str, task_id: Any, model: str, from_role: str, details: str = ""):
+    width = 76
+    print("\n" + "─" * width)
+    print(f"🚀 [SLPPC SUB-AGENT HOOK DISPATCH] - {status}")
+    print("─" * width)
+    print(f"• Sub-Agent Role   : {role}")
+    print(f"• Task / Work Item : #{task_id if task_id else 'N/A'}")
+    print(f"• Model / Tier     : {model}")
+    print(f"• Handoff Boundary : {from_role} ➔ {role}")
+    if details:
+        print(f"• Instructions     : {details[:60]}")
+    print("─" * width + "\n")
 
 def main():
     parser = argparse.ArgumentParser(description="Call or wake up a Paseo agent profile (with automatic Research & Gen pipeline and SLP Room Handoff).")
@@ -151,7 +165,9 @@ def main():
     )
 
     pre_gen_block = ""
-    if not args.skip_pre_gen:
+    # Chống nghẽn: Bỏ qua pre-gen 35s nếu là task thi công cụ thể (đã có item_id hoặc role là Peer/QC)
+    should_pre_gen = (not args.skip_pre_gen) and (not args.item_id) and (profile_name.lower() not in ("peer", "peer2", "peer3", "peer4", "qc"))
+    if should_pre_gen:
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parent))
             import profile_research_gen as prg
@@ -201,23 +217,44 @@ def main():
             print(pre_gen_block)
         sys.exit(0)
 
-    # Nếu đang chạy trong Orca và đã có sẵn terminal tab cho profile này, bắn lệnh trực tiếp
+    # Nếu đang chạy trong Orca:
     if shutil.which("orca"):
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parent))
             from orca_slpc_bridge import find_live_terminal_for_role  # type: ignore
             target_term = find_live_terminal_for_role(profile_name)
             if target_term:
+                print_hook_banner("ORCA DIRECT DISPATCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body)
                 print(f"🎯 [Orca Direct Dispatch]: Tìm thấy live terminal của {profile_name} ({target_term}). Bắn lệnh trực tiếp...")
                 subprocess.run(["orca", "terminal", "send", "--terminal", target_term, "--text", f"{task_body}\n{room_block}", "--enter"], check=True)
                 print(f"✅ Đã gửi lệnh trực tiếp tới {profile_name} trên Orca Workspace Board!")
                 sys.exit(0)
+            else:
+                # EPHEMERAL SUB-AGENT AUTO-LAUNCH IN ORCA:
+                print_hook_banner("ORCA AGENT LAUNCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body)
+                print(f"🚀 [Orca Agent Launch]: Chưa có tab cho {profile_name}. Đang mở AI Agent tab mới trên Orca...")
+                launch_cmd = [
+                    "orca", "agent", "launch",
+                    "--worktree", "active",
+                    "--agent", "hermes",
+                    "--prompt", f"[{profile_name}] {task_body}\n{room_block}",
+                    "--focus",
+                    "--json"
+                ]
+                lres = subprocess.run(launch_cmd, capture_output=True, text=True, check=False)
+                if lres.returncode == 0:
+                    print(f"✅ Đã spawn thành công AI Agent tab cho {profile_name} trên Orca Workspace!")
+                    sys.exit(0)
+                else:
+                    print(f"⚠️ [Orca Agent Launch Warning]: {lres.stderr.strip()}", file=sys.stderr)
         except Exception as e:
-            print(f"[Notice] Orca direct dispatch fallback sang paseo run: {e}", file=sys.stderr)
+            print(f"[Notice] Orca dispatch fallback: {e}", file=sys.stderr)
 
+    print_hook_banner("SPAWNING EPHEMERAL SUB-AGENT", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body)
     print(f"Calling {profile_name} ({provider}/{model})...")
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
+        print_hook_banner("SUB-AGENT EXECUTION STARTED", profile_name, args.item_id, f"{provider}/{model}", sender_role, "Process launched in background")
         print(f"Success: {profile_name} spawned.")
         if res.stdout.strip():
             print(res.stdout.strip())
