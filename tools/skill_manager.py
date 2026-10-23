@@ -164,6 +164,19 @@ def get_all_skills() -> List[Dict[str, Any]]:
     return res
 
 
+def find_skill_in_master(skill_name: str) -> Optional[Path]:
+    """Find skill directory in master registry across all profile subdirectories."""
+    top = MASTER_REGISTRY / skill_name
+    if top.is_dir() and (top / "SKILL.md").exists():
+        return top
+    for sub in MASTER_REGISTRY.iterdir():
+        if sub.is_dir():
+            nested = sub / skill_name
+            if nested.is_dir() and (nested / "SKILL.md").exists():
+                return nested
+    return None
+
+
 def sync_skills() -> Dict[str, Any]:
     """
     Consolidate all skills into Master Registry and symlink to all target directories.
@@ -189,8 +202,9 @@ def sync_skills() -> Dict[str, Any]:
     if gemini_plugins.is_dir():
         for sk_dir in gemini_plugins.glob("**/skills/*"):
             if sk_dir.is_dir() and (sk_dir / "SKILL.md").exists():
-                master_dest = MASTER_REGISTRY / sk_dir.name
-                if not master_dest.exists():
+                existing = find_skill_in_master(sk_dir.name)
+                if not existing:
+                    master_dest = MASTER_REGISTRY / "shared" / sk_dir.name
                     try:
                         shutil.copytree(sk_dir, master_dest, symlinks=True)
                     except Exception as e:
@@ -204,26 +218,20 @@ def sync_skills() -> Dict[str, Any]:
                 continue
             real_path = item.resolve() if item.is_symlink() else item
             if real_path.is_dir() and (real_path / "SKILL.md").exists():
-                master_dest = MASTER_REGISTRY / item.name
-                if not master_dest.exists():
+                existing = find_skill_in_master(item.name)
+                if not existing:
+                    master_dest = MASTER_REGISTRY / "shared" / item.name
                     try:
-                        # Copy or symlink into master
+                        # Copy or symlink into master shared
                         shutil.copytree(real_path, master_dest, symlinks=True)
                     except Exception as e:
                         errors.append(f"Không thể sao chép {item.name} vào Master: {str(e)}")
 
-    # Step 2: Build full target directories list including bmad/rooms
+    # Step 2: Build target directories list (do NOT scatter into bmad/rooms)
     active_targets = list(TARGET_DIRS)
-    bmad_rooms = BASE_DIR / "bmad/rooms"
-    if bmad_rooms.is_dir():
-        for room in bmad_rooms.iterdir():
-            if room.is_dir():
-                room_skills = room / ".claude/skills"
-                room_skills.mkdir(parents=True, exist_ok=True)
-                active_targets.append(room_skills)
 
-    # Step 3: Symlink all master skills to every target directory
-    all_master_skills = [s for s in MASTER_REGISTRY.iterdir() if s.is_dir() and (s / "SKILL.md").exists()]
+    # Step 3: Scan all master skills across profile directories (skills/<profile>/<skill>)
+    all_master_skills = [s for s in MASTER_REGISTRY.rglob("*") if s.is_dir() and (s / "SKILL.md").exists()]
 
     for skill_dir in all_master_skills:
         skill_name = skill_dir.name

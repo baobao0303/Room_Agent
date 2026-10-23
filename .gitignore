@@ -99,6 +99,10 @@ scratch/
 
 # 9. Auto-generated research & test briefs
 tools/research/
+!tools/research/
+!tools/research/README.md
+!tools/research/*.py
+!tools/research/reports/**
 
 # 10. Ephemeral Room Coordination, Meeting Memos & Working Artifacts
 bmad/rooms/lead/
