@@ -52,6 +52,8 @@ def analyze_code_quality(diff_text: str) -> dict[str, Any]:
 
     hardcoded_hex_regex = re.compile(r"\+(?=.*(#([0-9a-fA-F]{3,6})))")
     missing_onpush_regex = re.compile(r"\+@Component\(\{")
+    hardcoded_testid_regex = re.compile(r"\+(?=.*(\btds-test-id=|\bdata-testid=))")
+    array_index_testid_regex = re.compile(r"\+(?=.*\[tdsTestId\]=.*(\bindex\b|\bidx\b|\bi\b))")
     has_onpush = "ChangeDetectionStrategy.OnPush" in diff_text
 
     current_file = ""
@@ -84,10 +86,32 @@ def analyze_code_quality(diff_text: str) -> dict[str, Any]:
                     "detail": "Component thiếu `changeDetection: ChangeDetectionStrategy.OnPush` theo quy chuẩn hiệu năng Angular 2026.",
                 })
 
+        # 3. Check TDS Test ID violations (hardcoded DOM attribute or array index)
+        if current_file.endswith((".html", ".ts")) and not current_file.endswith(".spec.ts"):
+            m_testid = hardcoded_testid_regex.search(line)
+            if m_testid:
+                findings.append({
+                    "file": current_file,
+                    "severity": "ERROR",
+                    "category": "TDS_TEST_ID_VIOLATION",
+                    "detail": "Phát hiện hardcode attribute `tds-test-id` hoặc `data-testid`. Bắt buộc dùng directive `tdsTestId` từ `@wicx/core`.",
+                })
+            m_index = array_index_testid_regex.search(line)
+            if m_index:
+                findings.append({
+                    "file": current_file,
+                    "severity": "ERROR",
+                    "category": "TDS_TEST_ID_ARRAY_INDEX",
+                    "detail": "Phát hiện dùng array index trong `tdsTestId`. Bắt buộc dùng business entity ID (ví dụ: `[tdsTestId]=\"'customer-row-' + item.id\"`).",
+                })
+
+    has_errors = any(f.get("severity") == "ERROR" for f in findings)
+    verdict = "APPROVED" if len(findings) == 0 else ("REJECTED" if has_errors else "ADVICE_PROVIDED")
+
     return {
         "total_findings": len(findings),
         "findings": findings,
-        "verdict": "APPROVED" if len(findings) == 0 else "ADVICE_PROVIDED",
+        "verdict": verdict,
     }
 
 

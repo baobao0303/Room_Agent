@@ -1,23 +1,28 @@
-# AGENTS.md - Global Workspace Directives & Multi-Agent Execution Protocols
+# AGENTS.md - Global Workspace Directives, Multi-Agent Architecture & Setup Guide
 
-> **QUY CHUẨN ĐỒNG BỘ TOÀN HỆ THỐNG**: Mọi Agent hoạt động trong workspace `/home/baoltb/Desktop/Paseo_Project` phải tuân thủ nghiêm ngặt các nguyên tắc, đường dẫn chuẩn và luồng phối hợp kế thừa từ **Obsidian Knowledge Base** (`/home/baoltb/Desktop/obsidian-obsidian`).
+> **QUY CHUẨN ĐỒNG BỘ TOÀN HỆ THỐNG**: Mọi Agent hoạt động trong workspace `Room_Agent` phải tuân thủ nghiêm ngặt các nguyên tắc, đường dẫn chuẩn và luồng phối hợp kế thừa từ Master Architecture Spec:
+> - `docs/spec/ephemeral-sub-agent-orchestration-spec.md` (ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION-2026-V1)
+> - `docs/spec/harness-cli-v0.1.14-upgrade-spec.md` (SLPPC Native Governance)
 
 ---
 
 ## 1. Workspace Identity & Canonical Paths
 
-- **Root Workspace**: `/home/baoltb/Desktop/Paseo_Project`
-- **BMAD Central Brain**: `/home/baoltb/Desktop/Paseo_Project/bmad` (Knowledge Graph, Architecture & Data Flows)
-- **Paseo Daemon Plugins**: `/home/baoltb/Desktop/Paseo_Project/plugins` (Lifecycle hooks, environment & approval bridge)
-- **Frontend Source Code**: `/home/baoltb/Desktop/Paseo_Project/projects/crm-fe` (Angular 18, Module Federation, Nx, UI-Lib)
-- **REMOTE Docs Repository**: `/home/baoltb/Desktop/crm-doc` (REMOTE `_git/crm` branch `docs/base`)
-- **Obsidian Knowledge Base**: `/home/baoltb/Desktop/obsidian-obsidian` (Specs, ADRs, Protocols, Beats, Metas)
-- **Harness Cloud Storage**: Floci DynamoDB & S3 (`http://<FLOCI_HOST>:14566`, Web UI `http://<FLOCI_HOST>:4566`)
-- **REMOTE Azure DevOps Server**: `https://remote.example.com/MainCollection/ACME` (via MCP `remote-crm`)
+- **Root Workspace**: Đường dẫn thư mục gốc `Room_Agent`.
+- **BMAD Central Brain**: `bmad/` (Đồ thị kiến trúc, luồng module, meeting rooms, violations log).
+- **Canonical Skills**: `skills/` (Phân tầng 7 nhóm RBAC theo vai trò: `supervisor`, `pm`, `lead`, `peer`, `qc`, `security`, `shared`).
+- **Agent Profiles**: `profiles/` (10 hồ sơ MD có YAML frontmatter `skills_dirs` và `permissions`).
+- **Core CLI Tools**: `tools/` (21 Python CLI tools chuẩn hóa 6 nhóm nghiệp vụ).
+- **Execution Scripts**: `scripts/` (Scripts cài đặt, khởi động phòng, cấu hình RTK proxy, CI guards).
+- **Harness Cloud Storage**: Floci DynamoDB & S3 (`http://<FLOCI_HOST>:14566`, Web UI `http://<FLOCI_HOST>:4566`).
+- **Subprojects (FE Source)**:
+  - `projects/wicx-crm-fe` (Angular 18, Nx, Rsbuild, Module Federation, TDS UI).
+  - `projects/wion_pos_fe` (Angular 18, Nx, Rsbuild/Webpack, Module Federation).
+- **Model Standard**: Bắt buộc toàn bộ Agent Profiles trong phòng sử dụng model `ag/gemini-3.8-flash-high`.
 
 ---
 
-## 2. Team Multi-Agent Roles & Workflow Gates (SLPPC)
+## 2. Multi-Agent Roles & 5-Stage Governance Gate (SLPPC)
 
 Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 5 cổng kiểm soát SLPPC:
 
@@ -25,13 +30,13 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 5
 [Yêu cầu từ User]
        │
        ▼
-1. Supervisor (Scope & Intent Guard) ──► Phân tích scope, tiếp nhận ý định User
+1. Supervisor (Scope & Intent Guard) ──► Tiếp nhận ý định User, phân tích phạm vi, khống chế chi phí
        │
        ▼
-2. PM Agent (Feasibility & Alignment) ─► Thẩm định Khả thi / Phù hợp qua Kev System One (<50ms)
+2. PM Agent (Feasibility & Alignment) ─► Thẩm định Khả thi / Phù hợp qua Kev System One (<50ms) & Loop Gate
        │
        ▼
-3. Lead (Architect & Technical PM) ────► Thiết kế kiến trúc, tra cứu bài học cũ, phân rã Zero-Search
+3. Lead (Architect & Technical PM) ────► Thiết kế kiến trúc, tra cứu bẫy lỗi cũ, phân rã Zero-Search
        │
        ▼
 4. Peer (Code Executor / Dev 1..4) ───► Lập trình theo spec, tuân thủ Angular 18/TDS, nộp Resolved
@@ -43,119 +48,176 @@ Mọi tác vụ phải tuân thủ nghiêm ngặt quy trình chuyển giao qua 5
 [Task CLOSED]
 ```
 
-### Chi tiết vai trò SLPPC, Cố vấn PM & An ninh Sentinel:
-1. **Supervisor (`supervisor`)**: Scope & Intent Guard. Tiếp nhận yêu cầu từ User, phân tích phạm vi, tạo Epic/Task/Story trên Harness DB (`--engine auto`), điều phối PM/Lead/Peer và kiểm soát chi phí/rủi ro.
-2. **PM Agent (`pm`)**: Product Manager & Decision Arbiter (Kev System One Engine). Cố vấn định lượng ngầm cho Supervisor & Lead Dev: đánh giá mức độ **Khả thi (Feasibility)** và mức độ **Phù hợp (Alignment)**, tính điểm rủi ro và phân luồng sub-50ms trước khi phân rã task. Chặn đứng lỗi `pm_bypass`.
-3. **Lead (`lead`)**: Technical Architect & PM. Phân tích tài liệu nghiệp vụ, tra cứu bài học kinh nghiệm qua `harness learn query`, thiết kế kiến trúc hệ thống, API Contract, duyệt giải pháp kỹ thuật và phân rã task Zero-Search cho Peer. Nghiêm cấm tự ý code (`role_trespass`).
-4. **Peer (`peer`, `peer2`, `peer3`, `peer4`)**: Code Executor (Developer). Hiện thực hóa mã nguồn theo spec, tuân thủ Angular 18 + TDS UI Design System, viết unit test và chuyển task sang `Resolved`. Nghiêm cấm tự tiện đóng task (`premature_close`).
-5. **QC (`qc`)**: Independent Quality Gate & Test Architect. Độc quyền quyền hạn chuyển trạng thái task sang `Closed`. Nghiệm thu độc lập, sinh testcase theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria, ghi nhận bài học kinh nghiệm vào `harness learn record`, và chạy `tools/slppc_flow_guard.py audit` bảo đảm 100% tuân thủ quy trình trước khi đóng Epic.
-6. **Security Sentinel (`security`)**: Continuous Anti-Leak Gatekeeper & Open-Source Auditor. Giám sát liên tục chống lộ API spec tính năng, luồng nghiệp vụ FE, địa chỉ công ty và secrets; sở hữu quyền VETO chặn đứng mọi commit/push vi phạm.
+### Chi tiết 6 vai trò SLPPC & An ninh Sentinel:
+1. **Supervisor (`supervisor`)**: Scope & Intent Guard (Macro Governor). Tiếp nhận yêu cầu từ User, BẮT BUỘC kết nối PM Agent (`pm`) thẩm định Khả thi / Phù hợp trước khi tạo Epic/Task/Story trên Harness DB (`--engine auto`). Nghiêm cấm đào sâu đọc mã nguồn/debug chi tiết (`role_trespass`) hoặc bỏ qua cổng PM (`pm_bypass`). Quản trị trần đồng thời (Concurrency Ceiling max 3–5 workers), kích hoạt Zombie Reaper quét terminal mồ côi. Tuyệt đối không can thiệp code thô.
+2. **PM Agent (`pm`)**: Product Manager, Decision Arbiter & Loop Enforcer (Issue #4). Thẩm định **Khả thi (Feasibility)** và **Phù hợp (Alignment)** qua Kev System One (<50ms). Sở hữu kỹ năng `loop-engineering`, thiết lập trần vòng lặp (**Turn Ceiling $\le$ 3–5 lần thử**) và kiểm tra Mechanical Stop Gate trước khi giao task. Chặn đứng lỗi `pm_bypass`.
+3. **Lead (`lead`)**: Technical Architect & Sub-Agent Dispatcher. Tra cứu bài học kinh nghiệm qua `scripts/bin/harness-cli learn query`, thiết kế API Contract / DTO, duyệt giải pháp kỹ thuật và phân rã task Zero-Search 5 thành phần cho Peer. Nghiêm cấm tự ý code (`role_trespass`).
+4. **Peer (`peer`, `peer2`, `peer3`, `peer4`, `peer_design`)**: Ephemeral Coding Sub-Agents (Maker Pool). Hoạt động trên Context Window tươi mới (<30k tokens), chỉ chạm vào file được chỉ định (Single-Ownership), thực thi code, chạy test tự động cục bộ và nộp trạng thái `Resolved`. Nghiêm cấm tự tiện đóng task (`premature_close`).
+5. **QC (`qc`)**: Independent Quality Gate & Test Architect (Checker Pool). Độc quyền thẩm quyền chuyển trạng thái task sang `Closed`. Sinh test matrix và file spec theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria, ghi nhận bài học kinh nghiệm vào Harness Learn Store, và chạy `tools/slppc_flow_guard.py audit` bảo đảm 100% tuân thủ quy trình.
+6. **Security Sentinel (`security_sentinel`)**: Continuous Anti-Leak Gatekeeper & Open-Source Cleanliness Auditor. Giám sát liên tục chống lộ API spec nghiệp vụ, địa chỉ thực tế, domain nội bộ và secrets; sở hữu quyền VETO chặn đứng mọi commit/push vi phạm (`scripts/anti_leak_sentinel.py`).
 
 ---
 
-## 3. Available Tools & Skills Index
+## 3. Ephemeral Sub-Agent Architecture ("Ephemeral by Default, Persistent by Exception")
 
-### A. Harness Manager Tool (`tools/harness_manager.py` / Skill `harness-ops`)
-- **Lưu trữ**: Floci DynamoDB endpoint `http://<FLOCI_HOST>:14566` (tables `harness_work_items`, `harness_stories`, `harness_tools`, `harness_metadata`) và SQLite local (`harness.db`).
-- **Engine**: Hỗ trợ cờ `--engine {auto,floci,rust,sqlite}` (mặc định: `auto`).
-- **Lệnh thực thi**:
-  - Xem ma trận kiểm thử: `./scripts/harness query matrix`
-  - Xem backlog đa chiều: `./scripts/harness query backlog [--sprint <sprint>] [--source remote|local] [--top 25]`
-  - Xem thống kê: `python3 tools/harness_manager.py [--engine auto] stats` | `./scripts/harness query stats`
-  - Đồng bộ lại từ REMOTE: `./scripts/harness sync-remote`
-  - Thêm mới / Cập nhật trạng thái: `python3 tools/harness_manager.py [--engine auto] add ...` | `python3 tools/harness_manager.py [--engine auto] update ...`
+Hệ sinh thái chuyển dịch từ nhóm Agent thường trực (Persistent Worker Pool) sang mô hình Sub-Agent tạm thời dùng xong tự hủy:
 
-### A2. SLPPC Flow Guard & Automated Violation Auditor (`tools/slppc_flow_guard.py`)
-- **Mục đích**: Canh gác tự động rào cản thẩm quyền 5 vai trò SLPPC, ngăn chặn `role_trespass` (Lead ôm code), `pm_bypass` (bỏ qua cổng PM), `premature_close` (Dev tự đóng task), `vague_specs` (giao task cẩu thả).
-- **Biên bản vi phạm**: Lưu tự động và vĩnh viễn tại `bmad/rooms/violations/violation_<task_id>_<from>_to_<to>_<timestamp>.md`.
-- **Lệnh thực thi**: `python3 tools/slppc_flow_guard.py audit [--json]`
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 MÔ HÌNH ĐIỀU HÀNH EPHEMERAL SUB-AGENT TỔNG QUAN              │
+│                                                                             │
+│   [COORDINATOR / SUPERVISOR] (Single Persistent Session)                    │
+│   ├── Tiếp nhận yêu cầu từ User / Backlog                                   │
+│   ├── Phân tích phạm vi, rủi ro và chia nhỏ thành Task Zero-Search          │
+│   │                                                                         │
+│   ├── 🚀 KÍCH HOẠT THEO YÊU CẦU (ON-DEMAND DISPATCH):                       │
+│   │   ├── Task A: Sinh Sub-Agent A (Context sạch 10k) ➔ Xong việc ➔ TỰ HỦY  │
+│   │   ├── Task B: Sinh Sub-Agent B (Context sạch 15k) ➔ Xong việc ➔ TỰ HỦY  │
+│   │   └── Task C: Sinh Sub-Agent C (Context sạch 20k) ➔ Xong việc ➔ TỰ HỦY  │
+│   │                                                                         │
+│   └── 📊 Thu thập kết quả báo cáo ➔ Kiểm định độc lập ➔ Trả lời User       │
+│                                                                             │
+│   KẾT QUẢ: Token tiêu hao giảm 70%, RAM nền về 0, Triệt tiêu 100% "Ngáo"     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-### A3. Harness Native Rust Bridge (`tools/harness_rust.py`)
-- **Mục đích**: Cầu nối Python gọi trực tiếp binary Rust native v0.1.14 (`scripts/bin/harness-cli`) và mô hình quyết định Kev System One.
-- **Hàm cốt lõi**: `supervise_task(text)` (sub-50ms routing), `record_lesson(...)` (ghi đồng thời SQLite + DynamoDB), `query_lessons(domain)` (truy vấn bẫy lỗi).
+### Bộ Khung 6 Trụ Cột Quản Trị Sub-Agent:
+1. **Concurrency Ceiling (Giới hạn trần đồng thời)**: Khống chế tối đa **không quá 3–5 Sub-Agents chạy song song** cùng thời điểm để tránh nghẽn CPU và chạm rate-limit API.
+2. **6-Phase State Machine**: Mọi Sub-Agent chuyển dịch tuần tự: `SPAWNED` ➔ `ALLOCATED` ➔ `EXECUTING` ➔ `REPORTED` ➔ `VERIFIED` ➔ `REAPED`.
+3. **Watchdog Daemon & Timeout Ceiling**: Hard timeout tối đa **300 giây (5 phút)**. Tự động gửi ngắt (`orca terminal send --interrupt`) hoặc cưỡng chế đóng terminal khi bị treo.
+4. **Mechanical Verification**: Tuyệt đối không tin lời tự khai ("Never let the AI verify its own done"). Bắt buộc kiểm tra Exit Code 0, Git Diff thật và Output Test Runner thật trước khi chấp nhận nghiệm thu.
+5. **Zombie Terminal Reaper (`tools/zombie_reaper.py`)**: Định kỳ quét đối chiếu terminals đang mở với danh sách task Active trong Harness DB; tự động đóng các PTY mồ côi để đưa RAM nền về 0.
+6. **Authority Fencing (Rào cản thẩm quyền)**: Cấm Sub-Agent spawn đệ quy (No nested delegation), cấm tự đóng task, cấm ghi đè bộ nhớ hệ thống.
 
-### B. REMOTE ACME MCP Server (`tools/remote_mcp_server.py`)
-- **Server**: `remote-crm` (cấu hình trong `~/.gemini/config/mcp_config.json`).
-- **Tools**: `remote_list_work_items`, `remote_get_work_item`, `remote_query_wiql`, `remote_list_repositories`, `remote_list_pull_requests`, `remote_search_use_cases`, `remote_get_use_case`, `remote_sync_docs`, `remote_list_doc_tree`, `remote_git_status`, `remote_git_log`.
+---
 
-### C. Query Reader Tool (`tools/query_reader.py` / Skill `query-read`)
-- **Mục đích**: Duyệt cấu trúc thư mục chống lỗi `EISDIR`, tìm kiếm ngữ cảnh chính xác cao bằng thuật toán BM25.
-- **Lệnh thực thi**: `python3 tools/query_reader.py <folder_path> ["<từ_khóa>"]`
+## 4. RTK (Rust Token Killer) CLI Proxy (Issue #5)
 
-### D. TDS UI & Figma Tools (`tools/tds_search.py`, Skill `tds-ui-usage`, `tds-ui-figma`)
-- **`tds-ui-figma`**: Token lookup, chuyển đổi Figma node sang TDS Angular component và tokens `tds-color-*`.
-- **`tds-ui-usage`**: Danh mục gần 80 components UI Lib, recipes, troubleshooting.
-- **`tools/tds_search.py`**: Tra cứu API, selectors, component TDS offline nhanh chóng.
+Dự án tích hợp bộ proxy hiệu năng cao viết bằng Rust thuần (`rtk`) đánh chặn các lệnh CLI phổ biến, nén từ **60% đến 90% output** trước khi nạp vào context LLM:
 
-### E. Agent Progress & Handoff Ledger (`tools/agent_progress.py` & `docs/AGENT_PROGRESS.md`)
-- **Mục đích**: Nơi lưu trữ tập trung toàn bộ những gì các Agent đã làm, những hạng mục còn thiếu, và bước tiếp theo cần thực hiện để khi User yêu cầu **"làm tiếp"** / **"báo cáo tiến độ"**, bất kỳ Agent nào vào cũng nắm bắt và báo cáo được ngay.
-- **Lệnh thực thi**:
-  - Xem nhanh trạng thái để báo cáo User khi được yêu cầu *"làm tiếp"*: `python3 tools/agent_progress.py status` (hoặc đọc `docs/AGENT_PROGRESS.md`)
-  - Ghi nhận công việc sau khi hoàn thành một bước: `python3 tools/agent_progress.py log --agent "<Role>" --summary "<Tóm tắt>" --done "<Việc đã xong>" --missing "<Việc còn thiếu>" --next "<Bước kế tiếp>" --files "<File đã sửa>"`
-
-### F. Claude Code & Codex Sub-Agents (`031_claude_code_sub_agents` / Skill `claude-code-sub-agents`)
-- **Đường dẫn cài đặt**: `.claude/agents/*.md`, `~/.paseo/claude-config/agents/*.md`, `.agents/skills/claude-code-sub-agents/SKILL.md`, và `~/.codex/skills/claude-code-sub-agents/SKILL.md`.
-- **3 Sub-Agents chuyên biệt cho 4 Role (`Supervisor - Lead - Peer - QC`)**:
-  1. `gemini-codebase-analyzer`: Phân tích toàn cảnh codebase quy mô lớn với Context Window 1M+ tokens (`gemini --prompt "..." --all-files`).
-  2. `strategic-reasoning-architect`: Suy luận chiến lược, đánh giá kiến trúc và tìm Root Cause phức tạp (`codex -m "gpt-5" "..."`).
-  3. `slpc-qc-verifier`: Sub-agent chuyên trách Role thứ 4 (`QC`) thực thi quy trình 5-Stage ISTQB Pipeline (`python3 tools/qc_test_generator.py`) và nghiệm thu độc lập.
-
-### G. BMAD Central Brain (`/home/baoltb/Desktop/Paseo_Project/bmad`)
-- **Bản chất**: "Bộ não" lưu trữ đồ thị tri thức kiến trúc, ranh giới module và luồng nghiệp vụ tập trung, giải quyết triệt để vấn đề Context Overflow (tránh nạp 248.000 file source thô vào LLM context).
-- **Tương thích Understand-Anything**: Tích hợp với `understand-anything` để trực quan hóa đồ thị kiến trúc:
-  - `bmad/architecture.json`: Đồ thị Nodes (App Shell Host, Remote MFEs `mfe-cdp`, `mfe-crm`, `mfe-account`, thư viện dùng chung `tds-ui`) kèm port dev (4200, 4204, 4203...), router mapping (`/:shopId/customers`, `/:shopId/data-raw`...) và dependencies.
-  - `bmad/modules/`: Tóm tắt vai trò, API contracts và công nghệ (Rsbuild Module Federation 2.0, Angular 18 Signals, Tailwind CSS).
-  - `bmad/flows/`: Đồ thị luồng tương tác và luồng dữ liệu người dùng (ví dụ: `customer-360-flow.md`).
-- **Quy tắc bắt buộc**: Trước khi Lead/Peer lập trình hoặc BA bóc tách spec, **Agent PHẢI đọc `bmad/architecture.json`** và các file module liên quan để nắm trọn vẹn điểm chạm hệ thống.
-
-### H. Paseo Lifecycle Plugins (`/home/baoltb/Desktop/Paseo_Project/plugins`)
-- **Vị trí**: `/home/baoltb/Desktop/Paseo_Project/plugins/slpc-lifecycle-hooks`
-- **Mục đích**: Plugin chính thức chạy trên server Paseo Daemon (`@getpaseo/plugin/server`, port `:6767`), đăng ký 11 lifecycle hooks (`workspace.create`, `agent.create`, `session.open`, `tool.execute`, `subagent.spawn`...).
-- **Chức năng tự động hóa**:
-  1. **Inject môi trường SLPC**: Tự động cấp các biến môi trường `PASEO_SLPC_HOOK_ACTIVE=1`, `PASEO_HOOK_TOOL`, `PASEO_RESEARCH_GEN_TOOL` cho mọi agent session.
-  2. **Tự động phê duyệt an toàn**: Regex `SAFE_AUTO_APPROVE_PATTERN` tự duyệt các lệnh đọc git và scripts trong `tools/` mà không hỏi prompt thủ công.
-  3. **Ép cổng Research & Gen Gate**: Kích hoạt `tools/profile_research_gen.py` đồng bộ tri thức trước khi agent thực thi.
-- **Quản lý & Kiểm tra trạng thái**:
+- **Bộ biến môi trường bắt buộc**:
   ```bash
-  python3 /home/baoltb/Desktop/Paseo_Project/tools/paseo_hooks.py status
+  export RTK_TELEMETRY_DISABLED=1
+  export RTK_COMPACT_MODE=1
+  export RTK_TEST_FAILURES_ONLY=1
   ```
-
-### I. Skill Manager & Inverted Index DB Search (`tools/skill_manager.py`)
-- **Lưu trữ**: Floci DynamoDB endpoint `http://<FLOCI_HOST>:14566` (bảng `harness_skills` và chỉ mục ngược `harness_skills_index`).
-- **Mục đích**: Quản lý Master Registry 80+ skills, đồng bộ đa phòng và tìm kiếm cực nhanh qua Inverted Index (**truy vấn phân vùng $O(1)$, tuyệt đối không ScanAll toàn bảng**).
-- **Lệnh thực thi**:
-  - Tìm kiếm skill theo từ khóa: `python3 tools/skill_manager.py search "<từ_khóa>" [--limit 10] [--json]` (hoặc `query`)
-  - Đồng bộ và lập chỉ mục DB: `python3 tools/skill_manager.py sync-db` | `python3 tools/skill_manager.py sync`
-  - Liệt kê toàn bộ: `python3 tools/skill_manager.py list [--json]`
+- **Ma trận Alias Per-Profile (`scripts/rtk_profile_env.sh`)**:
+  - `supervisor`: `git` ➔ `rtk git`, `log` ➔ `rtk git log -n 5`, `gain` ➔ `rtk gain`.
+  - `pm`: `diff` ➔ `rtk diff`, `find` ➔ `rtk find`.
+  - `lead`: `git` ➔ `rtk git`, `diff` ➔ `rtk git diff`, `tsc` ➔ `rtk tsc`.
+  - `peer 1..4`: `jest` ➔ `rtk jest`, `tsc` ➔ `rtk tsc`, `cat` ➔ `rtk read -l aggressive`, `git` ➔ `rtk git`.
+  - `peer_design`: `diff` ➔ `rtk diff`, `cat` ➔ `rtk read`.
+  - `qc`: `jest` ➔ `rtk jest` (failures only), `playwright` ➔ `rtk test`, `err` ➔ `rtk err`.
+  - `security_sentinel`: `grep` ➔ `rtk grep`, `diff` ➔ `rtk diff`.
 
 ---
 
-## 4. Coding & Operation Rules
+## 5. Profile-Based Skills Taxonomy & RBAC Matrix
+
+Kho kỹ năng được tái cấu trúc thành 7 nhóm phân tầng theo vai trò chuyên biệt, loại bỏ cấu trúc phẳng:
+
+```text
+skills/
+├── supervisor/       # slpc-role-governance, chief-of-staff, handoff, workflow-launch-exec...
+├── pm/               # pm-decision-governance, systemone, loop-engineering, ba, to-spec...
+├── lead/             # lead-review, codebase-design, code-review, improve-codebase-architecture...
+├── peer/             # rsbuild-angular, mfe-angular-build, tds-ui-usage, tds-ui-figma, debug...
+├── qc/               # qc, a11y-debugging, chrome-devtools, tdd...
+├── security/         # fewer-permission-prompts, permissioned-github...
+└── shared/           # Tiện ích nền tảng: git, research, terminal, query-read...
+```
+
+- **Khóa phạm vi trong hồ sơ (`profiles/<name>.md`)**:
+  - Mỗi profile chỉ nạp danh mục `skills_dirs` tương ứng: `skills/<profile>` và `skills/shared`.
+  - Lập trình viên không thể gọi tool của quản lý; người quản lý không thể dùng tool can thiệp code thô.
+
+---
+
+## 6. Hướng Dẫn Cài Đặt & Khởi Động Lại Phòng (Setup & Room Launch Guide)
+
+Sau khi clone hoặc merge mã nguồn mới, thực hiện quy trình cài đặt và kích hoạt lại toàn bộ phòng ban:
+
+### Bước 1: Chuẩn Bị Môi Trường & Công Cụ Cơ Sở
+- Cài đặt công cụ bắt buộc: `git`, `python3` ($\ge 3.11$).
+- Cài đặt Rust Token Killer (RTK):
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  rtk --version  # Xác nhận phiên bản (vd: rtk 1.0.1)
+  ```
+- Nếu dùng Orca IDE: Đảm bảo lệnh `orca` có trong PATH (`~/.config/orca/linux-orca-cli-shim` hoặc Orca Desktop AppImage).
+
+### Bước 2: Khởi Tạo File Cấu Hình `.env`
+```bash
+cp .env.example .env
+# Kiểm tra FLOCI_ENDPOINT (mặc định: http://<FLOCI_HOST>:14566)
+```
+
+### Bước 3: Chạy Script Cài Đặt Tự Động 1 Bước (`setup.sh`)
+Script thực hiện toàn bộ 6 khâu cài đặt:
+```bash
+./setup.sh
+```
+- Khởi tạo thư mục và liên kết Skills vào `~/.hermes/skills/`.
+- Cấu hình Git Pre-commit Guard (`.git/hooks/pre-commit`) chặn hardcoded hex và vi phạm vai trò.
+- Đồng bộ các Profile SLPPC vào `~/.paseo/config.json` qua `patch_paseo.py`.
+- Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB).
+
+### Bước 4: Khởi Chạy Các Agent Tabs Thường Trực Trong Phòng Ban
+```bash
+# Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành.
+# Peer 1..4, Design, QC là Ephemeral Sub-Agents kích hoạt on-demand khi có task.
+./scripts/launch_room.sh
+
+# Hoặc vừa setup vừa launch:
+./setup.sh --launch
+```
+
+### Bước 5: Kiểm Tra & Giám Sát Sức Khỏe Phòng Ban
+```bash
+# 1. Kiểm tra an ninh chống rò rỉ (phải đạt PASS 100%)
+python3 scripts/anti_leak_sentinel.py
+
+# 2. Chạy toàn bộ 26 unit tests của công cụ
+python3 -m unittest discover -s tools/tests
+
+# 3. Quét Zombie Terminals mồ côi và Watchdog timeout
+python3 tools/zombie_reaper.py --dry-run
+
+# 4. Kiểm tra trạng thái Backlog & Work Items
+python3 tools/harness_manager.py stats
+./scripts/harness query backlog
+
+# 5. Kiểm tra nhịp tim các Agent
+python3 tools/agent_heartbeat.py status
+```
+
+---
+
+## 7. Quy Chuẩn Lập Trình & Kiểm Soát Chất Lượng (Quality Gates)
+
 1. **Lazy Senior Developer Philosophy**:
    - Stdlib & Native Platform trước tiên.
-   - Đọc kỹ source code và specs trước khi chỉnh sửa.
    - Diff ngắn gọn, giữ nguyên code style hiện tại, không thêm boilerplate thừa.
 2. **Path Integrity**:
    - Luôn sử dụng đường dẫn tuyệt đối khi thao tác file.
-   - Mã nguồn FE luôn trỏ về `/home/baoltb/Desktop/Paseo_Project/projects/crm-fe`.
-3. **No Raw HTML in Data**:
-   - Dữ liệu bóc tách từ REMOTE hoặc nạp vào DynamoDB/Harness bắt buộc phải được làm sạch qua `clean_html()` để loại bỏ thẻ HTML.
-4. **Session Continuity & Handoff Rule**:
-   - Khi User yêu cầu *"làm tiếp"* hoặc *"báo cáo những gì đã làm"*, Agent bắt buộc đọc `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) trước tiên.
-   - Trước khi kết thúc phiên hoặc dừng chờ User, Agent bắt buộc cập nhật tiến độ vào `docs/AGENT_PROGRESS.md` qua `python3 tools/agent_progress.py log ...`.
-5. **Zero-Search Task Specification Standard (Quy chuẩn Mô tả Task Zero-Search)**:
-   - Khi Supervisor tạo Epic/Task hoặc Lead phân rã Task cho Peer Dev / Peer Design, trường `description` và biên bản bàn giao BẮT BUỘC phải đủ 5 thông tin định danh, tuyệt đối cấm mô tả 1 dòng mơ hồ khiến Peer phải chạy bộ công cụ tìm kiếm (`search_files`, `rg`, `find`):
-     1. **Target Files**: Đường dẫn file cụ thể (Single-Ownership).
-     2. **Anchors / Line Numbers**: Tên hàm, class, selector, hoặc block code cần can thiệp.
-     3. **Concrete Changes**: Logic chi tiết, kiểu dữ liệu, token TDS hoặc payload JSON cụ thể.
-     4. **Acceptance Criteria (AC)**: Tiêu chuẩn nghiệm thu định lượng (pass test suite nào, verify điều kiện gì).
-     5. **Zero-Search Mandate**: Peer chỉ việc mở đúng file đích bằng `read_file`, chỉnh sửa bằng `patch`, và chạy test bằng `terminal`. Peer có quyền VETO từ chối task nếu mô tả thiếu thông tin định vị.
-6. **Strict Typing Gate: Zero `any`, Zero `unknown`, Zero Sloppy Fallbacks (`||`)**:
-   - Khi DTO và Model đã có sẵn trong codebase (như `Employee`, `ShopUserDto`), cấm tuyệt đối việc Peer dùng `any`, `unknown`, `as any` hoặc lạm dụng chuỗi fallback `||` không chắc chắn (ví dụ: `a || b || c`).
-   - Phải map tường minh từng thuộc tính theo đúng schema DTO đã khai báo (`item.shopUserId`, `item.accountUserId ?? String(item.shopUserId)`, `item.name`).
-   - Cấm dùng `new Optional()` cho các Service/Store cốt lõi đã `{ providedIn: 'root' }` (như `MemberStore`). Dependency bắt buộc phải inject trực tiếp vào `deps`.
-   - **Quality Gate của QC**: QC BẮT BUỘC phải rà soát diff của Peer. Nếu phát hiện dù chỉ 1 chữ `any`, `unknown` hoặc fallback chắp vá, QC lập tức REJECT nộp lại cho Peer sửa, cấm duyệt đóng task.
-7. **Anti-Leak & Sensitive Data Gate (Quy chuẩn Chống Lộ Dữ Liệu Nhạy Cảm & Địa Chỉ Thực Tế)**:
-   - Tuyệt đối cấm đưa tên công ty nội bộ, địa chỉ thực tế (số nhà, tên đường, cụm/lô khu công nghiệp, quận huyện), số điện thoại, email cá nhân, mã số thuế hoặc API token vào mã nguồn, tài liệu spec mẫu, commit Git hoặc Pull Request công khai.
-   - Bắt buộc tích hợp và kích hoạt script quét tự động (`scripts/check-sensitive-info.py` hoặc CI Action `security-scan.yml`) fail-closed trước khi merge.
-   - Với các dự án Rust: Bắt buộc chạy `cargo fmt --check` trước khi push để đảm bảo release pipeline không bị gãy format.
+3. **Session Continuity & Handoff Rule**:
+   - Khi User yêu cầu *"làm tiếp"* hoặc *"báo cáo tiến độ"*, Agent bắt buộc đọc `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) trước tiên.
+   - Trước khi kết thúc phiên hoặc dừng chờ User, Agent bắt buộc cập nhật tiến độ qua `python3 tools/agent_progress.py log ...`.
+4. **Zero-Search Task Specification Standard (5 Thành Phần Bắt Buộc)**:
+   Khi Supervisor/Lead giao việc cho Peer, task BẮT BUỘC phải đủ 5 thông tin định danh, nghiêm cấm mô tả 1 dòng mơ hồ:
+   1. `Target Files`: Đường dẫn file cụ thể (Single-Ownership).
+   2. `Anchors / Line Numbers`: Tên hàm, class, selector, hoặc block code cần can thiệp.
+   3. `Concrete Changes`: Logic chi tiết, kiểu dữ liệu, token TDS hoặc payload JSON cụ thể.
+   4. `Acceptance Criteria (AC)`: Tiêu chuẩn nghiệm thu định lượng (pass test suite nào).
+   5. `Test Command`: Lệnh kiểm tra cơ học cụ thể (vd: `npx jest path/to/spec`).
+5. **Strict Typing Gate: Zero `any`, Zero `unknown`, Zero Sloppy Fallbacks (`||`)**:
+   - Cấm dùng `any`, `unknown`, `as any` hoặc chuỗi fallback `||` chắp vá trong mã nguồn FE.
+   - QC bắt buộc chạy `python3 tools/strict_typing_scanner.py <path>` rà soát diff; nếu phát hiện vi phạm, lập tức REJECT task.
+6. **Anti-Leak & Sensitive Data Gate**:
+   - Tuyệt đối cấm đưa tên công ty nội bộ, địa chỉ thực tế, số điện thoại, email cá nhân, mã số thuế hoặc API token vào mã nguồn, commit Git hoặc PR công khai.
+   - Bắt buộc chạy `python3 scripts/anti_leak_sentinel.py` fail-closed trước khi commit/push.
+7. **TDS Test ID & Testing Contract Gate**:
+   - 100% component FE có tương tác phải gắn directive `tdsTestId` từ `@wicx/core`.
+   - Naming convention: `<domain>-<component>-<element>-<state?>` (100% tiếng Anh, kebab-case).
+   - QC thẩm tra bằng `[tds-test-id="..."]` hoặc helper `getByTdsTestId()`, nghiêm cấm `getByText()` hay class CSS.

@@ -28,6 +28,9 @@ Chỉ thị dành cho Agent khi làm việc trong thư mục `tools/`.
   - Cú pháp: `python3 /home/baoltb/Desktop/Paseo_Project/tools/qc_test_generator.py --source <file> --spec <spec> --task-id <id> --out-spec <spec_ts> --sync-harness [--run]`
 - **`agent_progress.py`**:
   - Quản lý Sổ cái Tiến độ & Bàn giao (`docs/AGENT_PROGRESS.md`) + tìm/đọc thread `.jsonl` (`find-thread`, `read-thread`, `sessions`, `status`, `log`).
+- **`zombie_reaper.py`**:
+  - Quét và thu hồi các terminal PTY mồ côi (Zombie Terminal Reaper) và giám sát trần timeout watchdog 300s cho Ephemeral Sub-Agents.
+  - Cú pháp: `python3 tools/zombie_reaper.py [--dry-run] [--timeout 300] [--json] [--interrupt-stalled]`
 
 
 ---

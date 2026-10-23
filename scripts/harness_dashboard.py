@@ -524,7 +524,7 @@ def scan_workspace_Targets():
             "id": "self-test-harness",
             "category": "Test",
             "title": "Harness & Floci DynamoDB Self-Test",
-            "command": "python3 tools/test_harness.py",
+            "command": "python3 tools/tests/test_harness.py",
             "cwd": str(BASE_DIR)
         },
         {
@@ -980,7 +980,7 @@ def resolve_link_and_generate_tests(body: dict) -> dict:
         summary_lines.append(f"echo '[GENERATED SPEC] -> {out_s} ({cnt_s} ISTQB test cases)'")
 
     if run_test and generated_files:
-        summary_lines.append("python3 tools/test_qc_generator.py")
+        summary_lines.append("python3 tools/tests/test_qc_generator.py")
 
     job_cmd = " && ".join(summary_lines)
     job = start_background_job(

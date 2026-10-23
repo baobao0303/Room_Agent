@@ -49,9 +49,45 @@ EXCLUDED_PATHS = {
     "venv",
     "__pycache__",
     "tools/research", # auto-generated research briefs (gitignored)
-    "bmad/rooms",     # ephemeral agent room coordination (gitignored)
     "scripts/anti_leak_sentinel.py", # skip self
 }
+
+def check_git_tracked_memos() -> list[str]:
+    """Ensure ephemeral memos, progress logs, and .claude/ are NOT tracked by Git."""
+    issues = []
+    forbidden_prefixes = [
+        "bmad/rooms/lead/",
+        "bmad/rooms/peer/",
+        "bmad/rooms/qc/",
+        "bmad/rooms/supervisor/",
+        "bmad/rooms/pm/",
+        "bmad/rooms/tasks/",
+        "bmad/rooms/violations/",
+        "bmad/rooms/archive/",
+        ".claude/",
+        "docs/AGENT_PROGRESS.md",
+        "docs/spec/wicx-crm-fe/",
+        "docs/spec/wion-pos-header-refactor-spec.md"
+    ]
+    allowed_exceptions = {"bmad/rooms/README.md", "bmad/rooms/template-handoff.md"}
+    try:
+        res = subprocess.run(
+            ["git", "ls-files"],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        for line in res.stdout.splitlines():
+            line = line.strip()
+            if not line or line in allowed_exceptions:
+                continue
+            for prefix in forbidden_prefixes:
+                if line.startswith(prefix) or line == prefix:
+                    issues.append(f"Ephemeral/Internal file is tracked by Git: '{line}'. Must untrack via 'git rm --cached {line}'")
+    except Exception as e:
+        issues.append(f"Failed to check git tracking for memos: {e}")
+    return issues
 
 def check_scattered_skills() -> list[str]:
     """Ensure skills reside exclusively in canonical `skills/<skill_name>/SKILL.md`."""
@@ -136,6 +172,10 @@ def main() -> int:
     # 1. Check git tracking of projects
     proj_issues = check_git_tracked_subprojects()
     all_issues.extend(proj_issues)
+
+    # 1.1 Check git tracking of ephemeral memos & progress logs
+    memo_issues = check_git_tracked_memos()
+    all_issues.extend(memo_issues)
 
     # 2. Check scattered skills
     skill_issues = check_scattered_skills()

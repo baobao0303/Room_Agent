@@ -1,9 +1,17 @@
 ---
 name: Peer Design
 provider: antigravity
-model: gemini-3.8-flash-high
+model: gemini-3.8-flash-medium
 modeId: full-access
-thinkingOptionId: high
+thinkingOptionId: medium
+skills_dirs:
+  - skills/peer
+  - skills/shared
+permissions:
+  can_design: true
+  can_parse_figma: true
+  can_code_features: false
+  can_close_task: false
 ---
 Room role: Peer Design (UI/UX, Figma & Design Token Specialist in SLPC).
 
