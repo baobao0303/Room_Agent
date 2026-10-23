@@ -33,9 +33,11 @@ WEB_DASHBOARD_FILE = BASE_DIR / "tools/web/skill_dashboard.html"
 TARGET_DIRS = [
     Path(os.path.expanduser("~/.claude/skills")),
     Path(os.path.expanduser("~/.paseo/skills")),
-    BASE_DIR / ".claude/skills",
-    Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills"),
+    Path(os.path.expanduser("~/.hermes/skills")),
 ]
+_paseo_project_skills = Path(os.environ.get("PASEO_AGENTS_SKILLS", Path.home() / "Desktop" / "Paseo_Project" / ".agents" / "skills"))
+if _paseo_project_skills.is_dir():
+    TARGET_DIRS.append(_paseo_project_skills)
 
 
 def ensure_dirs():
@@ -103,10 +105,15 @@ def get_all_skills() -> List[Dict[str, Any]]:
     if MASTER_REGISTRY.is_dir():
         for item in MASTER_REGISTRY.iterdir():
             if item.is_dir():
-                add_skill_entry(item, "Master Registry", "master", is_master=True)
+                if (item / "SKILL.md").exists():
+                    add_skill_entry(item, "Master Registry", "master", is_master=True)
+                else:
+                    for sub_item in item.iterdir():
+                        if sub_item.is_dir() and (sub_item / "SKILL.md").exists():
+                            add_skill_entry(sub_item, f"Master Registry ({item.name})", "master", is_master=True)
 
     # 2. Existing in Paseo Project .agents/skills
-    proj_skills = Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills")
+    proj_skills = _paseo_project_skills
     if proj_skills.is_dir():
         for item in proj_skills.iterdir():
             if item.is_dir():
@@ -160,6 +167,19 @@ def get_all_skills() -> List[Dict[str, Any]]:
     return res
 
 
+def find_skill_in_master(skill_name: str) -> Optional[Path]:
+    """Find skill directory in master registry across all profile subdirectories."""
+    top = MASTER_REGISTRY / skill_name
+    if top.is_dir() and (top / "SKILL.md").exists():
+        return top
+    for sub in MASTER_REGISTRY.iterdir():
+        if sub.is_dir():
+            nested = sub / skill_name
+            if nested.is_dir() and (nested / "SKILL.md").exists():
+                return nested
+    return None
+
+
 def sync_skills() -> Dict[str, Any]:
     """
     Consolidate all skills into Master Registry and symlink to all target directories.
@@ -171,7 +191,7 @@ def sync_skills() -> Dict[str, Any]:
 
     # Step 1: Collect from external directories into Master Registry if not present
     source_candidates = [
-        Path("/home/baoltb/Desktop/Paseo_Project/.agents/skills"),
+        _paseo_project_skills,
         Path(os.path.expanduser("~/.claude/skills")),
         Path(os.path.expanduser("~/.paseo/skills")),
         Path(os.path.expanduser("~/.codex/skills")),
@@ -185,8 +205,9 @@ def sync_skills() -> Dict[str, Any]:
     if gemini_plugins.is_dir():
         for sk_dir in gemini_plugins.glob("**/skills/*"):
             if sk_dir.is_dir() and (sk_dir / "SKILL.md").exists():
-                master_dest = MASTER_REGISTRY / sk_dir.name
-                if not master_dest.exists():
+                existing = find_skill_in_master(sk_dir.name)
+                if not existing:
+                    master_dest = MASTER_REGISTRY / "shared" / sk_dir.name
                     try:
                         shutil.copytree(sk_dir, master_dest, symlinks=True)
                     except Exception as e:
@@ -200,26 +221,20 @@ def sync_skills() -> Dict[str, Any]:
                 continue
             real_path = item.resolve() if item.is_symlink() else item
             if real_path.is_dir() and (real_path / "SKILL.md").exists():
-                master_dest = MASTER_REGISTRY / item.name
-                if not master_dest.exists():
+                existing = find_skill_in_master(item.name)
+                if not existing:
+                    master_dest = MASTER_REGISTRY / "shared" / item.name
                     try:
-                        # Copy or symlink into master
+                        # Copy or symlink into master shared
                         shutil.copytree(real_path, master_dest, symlinks=True)
                     except Exception as e:
                         errors.append(f"Không thể sao chép {item.name} vào Master: {str(e)}")
 
-    # Step 2: Build full target directories list including bmad/rooms
-    active_targets = list(TARGET_DIRS)
-    bmad_rooms = BASE_DIR / "bmad/rooms"
-    if bmad_rooms.is_dir():
-        for room in bmad_rooms.iterdir():
-            if room.is_dir():
-                room_skills = room / ".claude/skills"
-                room_skills.mkdir(parents=True, exist_ok=True)
-                active_targets.append(room_skills)
+    # Step 2: Build target directories list (only existing target directories)
+    active_targets = [t for t in TARGET_DIRS if t.is_dir()]
 
-    # Step 3: Symlink all master skills to every target directory
-    all_master_skills = [s for s in MASTER_REGISTRY.iterdir() if s.is_dir() and (s / "SKILL.md").exists()]
+    # Step 3: Scan all master skills across profile directories (skills/<profile>/<skill>)
+    all_master_skills = [s for s in MASTER_REGISTRY.rglob("*") if s.is_dir() and (s / "SKILL.md").exists()]
 
     for skill_dir in all_master_skills:
         skill_name = skill_dir.name

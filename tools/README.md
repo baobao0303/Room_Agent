@@ -1,111 +1,91 @@
-# Tools Directory - Cấu Trúc Bộ Công Cụ Dự Án Paseo
+# Tools Directory - Cấu Trúc Bộ Công Cụ Multi-Agent SLPPC
 
-Thư mục chứa toàn bộ các công cụ bổ trợ, CLI và script tự động hóa dành cho các Agent (`Supervisor`, `Lead`, `Peer`, `QC`) và nhà phát triển trong hệ thống SLPC.
+Thư mục chứa toàn bộ CLI, scripts tự động hóa và công cụ điều hành dành cho các Agent (`Supervisor`, `PM`, `Lead`, `Peer 1..4`, `QC`, `Security Sentinel`) trong hệ sinh thái SLPPC.
 
 ---
 
-## 📂 Phân Loại Cấu Trúc Thư Mục
+## 📂 Phân Loại Công Cụ Theo Nhóm Nghiệp Vụ
 
 ```text
 tools/
-├── tests/                     # Toàn bộ test suite kiểm thử cho các tools
-│   ├── test_harness.py        # Kiểm thử tích hợp Harness Manager & Floci DynamoDB
-│   ├── test_qc_generator.py   # Kiểm thử quy chuẩn 5-Stage ISTQB QC Generator
-│   └── test_tds_search.py     # Kiểm thử cổng tra cứu TDS UI Component Gateway
-├── research/                  # Bộ công cụ nghiên cứu kỹ thuật & Hermes Gateway
-│   ├── research_agent.py      # Sub-agent nghiên cứu kỹ thuật đa tầng (Hermes / Router9)
-│   ├── hermes_research_client.py # Client kết nối Hermes Gateway
-│   └── reports/               # Lưu trữ các báo cáo nghiên cứu kỹ thuật dạng Markdown
-│       ├── raw_data_mapping_step_1_channel_con.md
-│       ├── tds_icon_list_from_https_tds_tmtco_.md
-│       ├── codex_room_setup_research.md
-│       └── harness_framework_research.md
-├── harness_manager.py         # Quản trị Work Items & State Machine trên Floci DynamoDB
-├── harness_doctor.py          # Continuous Doctor Health Monitor & Auto-Healer
-├── floci_client.py            # Client kết nối Floci DynamoDB & S3 Local
-├── agent_progress.py          # Sổ cái Tiến độ & Quản lý Handoff Ledger (docs/AGENT_PROGRESS.md)
-├── call_agent.py              # CLI Runner điều phối kích hoạt 4 Role SLPC
-├── paseo_hooks.py             # CLI điều khiển Paseo Daemon Lifecycle Hooks
-├── profile_research_gen.py    # Pipeline ép cổng Research & Gen Brief tự động
-├── qc_test_generator.py       # Bộ sinh Test Matrix & Unit Test 5-Stage ISTQB
-├── query_reader.py            # Đọc ngữ cảnh thông minh, chống lỗi EISDIR, xếp hạng BM25
-├── tds_search.py              # Tra cứu nhanh offline và online cho thư viện TDS UI Angular
-├── crm_doc_reader.py          # Tra cứu tài liệu nghiệp vụ từ repo TFS wicx-crm doc/base
-├── distill_ba_beats.py        # Chắt lọc tài liệu BA thành các beat ngắn gọn
-├── remote_mcp_server.py       # MCP Server kết nối TFS / Azure DevOps Server
-├── remote_sync.py             # Đồng bộ toàn bộ backlog từ TFS về Floci DynamoDB
-└── doc_sync.py                # Đồng bộ và kiểm tra cấu trúc đặc tả trong docs/spec/
+├── 1. Core Harness & Data Store
+│   ├── floci_client.py              # DynamoDB & S3 local client (endpoint :14566)
+│   ├── harness_manager.py           # Quản lý Work Items & State Machine (auto/floci/sqlite)
+│   ├── harness_rust.py              # Native Rust Bridge v0.1.14 & Kev System One Decision Engine
+│   ├── harness_doctor.py            # Continuous DB Health Monitor & Auto-Healer
+│   └── harness_learning_search.py   # Tra cứu & kiểm soát chất lượng tri thức tự học
+│
+├── 2. SLPPC Governance & Quality Gates
+│   ├── slppc_flow_guard.py          # Canh gác ranh giới 5 vai trò (role_trespass, pm_bypass, vague_specs)
+│   ├── lead_code_review.py          # Bộ công cụ rà soát mã nguồn & thẩm định kiến trúc của Lead Dev
+│   ├── strict_typing_scanner.py     # Quét nghiêm ngặt cấm 'any', 'unknown' và fallback chắp vá
+│   ├── zombie_reaper.py             # Zombie Terminal Reaper & Watchdog timeout 300s
+│   └── room_cleanup.py              # Thu gom rác an toàn khi Work Item đạt Closed
+│
+├── 3. Agent Runtime & Lifecycle
+│   ├── agent_progress.py            # Sổ cái tiến độ & biên bản bàn giao (docs/AGENT_PROGRESS.md)
+│   ├── agent_heartbeat.py           # Giám sát nhịp tim và trạng thái của từng Agent
+│   ├── agent_heartbeat_watcher.py   # Daemon watcher cảnh báo mất nhịp tim
+│   ├── agent_reprimand.py           # Lập biên bản chế tài và xử phạt vi phạm quy trình
+│   ├── agent_context_manager.py     # Giám sát ngân sách context window (<30k tokens)
+│   ├── call_agent.py                # Dispatcher kích hoạt Paseo agent profiles
+│   └── paseo_hooks.py               # Điều khiển Paseo Daemon Lifecycle Hooks (:6767)
+│
+├── 4. Testing & Code Generation
+│   ├── qc_test_generator.py         # Bộ sinh Test Matrix & Unit Test 5-Stage ISTQB
+│   ├── tester_team_tool.py          # Bộ công cụ tự động hóa kiểm thử Tester Team
+│   └── profile_research_gen.py      # Pipeline ép cổng Research + Gen Brief tự động
+│
+├── 5. Search, Knowledge & Integration
+│   ├── skill_manager.py             # Master Registry & Inverted Index DB Search cho 80+ skills
+│   ├── tds_search.py                # Tra cứu offline/online API & selectors TDS UI
+│   ├── query_reader.py              # Đọc ngữ cảnh thông minh, chống lỗi EISDIR, BM25
+│   ├── record_discussion.py         # Ghi biên bản thảo luận & đồng thuận (ADR minutes)
+│   ├── remote_mcp_server.py         # MCP Server kết nối Azure DevOps / TFS
+│   ├── remote_sync.py               # Đồng bộ backlog từ Azure DevOps về DynamoDB
+│   └── doc_sync.py                  # Đồng bộ và kiểm tra cấu trúc đặc tả trong docs/spec/
+│
+├── 6. Orchestration Bridges
+│   ├── orca_slpc_bridge.py          # Bộ điều phối toàn diện SLPC trên Orca Orchestration
+│   ├── orca_harness_bridge.py       # Cầu nối đồng bộ Harness DB với Orca Workspace Board
+│   └── aevum_harness_bridge.py      # Cầu nối đồng bộ BlockSuite Aevum Real-Time Kanban
+│
+└── 7. Subdirectories
+    ├── tests/                       # Unit test suites cho toàn bộ tools (100% PASS)
+    │   ├── test_harness.py
+    │   ├── test_qc_generator.py
+    │   ├── test_skill_manager.py
+    │   ├── test_strict_typing_scanner.py
+    │   ├── test_role_fence_audit.py
+    │   ├── test_tds_search.py
+    │   ├── test_harness2_spec_audit.py
+    │   └── test_harness_core_issue12_13.py
+    ├── research/                    # Sub-agent nghiên cứu kỹ thuật & Hermes Gateway
+    │   ├── research_agent.py
+    │   ├── hermes_research_client.py
+    │   └── reports/                 # Các báo cáo nghiên cứu kỹ thuật chuẩn hóa
+    └── web/                         # Giao diện dashboard trực quan
+        └── skill_dashboard.html     # HTML UI cho Skill Manager
 ```
 
 ---
 
-## 🛠️ Danh Mục Công Cụ Theo Nhóm Nghiệp Vụ
+## ⚡ Lệnh Thường Dùng
 
-### 1. Điều Phối Đa Agent & Quản Trị Tiến Độ (SLPC & Orchestration)
-- **`agent_progress.py`**: Xem trạng thái và ghi nhận bàn giao giữa các phiên làm việc.
-  ```bash
-  python3 tools/agent_progress.py status
-  python3 tools/agent_progress.py log --agent "Peer" --summary "..." --done "..." --next "..."
-  ```
-- **`call_agent.py`**: Kích hoạt vai trò cụ thể (`supervisor`, `lead`, `peer`, `qc`).
-  ```bash
-  python3 tools/call_agent.py --role supervisor --prompt "..."
-  ```
-- **`profile_research_gen.py`**: Tự động hóa khâu Research + Gen Brief theo đặc tả trước khi lập trình.
-  ```bash
-  python3 tools/profile_research_gen.py --profile "Supervisor" --topic "..."
-  ```
-- **`paseo_hooks.py`**: Kiểm tra và điều khiển Paseo Daemon Lifecycle Hooks (Port 6767).
-  ```bash
-  python3 tools/paseo_hooks.py status
-  ```
+```bash
+# 1. Tra cứu ma trận kiểm thử & backlog
+python3 tools/harness_manager.py stats
+python3 tools/harness_manager.py list --source bot --assigned-to-profile lead
 
-### 2. Kiểm Thử & Đảm Bảo Chất Lượng (Quality Assurance & Testing)
-- **`qc_test_generator.py`**: Sinh test case và file unit test chuẩn ISTQB 5-Stage.
-  ```bash
-  python3 tools/qc_test_generator.py --source <file.ts> --spec <spec.md> --task-id <id> --out-spec <test.spec.ts>
-  ```
-- **`tests/`**: Toàn bộ unit tests cho tools được gom gọn độc lập tại `tools/tests/`:
-  ```bash
-  python3 -c "import unittest; unittest.main(module=None, argv=['unittest', 'discover', '-s', 'tools/tests'])"
-  ```
+# 2. Canh gác ranh giới vai trò SLPPC
+python3 tools/slppc_flow_guard.py audit
 
-### 3. Lưu Trữ Phân Tán & Quản Lý Backlog (Harness & Floci)
-- **`harness_manager.py`**: Thao tác CRUD và chuyển đổi trạng thái Work Item trên Floci DynamoDB (317 items).
-  ```bash
-  python3 tools/harness_manager.py list --status Active
-  ./scripts/harness query matrix
-  ```
-- **`harness_doctor.py`**: Chẩn đoán kết nối Floci, cấu trúc bảng DynamoDB và sửa lỗi tự động.
-  ```bash
-  python3 tools/harness_doctor.py --check
-  ```
-- **`floci_client.py`**: Client tầng thấp tương tác trực tiếp với DynamoDB & S3 trên Floci.
-- **`remote_sync.py`**: Đồng bộ dữ liệu mới nhất từ Azure DevOps Server về Floci:
-  ```bash
-  ./scripts/harness sync-remote
-  ```
+# 3. Quét Zombie Terminal & giám sát Watchdog
+python3 tools/zombie_reaper.py --dry-run
 
-### 4. Đọc Dữ Liệu & Tra Cứu Thông Minh (Search & Reading Engine)
-- **`query_reader.py`**: Đọc thư mục/file an toàn chống tràn context, trích xuất đoạn văn theo BM25.
-  ```bash
-  python3 tools/query_reader.py <folder_path> ["keyword"]
-  ```
-- **`crm_doc_reader.py`**: Tra cứu Use Case (UC1.01..UC4.09) từ kho tài liệu gốc.
-  ```bash
-  python3 tools/crm_doc_reader.py --uc UC4.01
-  ```
-- **`distill_ba_beats.py`**: Chuyển đổi đặc tả dài thành các beat hành động ngắn cho dev.
+# 4. Quét vi phạm Strict Typing
+python3 tools/strict_typing_scanner.py projects/wicx-crm-fe
 
-### 5. Giao Diện & Thiết Kế (UI & Design System)
-- **`tds_search.py`**: Tra cứu selector, input, output và code ví dụ của 92+ component TDS UI.
-  ```bash
-  python3 tools/tds_search.py "table"
-  python3 tools/tds_search.py --catalog
-  ```
-
-### 6. Nghiên Cứu Kỹ Thuật (Research Sub-Agent)
-- **`research/research_agent.py`**: Tổng hợp kiến trúc đa tầng qua Router9 / Hermes Gateway:
-  ```bash
-  python3 tools/research/research_agent.py "Kiến trúc Module Federation 2.0"
-  ```
+# 5. Chạy toàn bộ test suite của tools
+python3 -m unittest discover -s tools/tests
+```

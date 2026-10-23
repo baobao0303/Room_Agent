@@ -12,16 +12,20 @@ CONFIG_PATH = Path(os.environ.get("PASEO_CONFIG", Path.home() / ".paseo" / "conf
 PROFILES_DIR = Path(os.environ.get("PASEO_PROFILES_DIR", PROJECT_ROOT / "profiles"))
 PROFILE_FILES = [
     "supervisor.md",
+    "pm.md",
     "lead.md",
     "peer.md",
     "peer_2.md",
     "peer_3.md",
     "peer_4.md",
     "peer_design.md",
-    "qc.md"
+    "qc.md",
+    "security_sentinel.md"
 ]
 DEFAULT_IDS = {
     "Supervisor": "agent_profile_supervisor_slp",
+    "PM Agent": "agent_profile_pm_slp",
+    "PM": "agent_profile_pm_slp",
     "Lead": "agent_profile_lead_slp",
     "Peer": "agent_profile_peer_slp",
     "Peer Dev 2": "agent_profile_peer2_slp",
@@ -29,6 +33,8 @@ DEFAULT_IDS = {
     "Peer Dev 4": "agent_profile_peer4_slp",
     "Peer Design": "agent_profile_peer_design",
     "QC": "agent_profile_qc_slpc",
+    "Security Sentinel": "agent_profile_security_sentinel",
+    "Security": "agent_profile_security_sentinel",
 }
 
 DEFAULT_DEPARTMENT_PROFILES = [

@@ -28,12 +28,7 @@ jobs:
           python-version: "3.12"
       - run: python -m compileall -q tools scripts
       - run: bash -n setup_harness.sh setup_home.sh
-      - run: python tools/test_harness.py
-        env:
-          HARNESS_BACKEND: sqlite
-          HARNESS_DB: ${{ runner.temp }}/harness_test.db
-      - run: python tools/test_qc_generator.py
-      - run: python tools/tests/test_role_fence_audit.py
+      - run: python -m unittest discover -s tools/tests
         env:
           HARNESS_BACKEND: sqlite
           HARNESS_DB: ${{ runner.temp }}/harness_test.db
