@@ -430,6 +430,16 @@ def cmd_report_done(task_id: str, files: str):
         except Exception:
             pass
 
+        # Ephemeral Lifecycle: Peer nộp xong tự động đóng terminal để tiết kiệm RAM & Token
+        peer_handle = find_live_terminal_for_role("peer")
+        if peer_handle:
+            try:
+                print(f"🚪 [Ephemeral Auto-Close]: Peer nộp việc xong, đang đóng terminal {peer_handle}...")
+                subprocess.run(["orca", "terminal", "close", "--terminal", peer_handle, "--tab"], check=False)
+                print(f"✅ Đã đóng terminal tab của Peer ({peer_handle}) đưa RAM nền về 0.")
+            except Exception as e:
+                print(f"⚠️ Không thể đóng terminal Peer: {e}")
+
 
 def cmd_lead_review(task_id: str, repo_dir: str = "projects/wicx-crm-fe") -> bool:
     """Bước 5: Lead Dev thẩm định kiến trúc (5-Point Checklist). Nếu Pass mới bàn giao cho QC."""
@@ -516,6 +526,23 @@ def cmd_lead_review(task_id: str, repo_dir: str = "projects/wicx-crm-fe") -> boo
             "--task-id", str(task_id),
             "--penalize"
         ], check=False)
+
+        # Mở lại Terminal Orca cho Peer vào fix tiếp
+        if shutil.which("orca"):
+            print(f"🔄 [Reopen Peer Terminal]: Lead Review REJECTED Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
+            try:
+                cmd_reopen = [
+                    "orca", "agent", "launch",
+                    "--worktree", "active",
+                    "--agent", "hermes",
+                    "--focus",
+                    "--prompt", f"[Peer Fix Task #{task_id}]: Lead Review REJECTED. Hãy đọc bmad/rooms/tasks/{task_id}/lead_review_report_to_supervisor.md và khắc phục vi phạm!",
+                    "--json"
+                ]
+                run_cmd(cmd_reopen, check=False)
+                print(f"🚀 Đã mở lại Orca terminal cho Peer vào sửa lỗi Task #{task_id}!")
+            except Exception as e:
+                print(f"⚠️ Không thể mở lại terminal Peer: {e}")
         return False
 
     print("✅ [LEAD CODE REVIEW: APPROVED]! Mã nguồn đạt chuẩn kiến trúc 100%.")
@@ -620,6 +647,23 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
             "--task-id", str(task_id),
             "--penalize"
         ], check=False)
+
+        # Mở lại Terminal Orca cho Peer vào fix Bug
+        if shutil.which("orca"):
+            print(f"🔄 [Reopen Peer Terminal]: QC phát hiện Bug Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
+            try:
+                cmd_reopen = [
+                    "orca", "agent", "launch",
+                    "--worktree", "active",
+                    "--agent", "hermes",
+                    "--focus",
+                    "--prompt", f"[Peer Fix Bug Task #{task_id}]: QC độc lập phát hiện lỗi kiểm thử. Hãy đọc kết quả test và sửa code!",
+                    "--json"
+                ]
+                run_cmd(cmd_reopen, check=False)
+                print(f"🚀 Đã mở lại Orca terminal cho Peer vào sửa Bug Task #{task_id}!")
+            except Exception as e:
+                print(f"⚠️ Không thể mở lại terminal Peer: {e}")
         return False
 
     print("✅ [QC VERDICT: 100% PASS & APPROVED]!")

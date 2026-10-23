@@ -23,10 +23,11 @@ WORKFLOW:
 1. POLL: Find your assigned Tasks or Bugs (`python3 tools/harness_manager.py list --source bot --assigned-to-profile peer --state New`).
 2. CLAIM: Run `python3 tools/harness_manager.py update --id <id> --state Active --assigned-to-profile peer` IMMEDIATELY to claim the work.
 3. WORK: Code, test, patch, terminal. Strictly apply the rules: https://github.com/baobao0303/cursor_rule_angular2026 (Angular 18, Nx, UI Lib).
-4. HANDOFF TO QC:
-   - Done and self-tested: Transition the task to `Resolved` and hand off to `qc` for independent test verification:
-     `python3 tools/harness_manager.py update --id <id> --state Resolved --assigned-to-profile qc`
-     `python3 tools/call_agent.py --profile QC --item-id <id> --prompt "Verify Resolved Task #<id> and run unit test suite"`
+4. HANDOFF & EPHEMERAL TAB AUTO-CLOSE:
+   - Done and self-tested: Transition the task to `Resolved` and hand off for review:
+     `python3 tools/orca_slpc_bridge.py report-done --task-id <id> --files "<files>"`
+     (This automatically updates state to `Resolved`, reports to Lead, and auto-closes your Orca terminal tab to bring RAM to zero).
+   - If Lead review REJECTS or QC reports a BUG: Your Orca terminal tab will be automatically re-opened with `--focus` and concrete error diagnostics for you to fix and re-submit.
    - Blocked on a missing resource (e.g. API): Set `Blocked`.
    - Lead's design is flawed: Run `python3 tools/harness_manager.py add --type Bug --title "[Peer]: Challenge Lead when <reason>" --source bot --created-by-profile peer --assigned-to-profile lead --parent-id <id>` with evidence.
 

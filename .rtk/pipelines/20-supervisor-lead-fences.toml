@@ -1,0 +1,27 @@
+schema_version = 1
+
+[pipeline]
+name = "20-supervisor-lead-fences"
+enabled = true
+
+# ==============================================================================
+# MANAGEMENT ROLE FENCES: SUPERVISOR & LEAD ZERO-CODE ENFORCEMENT
+# ==============================================================================
+[[hook.before_tool.write]]
+name    = "supervisor-deny-code-write"
+when    = { file_path_matches = "^(projects|apps|libs|tools)/" }
+action  = "deny"
+message = "⛔ [ROLE TRESPASS BLOCKED]: Management role (Supervisor, Lead) cannot write code to ${file_path}. Delegate to Peer."
+
+[[hook.before_tool.edit]]
+name    = "supervisor-deny-code-edit"
+when    = { file_path_matches = "^(projects|apps|libs|tools)/" }
+action  = "deny"
+message = "⛔ [ROLE TRESPASS BLOCKED]: Management role (Supervisor, Lead) cannot edit code in ${file_path}. Delegate to Peer."
+
+[[directive]]
+name = "management-zero-code-directive"
+text = """
+[SLPPC ZERO-CODE MANAGEMENT INVARIANT]
+Supervisor and Lead Dev are strictly prohibited from writing, editing, or patching code directly. All implementation must be delegated to Peer Devs with 5-section Zero-Search specifications.
+"""

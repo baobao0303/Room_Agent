@@ -1,0 +1,36 @@
+schema_version = 1
+
+[pipeline]
+name = "10-pm-head-gate"
+enabled = true
+
+# ==============================================================================
+# UPSTREAM: KEV SYSTEM ONE DECISION ENGINE (<50ms)
+# ==============================================================================
+[upstream.kev]
+provider     = "typesafe"
+model        = "systemone-fast"
+base_url     = "http://100.124.36.46:8008/v1/systemone"
+timeout_secs = 3
+
+# ==============================================================================
+# 1. HEAD-OF-SPEC GATE: PM INTAKE & FEASIBILITY EVALUATION
+# ==============================================================================
+[classifier.pm_feasibility]
+upstream       = "kev"
+question       = "choice"
+instructions   = "Evaluate if incoming requirement is feasible and aligned with project architecture."
+input_chars    = 1500
+min_confidence = 0.70
+
+[classifier.pm_feasibility.labels]
+viable      = "Feasible, aligned with domain, clear boundaries"
+unverified  = "Lacks concrete acceptance criteria or missing architecture spec"
+scope_creep = "Unrequested features, unnecessary dependencies"
+
+[[directive]]
+name = "pm-head-directive"
+text = """
+[SLPPC HEAD-OF-SPEC: PM GATE]
+Every task, bug report, or feature intake MUST be evaluated by PM Agent via Kev System One (<50ms) before any subtask decomposition. Bypassing PM is strictly prohibited (pm_bypass).
+"""

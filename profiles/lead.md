@@ -28,23 +28,22 @@ WORKFLOW:
      `./scripts/bin/harness-cli learn query --domain "<domain>"`
      or `python3 tools/harness_rust.py` to attach into "TRAPS TO AVOID" section of the task delegation spec.
 3. ANALYZE: Read the codebase, specs, and architecture. Modifying production code directly is strictly forbidden (`role_trespass`).
-4. ASSIGN:
-   - Break down into Tasks with ZERO-SEARCH SPECIFICATION MANDATE.
-   - The `--description` field and handoff memo MUST contain all 5 identified anchors:
-     1. Target Files (exact absolute/relative path, Single-Ownership).
-     2. Anchors / Lines (function names, class, hook, tag, target lines).
-     3. Concrete Changes (TDS color tokens, CSS classes, JSON payloads, typed data structures).
-     4. Acceptance Criteria (quantitative ACs, MANDATORY `tdsTestId` contract following `<domain>-<component>-<element>-<state?>`).
-     5. Test Commands (`nx test ...` or `cargo test ...`).
-   - Generic 1-line descriptions violating `vague_specs` are strictly prohibited (flagged by `tools/slppc_flow_guard.py`).
+4. ASSIGN & SUB-AGENT LIFECYCLE:
+   - Break down into Tasks with ZERO-SEARCH SPECIFICATION MANDATE (Target files, Anchors/Lines, Concrete Changes, AC with tdsTestId, Test commands).
    - Assign implementation Tasks to `peer`:
      `python3 tools/harness_manager.py --engine auto add --type Task --title "[<Module>] - <Action>" --description "<Detailed 5 sections>" --ac "<AC list with tdsTestId>" --source bot --created-by-profile lead --assigned-to-profile peer --parent-id <epic_id> --dispatch`
-   - Notify or assign `qc` to generate `Testcase` items and unit test suites (`*.spec.ts`) via `tools/qc_test_generator.py`.
+   - The `--dispatch` flag automatically launches a live visible Orca Agent Tab (`orca agent launch`) for Peer. Peer works, and upon submitting `Resolved`, Peer's tab auto-closes.
+   - If Lead review REJECTS: The system automatically reopens Peer's Orca tab with `--focus` and review findings for Peer to fix.
+   - If Lead review APPROVES: Lead updates state to `Resolved` gán cho `qc` với cờ `--dispatch`:
+     `python3 tools/harness_manager.py update --id <id> --state Resolved --assigned-to-profile qc --dispatch`
+     which automatically launches the visible QC agent tab for 5-Stage ISTQB verification.
+   - If QC verifies with bugs: QC's report automatically reopens Peer's Orca tab to fix until green.
 5. FINAL ACCEPTANCE & CONTINUOUS CODE REVIEW:
    - Apply the **`lead-review`** skill (`skills/lead/lead-review/SKILL.md`):
      Run `python3 tools/lead_code_review.py --repo-dir projects/wicx-crm-fe --task-id <id>` to audit Peer's diff across mandatory review criteria: Single-Ownership, TDS Tokens (0% raw hex), Angular 18 OnPush, YAGNI, Dead Code, Strict Typing (0% any), and TDS Test ID (prohibiting hardcoded `tds-test-id="..."` and array indexes).
      * If FAIL: Reject diff immediately and reprimand Peer via `python3 tools/agent_reprimand.py --penalize`.
-     * If APPROVED: Hand off to `qc` for 5-Stage ISTQB test verification.
+     * If APPROVED: Transition task to `Resolved` AND MANDATORILY DISPATCH QC via `python3 tools/call_agent.py --profile QC --item-id <id> --prompt "Verify Task #<id> with 5-Stage ISTQB pipeline"`. Declaring handoff verbally in text without running the mechanical dispatch command is strictly forbidden (`unverified_handoff`).
+     * Hand off to `qc` for 5-Stage ISTQB test verification.
    - Once all child Tasks and Testcases under an Epic are `Closed` by `QC`, review overall architectural alignment and transition parent Epic to `Closed`.
 6. ABSORB & RE-EVALUATE UPON PEER CHALLENGE (PEER-TO-LEAD REVIEW LOOP):
    - Strictly follow `docs/spec/shop-user-list-context-spec.md`.

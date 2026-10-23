@@ -1,0 +1,31 @@
+schema_version = 1
+
+[pipeline]
+name = "30-qc-tail-gate"
+enabled = true
+
+# ==============================================================================
+# 3. TAIL-OF-SPEC GATE: QC VERIFICATION & TEST CAPTURE
+# ==============================================================================
+[classifier.qc_verification]
+upstream       = "kev"
+question       = "choice"
+instructions   = "Evaluate test suite outcome and verify absence of hidden regressions."
+input_chars    = 2000
+min_confidence = 0.80
+
+[classifier.qc_verification.labels]
+verified_pass   = "Real assertions, exit code 0, no error suppression"
+regression_risk = "Failing assertions, missing boundary checks, or mocked passes"
+
+[[hook.after_tool.shell]]
+name = "qc-test-output-compression"
+when = { command_matches = "^(npm test|nx test|cargo test|pytest|python3 -m unittest)" }
+use  = ["term"]
+
+[[directive]]
+name = "qc-tail-directive"
+text = """
+[SLPPC TAIL-OF-SPEC: QC QUALITY GATE]
+Only QC has the exclusive authority to transition tasks to Closed. QC sign-off requires mechanical Exit Code 0, real test assertion depth, and Kev System One verification. Peer is forbidden from self-closing.
+"""

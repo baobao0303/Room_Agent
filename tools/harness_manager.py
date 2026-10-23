@@ -95,8 +95,32 @@ def send_orca_notification(role: str, message: str) -> bool:
             from agent_context_manager import safe_send_agent_message  # type: ignore
         except ImportError:
             from tools.agent_context_manager import safe_send_agent_message  # type: ignore
-        return safe_send_agent_message(role, message)
-    except Exception:
+        sent = safe_send_agent_message(role, message)
+        if sent:
+            return True
+
+        # FALLBACK CHO EPHEMERAL SUB-AGENTS (Peer, QC, Design):
+        # Nếu tab chưa mở sẵn, tự động spawn tab mới trên Orca để User nhìn thấy AI làm việc
+        clean_role = role.lower().strip()
+        if shutil.which("orca") and any(k in clean_role for k in ("peer", "dev", "design", "qc")):
+            print(f"🚀 [Ephemeral Auto-Launch]: Chưa có tab cho {role.upper()}. Đang mở AI Agent tab mới trên Orca...")
+            cmd_launch = [
+                "orca", "agent", "launch",
+                "--worktree", "active",
+                "--agent", "hermes",
+                "--prompt", message,
+                "--focus",
+                "--json"
+            ]
+            res = subprocess.run(cmd_launch, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                print(f"✅ [Ephemeral Auto-Launch]: Đã mở thành công AI Agent tab cho {role.upper()} trên Orca!")
+                return True
+            else:
+                print(f"⚠️ [Ephemeral Launch Error]: {res.stderr.strip()}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"⚠️ [send_orca_notification error]: {e}", file=sys.stderr)
         return False
 
 
