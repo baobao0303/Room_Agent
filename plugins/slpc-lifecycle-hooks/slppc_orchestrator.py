@@ -157,8 +157,10 @@ class SlppcOrchestrator:
                 subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True)
                 subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True)
                 subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True)
+                time.sleep(0.5)
                 if model:
                     subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True)
+                    time.sleep(0.5)
 
                 reg = self.get_terminals_registry()
                 reg[role.lower()] = {"handle": handle, "tabId": tab_id}
@@ -278,7 +280,11 @@ class SlppcOrchestrator:
         lead_notified = False
         if lead_handle:
             tid_str = f"#{active_task.get('id')}" if active_task else "mới"
-            msg = f"[PM APPROVED] Yêu cầu {tid_str} đạt chuẩn Feasibility ({eval_res['feasibility_score']}/3.0). Đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task."
+            msg = (
+                f"[PM APPROVED] Yêu cầu {tid_str} đạt chuẩn Feasibility ({eval_res['feasibility_score']}/3.0).\n"
+                f"Chỉ đạo: Đọc bmad/rooms/pm/decision_memo.md và phân rã tối đa 1-3 Zero-Search tasks, hoàn tất trong <= 5 turns."
+            )
+            time.sleep(0.5)
             lead_notified = self.send_terminal_safely(lead_handle, msg)
 
         return {
