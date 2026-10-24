@@ -49,6 +49,11 @@ class TestSlppcOrchestrator(unittest.TestCase):
         memo_path = BASE_DIR / "bmad" / "rooms" / "pm" / "decision_memo.md"
         self.assertTrue(memo_path.is_file())
 
+    @patch.object(SlppcOrchestrator, "send_terminal_safely", return_value=True)
+    def test_pm_ended_flow(self, mock_send):
+        res = self.orch.handle_pm_ended({})
+        self.assertEqual(res.get("stage"), "pm_to_lead")
+
     def test_unmapped_role_route(self):
         res = self.orch.route_turn_ended("unknown_role")
         self.assertEqual(res.get("stage"), "unmapped")

@@ -252,17 +252,61 @@ class SlppcOrchestrator:
             encoding="utf-8"
         )
 
-        # Notify Lead Dev
+        # 1. Kích hoạt hoặc gửi thông báo tới PM Agent
+        pm_handle = self.find_live_terminal_for_role("pm")
+        if not pm_handle:
+            pm_handle = self.spawn_ephemeral_subagent(
+                role="pm",
+                title="[PM] Feasibility & Alignment",
+                prompt="[PM Agent] Product Manager & Decision Arbiter in SLPPC. Đánh giá Feasibility qua Kev System One.",
+                model="ag/gemini-3.8-flash-high"
+            )
+        pm_notified = False
+        if pm_handle:
+            pm_msg = f"[Supervisor Dispatch] Yêu cầu: {eval_input[:300]}. Hãy thẩm định Feasibility qua Kev System One."
+            pm_notified = self.send_terminal_safely(pm_handle, pm_msg)
+
+        # 2. Kích hoạt hoặc gửi thông báo tới Lead Dev
         lead_handle = self.find_live_terminal_for_role("lead")
-        notified = False
+        if not lead_handle:
+            lead_handle = self.spawn_ephemeral_subagent(
+                role="lead",
+                title="[Lead Dev] Architect & PM",
+                prompt="[Lead Dev] Architect & PM. Phân rã Zero-Search Task cho Peer.",
+                model="ag/gemini-3.8-flash-high"
+            )
+        lead_notified = False
         if lead_handle:
             tid_str = f"#{active_task.get('id')}" if active_task else "mới"
             msg = f"[PM APPROVED] Yêu cầu {tid_str} đạt chuẩn Feasibility ({eval_res['feasibility_score']}/3.0). Đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task."
-            notified = self.send_terminal_safely(lead_handle, msg)
+            lead_notified = self.send_terminal_safely(lead_handle, msg)
 
         return {
             "stage": "supervisor_to_pm_lead",
             "evaluation": eval_res,
+            "pm_handle": pm_handle,
+            "pm_notified": pm_notified,
+            "lead_handle": lead_handle,
+            "lead_notified": lead_notified
+        }
+
+    def handle_pm_ended(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """PM -> Lead Dev"""
+        lead_handle = self.find_live_terminal_for_role("lead")
+        if not lead_handle:
+            lead_handle = self.spawn_ephemeral_subagent(
+                role="lead",
+                title="[Lead Dev] Architect & PM",
+                prompt="[Lead Dev] Architect & PM. Phân rã Zero-Search Task cho Peer.",
+                model="ag/gemini-3.8-flash-high"
+            )
+        notified = False
+        if lead_handle:
+            msg = "[PM TO LEAD] Đã hoàn tất thẩm định Feasibility. Mời Lead Dev đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task."
+            notified = self.send_terminal_safely(lead_handle, msg)
+        return {
+            "stage": "pm_to_lead",
+            "lead_handle": lead_handle,
             "lead_notified": notified
         }
 
@@ -418,6 +462,8 @@ class SlppcOrchestrator:
 
         if "supervisor" in r:
             return self.handle_supervisor_ended(d)
+        if "pm" in r:
+            return self.handle_pm_ended(d)
         if "lead" in r:
             return self.handle_lead_ended(d)
         if "peer" in r:
@@ -430,7 +476,7 @@ class SlppcOrchestrator:
 
 def main():
     parser = argparse.ArgumentParser(description="Autonomous SLPPC Orchestrator CLI")
-    parser.add_argument("--trigger", choices=["supervisor", "lead", "peer", "qc"], help="Manually trigger stage transition")
+    parser.add_argument("--trigger", choices=["supervisor", "pm", "lead", "peer", "qc"], help="Manually trigger stage transition")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     args = parser.parse_args()
 

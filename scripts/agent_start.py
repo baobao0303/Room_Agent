@@ -96,7 +96,7 @@ REASONINGS = {
     "qc": "high",
 }
 
-PERSISTENT_ROLES = ["pm", "lead"]
+PERSISTENT_ROLES = ["pm", "lead", "peer", "qc"]
 ALL_ROLES = ["pm", "lead", "peer", "peer2", "peer3", "peer4", "design", "qc"]
 
 

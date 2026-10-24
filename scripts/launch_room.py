@@ -127,9 +127,8 @@ def main():
 
     print("🚀 Bắt đầu khởi động các Agent Tabs...")
 
-    # Kiến trúc Ephemeral Sub-Agent: Chỉ duy trì 2 Agent thường trực (pm, lead).
-    # Peer 1..4, Design, QC chỉ spawn on-demand khi có task và tự hủy sau khi task Closed.
-    roles = ["pm", "lead"]
+    # Khởi chạy 4 Agent cốt lõi trong pipeline SLPPC (pm, lead, peer, qc).
+    roles = ["pm", "lead", "peer", "qc"]
     for role in roles:
         prompt = AGENTS[role]
         title = TITLES[role]
