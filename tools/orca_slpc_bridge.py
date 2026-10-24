@@ -292,9 +292,6 @@ def launch_and_rename_agent(role: str, title: str, prompt: str, model: str = "ag
             if handle:
                 subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
                 subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
-                subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True, check=False)
-                if model:
-                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True, check=False)
 
                 reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
                 reg = {}

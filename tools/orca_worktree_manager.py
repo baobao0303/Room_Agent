@@ -137,10 +137,6 @@ def create_task_worktree(
     if handle:
         run_cmd(["orca", "terminal", "rename", "--terminal", handle, "--title", term_title, "--json"])
         run_cmd(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", term_title, "--json"])
-        run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {term_title}", "--enter"])
-        rtk_script = PROJECT_ROOT / "scripts" / "rtk_profile_env.sh"
-        if rtk_script.is_file():
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_script} peer", "--enter"])
 
     print(f"✅ [Orca Worktree Created]: Thẻ '{wt_name}' đã xuất hiện trên Orca Board!")
     print(f"📁 Thư mục cô lập: {worktree_path or wt_name}")

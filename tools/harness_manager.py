@@ -157,6 +157,22 @@ def send_orca_notification(role: str, message: str) -> bool:
         clean_role = role.lower().strip()
         if shutil.which("orca") and any(k in clean_role for k in ("peer", "dev", "design", "qc")):
             print(f"🚀 [Ephemeral Auto-Launch]: Chưa có tab cho {role.upper()}. Đang mở AI Agent tab mới trên Orca...")
+            titles_map = {
+                "peer": "[Peer Dev 1] Code Executor",
+                "qc": "[QC] 5-Stage ISTQB Verifier",
+                "design": "[Peer Design] UI/UX & Tokens",
+                "pm": "[PM] Feasibility & Alignment",
+                "lead": "[Lead Dev] Architect & PM",
+            }
+            models_map = {
+                "peer": "ag/gemini-3.8-flash-low",
+                "qc": "ag/gemini-3.8-flash-high",
+                "design": "ag/gemini-3.8-flash-high",
+            }
+            role_key = "peer" if any(k in clean_role for k in ("peer", "dev")) else ("qc" if "qc" in clean_role else ("design" if "design" in clean_role else clean_role))
+            term_title = titles_map.get(role_key, f"[{role.upper()}] Sub-Agent")
+            term_model = models_map.get(role_key, "ag/gemini-3.8-flash-high")
+
             cmd_launch = [
                 "orca", "agent", "launch",
                 "--worktree", "active",
@@ -179,32 +195,9 @@ def send_orca_notification(role: str, message: str) -> bool:
                     except Exception:
                         pass
 
-                titles_map = {
-                    "peer": "[Peer Dev 1] Code Executor",
-                    "qc": "[QC] 5-Stage ISTQB Verifier",
-                    "design": "[Peer Design] UI/UX & Tokens",
-                    "pm": "[PM] Feasibility & Alignment",
-                    "lead": "[Lead Dev] Architect & PM",
-                }
-                models_map = {
-                    "peer": "ag/gemini-3.8-flash-low",
-                    "qc": "ag/gemini-3.8-flash-high",
-                    "design": "ag/gemini-3.8-flash-high",
-                }
-                role_key = "peer" if any(k in clean_role for k in ("peer", "dev")) else ("qc" if "qc" in clean_role else ("design" if "design" in clean_role else clean_role))
-                term_title = titles_map.get(role_key, f"[{role.upper()}] Sub-Agent")
-                term_model = models_map.get(role_key, "ag/gemini-3.8-flash-high")
-
                 if handle:
                     subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
                     subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
-                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {term_title}", "--enter"], capture_output=True, check=False)
-                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {term_model}", "--enter"], capture_output=True, check=False)
-
-                    # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
-                    rtk_env_script = Path(BASE_DIR) / "scripts" / "rtk_profile_env.sh"
-                    if rtk_env_script.is_file():
-                        subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_env_script} {role_key}", "--enter"], capture_output=True, check=False)
 
                     reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
                     reg = {}

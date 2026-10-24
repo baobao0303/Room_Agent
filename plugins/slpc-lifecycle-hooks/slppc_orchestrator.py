@@ -156,11 +156,6 @@ class SlppcOrchestrator:
             if handle:
                 subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True)
                 subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True)
-                subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True)
-                time.sleep(0.5)
-                if model:
-                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True)
-                    time.sleep(0.5)
 
                 reg = self.get_terminals_registry()
                 reg[role.lower()] = {"handle": handle, "tabId": tab_id}
@@ -255,37 +250,38 @@ class SlppcOrchestrator:
         )
 
         # 1. Kích hoạt hoặc gửi thông báo tới PM Agent
+        pm_msg = f"[Supervisor Dispatch] Yêu cầu: {eval_input[:300]}. Hãy thẩm định Feasibility qua Kev System One."
         pm_handle = self.find_live_terminal_for_role("pm")
+        pm_notified = False
         if not pm_handle:
             pm_handle = self.spawn_ephemeral_subagent(
                 role="pm",
                 title="[PM] Feasibility & Alignment",
-                prompt="[PM Agent] Product Manager & Decision Arbiter in SLPPC. Đánh giá Feasibility qua Kev System One.",
+                prompt=pm_msg,
                 model="ag/gemini-3.8-flash-high"
             )
-        pm_notified = False
-        if pm_handle:
-            pm_msg = f"[Supervisor Dispatch] Yêu cầu: {eval_input[:300]}. Hãy thẩm định Feasibility qua Kev System One."
+            pm_notified = bool(pm_handle)
+        else:
             pm_notified = self.send_terminal_safely(pm_handle, pm_msg)
 
         # 2. Kích hoạt hoặc gửi thông báo tới Lead Dev
+        tid_str = f"#{active_task.get('id')}" if active_task else "mới"
+        lead_msg = (
+            f"[PM APPROVED] Yêu cầu {tid_str} đạt chuẩn Feasibility ({eval_res['feasibility_score']}/3.0).\n"
+            f"Chỉ đạo: Đọc bmad/rooms/pm/decision_memo.md và phân rã tối đa 1-3 Zero-Search tasks, hoàn tất trong <= 5 turns."
+        )
         lead_handle = self.find_live_terminal_for_role("lead")
+        lead_notified = False
         if not lead_handle:
             lead_handle = self.spawn_ephemeral_subagent(
                 role="lead",
                 title="[Lead Dev] Architect & PM",
-                prompt="[Lead Dev] Architect & PM. Phân rã Zero-Search Task cho Peer.",
+                prompt=lead_msg,
                 model="ag/gemini-3.8-flash-high"
             )
-        lead_notified = False
-        if lead_handle:
-            tid_str = f"#{active_task.get('id')}" if active_task else "mới"
-            msg = (
-                f"[PM APPROVED] Yêu cầu {tid_str} đạt chuẩn Feasibility ({eval_res['feasibility_score']}/3.0).\n"
-                f"Chỉ đạo: Đọc bmad/rooms/pm/decision_memo.md và phân rã tối đa 1-3 Zero-Search tasks, hoàn tất trong <= 5 turns."
-            )
-            time.sleep(0.5)
-            lead_notified = self.send_terminal_safely(lead_handle, msg)
+            lead_notified = bool(lead_handle)
+        else:
+            lead_notified = self.send_terminal_safely(lead_handle, lead_msg)
 
         return {
             "stage": "supervisor_to_pm_lead",
@@ -298,18 +294,19 @@ class SlppcOrchestrator:
 
     def handle_pm_ended(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """PM -> Lead Dev"""
+        lead_msg = "[PM TO LEAD] Đã hoàn tất thẩm định Feasibility. Mời Lead Dev đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task (Turn Ceiling <= 5)."
         lead_handle = self.find_live_terminal_for_role("lead")
+        notified = False
         if not lead_handle:
             lead_handle = self.spawn_ephemeral_subagent(
                 role="lead",
                 title="[Lead Dev] Architect & PM",
-                prompt="[Lead Dev] Architect & PM. Phân rã Zero-Search Task cho Peer.",
+                prompt=lead_msg,
                 model="ag/gemini-3.8-flash-high"
             )
-        notified = False
-        if lead_handle:
-            msg = "[PM TO LEAD] Đã hoàn tất thẩm định Feasibility. Mời Lead Dev đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task."
-            notified = self.send_terminal_safely(lead_handle, msg)
+            notified = bool(lead_handle)
+        else:
+            notified = self.send_terminal_safely(lead_handle, lead_msg)
         return {
             "stage": "pm_to_lead",
             "lead_handle": lead_handle,

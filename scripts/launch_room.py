@@ -159,20 +159,6 @@ def main():
             print(f"  ✅ Handle: {handle} (Tab: {tab_id})")
             run_cmd(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"])
             run_cmd(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"])
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"])
-
-            model = MODELS.get(role)
-            if model:
-                run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"])
-
-            reasoning = REASONINGS.get(role)
-            if reasoning:
-                run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/reasoning {reasoning}", "--enter"])
-
-            # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
-            rtk_script = SCRIPT_DIR / "scripts" / "rtk_profile_env.sh"
-            if rtk_script.is_file():
-                run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_script} {role}", "--enter"])
 
             registry[role] = {"handle": handle, "tabId": tab_id}
             REG_FILE.write_text(json.dumps(registry, indent=2), encoding="utf-8")

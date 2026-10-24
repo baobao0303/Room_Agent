@@ -159,6 +159,9 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
     title = TITLES.get(role, role)
     print(f"--- 🚀 Đang khởi chạy: {title} ({role}) ---")
 
+    model = MODELS.get(role, "ag/gemini-3.8-flash-high")
+    reasoning = REASONINGS.get(role, "high")
+
     code, out = run_cmd([
         "orca", "agent", "launch",
         "--worktree", "active",
@@ -183,20 +186,6 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         print(f"  ✅ Khởi chạy thành công: {handle} (Tab: {tab_id})")
         run_cmd(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"])
         run_cmd(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"])
-        run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"])
-
-        model = MODELS.get(role)
-        if model:
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"])
-
-        reasoning = REASONINGS.get(role)
-        if reasoning:
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/reasoning {reasoning}", "--enter"])
-
-        # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
-        rtk_script = SCRIPT_DIR / "scripts" / "rtk_profile_env.sh"
-        if rtk_script.is_file():
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_script} {role}", "--enter"])
 
         registry[role] = {"handle": handle, "tabId": tab_id}
         save_registry(registry)
