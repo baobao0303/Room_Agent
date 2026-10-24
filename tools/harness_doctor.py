@@ -423,11 +423,12 @@ def check_native_binary_and_learning(auto_heal: bool = True) -> Dict[str, Any]:
 def check_hooks_and_git(auto_heal: bool = True) -> Dict[str, Any]:
     """7. Check SLPC Lifecycle Hooks & Worktree Hook permissions."""
     hook_script = BASE_DIR / "scripts" / "worktree_hook.sh"
-    paseo_hooks = BASE_DIR / "tools" / "paseo_hooks.py"
+    paseo_hooks = BASE_DIR / "plugins" / "slpc-lifecycle-hooks" / "paseo_hooks.py"
+    legacy_hooks = BASE_DIR / "tools" / "paseo_hooks.py"
     healed = None
 
     ok_perms = True
-    for f in (hook_script, paseo_hooks):
+    for f in (hook_script, paseo_hooks, legacy_hooks):
         if f.is_file() and not os.access(f, os.X_OK):
             if auto_heal:
                 try:

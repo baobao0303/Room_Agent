@@ -12,21 +12,21 @@ Khi clone repository về máy nhà hoặc máy trạm mới, chỉ cần chạy
 ./setup.sh
 ```
 
-Hoặc vừa cấu hình môi trường, vừa tự động mở sẵn toàn bộ **9 Agent tabs** trực tiếp trên Orca Desktop:
+Hoặc sau khi setup, khởi chạy và quản trị các Agent tabs trực tiếp trên Orca Desktop:
 
 ```bash
-./setup.sh --launch
-# hoặc: ./scripts/launch_room.sh
+./agent-start         # Khởi chạy các Agent tabs thường trực (PM, Lead)
+./agent-start status  # Xem bảng trạng thái chi tiết của tất cả Agent & nhịp tim
 ```
 
 ### Script tự động thực hiện trọn gói:
 1. **Kiểm tra công cụ cơ sở**: Tự động nhận diện `python3`, `git`, `orca`, `hermes`.
 2. **Cấu hình `.env`**: Khởi tạo cấu hình với model chuẩn `ag/gemini-3.8-flash-high`.
-3. **Master Skills Tree (85+ Skills)**: Quản lý tập trung tại thư mục canonical `skills/<tên>/SKILL.md`, tự động symlink vào `~/.hermes/skills/`.
-4. **Đồng bộ 9 Profiles SLPPC**: Tự động đăng ký `Supervisor`, `PM Agent`, `Lead Dev`, `Peer Dev 1..4`, `Peer Design`, `QC`, `Security Sentinel` vào `~/.paseo/config.json`.
+3. **Master Skills Tree**: Quản lý tập trung tại thư mục canonical `skills/<nhóm>/<tên>/SKILL.md`, tự động symlink vào `~/.hermes/skills/`.
+4. **Đồng bộ 10 Profiles SLPPC**: Tự động đăng ký `Supervisor`, `PM Agent`, `Lead Dev`, `Peer Dev 1..4`, `Peer Design`, `QC`, `Security Sentinel` vào `~/.paseo/config.json`.
 5. **Cài đặt Git Pre-Commit Guard**: Tự động kích hoạt hook kiểm soát thẩm quyền vai trò và chống mã màu hex cứng.
 6. **Đồng bộ Harness DB & Aevum Kanban**: Khởi tạo kết nối Floci DynamoDB Cloud (`:14566`) và tự động kích hoạt cơ chế Local Fallback nếu Floci offline.
-7. **Khởi chạy Multi-Agent Room**: (Khi dùng cờ `--launch` hoặc chạy `./scripts/launch_room.sh`).
+7. **Khởi chạy Multi-Agent Room**: (Khi dùng cờ `--launch` hoặc chạy `./agent-start`).
 
 ---
 

@@ -167,7 +167,7 @@ Bộ cài `codex-room-setup` yêu cầu các công cụ và cấu trúc thư m�
 > [!NOTE]
 > **Trạng thái thực thi Setup thực tế trên máy hiện tại (`DOCTOR_OK`)**:
 > 1. **Kiểm tra nguồn (`./scripts/verify --source`) & Chẩn đoán máy (`./scripts/doctor`)**: Đạt 100% (`DOCTOR_OK: 1 warning(s)` chỉ do `codex-cli 0.159.3` mới hơn bản `0.150.1` trong manifest).
-> 2. **Paseo `v0.8.0` Audited Checkout**: Đã clone và build thành công tại `/home/baoltb/projects/supervisors/paseo` (commit `b8e24677e12b226c7c38c1c3a40649daa9f1152f`, tag `v0.8.0`). Để bảo toàn launcher Paseo Desktop `0.10.2` đang chạy tại `~/.local/bin/paseo`, symlink CLI bản `v0.8.0` được đặt tại `~/.local/bin/paseo-cli-v0.8.0`.
+> 2. **Paseo `v0.8.0` Audited Checkout**: Đã clone và build thành công tại `~/projects/supervisors/paseo` (commit `b8e24677e12b226c7c38c1c3a40649daa9f1152f`, tag `v0.8.0`). Để bảo toàn launcher Paseo Desktop `0.10.2` đang chạy tại `~/.local/bin/paseo`, symlink CLI bản `v0.8.0` được đặt tại `~/.local/bin/paseo-cli-v0.8.0`.
 > 3. **Codex Room Files & 3 Isolated Runtimes**: Đã xuất bản đầy đủ `~/.config/codex-room/*`, `~/.local/bin/{codex-room,codex-room-sync,paseo-local-update}` và chạy `./scripts/sync-all` sinh thành công 3 runtime cô lập tại `~/.codex-runtime/{supervisor,lead,peer}` (đã tắt native multi-agent và đồng bộ 100% model/effort).
 > 4. **Cấu hình lai `~/.paseo/config.json` (Hybrid SLPC + Core-3)**: Đã sao lưu `~/.paseo/config.json.bak-pre-codex-room`, gộp 3 provider `codex-supervisor`, `codex-lead`, `codex-peer` vào `~/.paseo/config.json` và chạy `python3 patch_paseo.py` để giữ nguyên toàn bộ `router9`, `servre` cùng 10 `agentProfiles` (bao gồm 4 profile `SLPC`: `Supervisor`, `Lead`, `Peer`, `QC`).
 
@@ -192,7 +192,7 @@ touch ~/.codex/config.toml ~/.codex/AGENTS.md
 Di chuyển vào thư mục `codex-room-setup` và chạy bộ kiểm tra:
 
 ```bash
-cd /home/baoltb/Desktop/Paseo_Project/codex-room-setup
+cd codex-room-setup
 
 # Kiểm tra tính toàn vẹn của repo nguồn
 ./scripts/verify --source
@@ -230,7 +230,7 @@ Khi chạy lệnh này:
 > **Cài riêng bản Paseo `v0.8.0` độc lập (không cần `codex` CLI)**:
 > Nếu bạn chỉ muốn tải và build chuẩn bộ Paseo `v0.8.0` về `~/projects/supervisors/paseo` + gắn link `~/.local/bin/paseo` ngay lúc này (trước khi cài `codex`), có thể gọi trực tiếp script con:
 > ```bash
-> cd /home/baoltb/Desktop/Paseo_Project/codex-room-setup
+> cd codex-room-setup
 > ./scripts/install-paseo --preflight
 > ./scripts/install-paseo
 > ```
@@ -243,7 +243,7 @@ Sau khi cài đặt thành công, khởi chạy Paseo daemon và kiểm tra danh
 paseo daemon start --home ~/.paseo --listen 127.0.0.1:6767 --relay
 
 # 2. Kiểm tra trạng thái cài đặt + danh sách provider đang sống trên daemon
-cd /home/baoltb/Desktop/Paseo_Project/codex-room-setup
+cd codex-room-setup
 ./install --verify --live
 ```
 Khi đạt chuẩn, lệnh sẽ trả về `OK exact live room provider inventory` (xác nhận đúng 3 provider `codex-lead`, `codex-peer`, `codex-supervisor`) và kết thúc bằng `VERIFY_OK`.
@@ -279,7 +279,7 @@ Vì cả `codex-room-setup` (Core-3) và `Paseo_Project` (SLPC) đều tác đ�
 ### 7.1. Bộ Unit Test & Container Test (`Makefile` & `tests/*`)
 - **Chạy toàn bộ Unit Test (`make test`)**:
   ```bash
-  cd /home/baoltb/Desktop/Paseo_Project/codex-room-setup
+  cd codex-room-setup
   make test
   ```
   Bao gồm 3 bộ test Python (`unittest`) + kiểm tra cú pháp shell (`bash -n` / `zsh -n`):
@@ -307,7 +307,7 @@ Một bản cài đặt `codex-room-setup` chỉ được coi là vận hành đ
 Để giải quyết bài toán **liên tục ngữ cảnh (Session Continuity)** — giúp bất kỳ Agent nào (Antigravity, Claude Code, Codex, Hermes, hay các role `Supervisor`/`Lead`/`Peer`/`QC`) khi nhận lệnh **"làm tiếp"** hoặc **"báo cáo những gì đã làm"** từ User đều nắm bắt tức thì trạng thái công việc mà không phải đọc lại từ đầu:
 
 ### 8.1. Kiến trúc Lưu trữ Kép (Dual-Format Progress Ledger)
-Hệ thống lưu trữ tiến độ tại 2 file đồng bộ trong `/home/baoltb/Desktop/Paseo_Project`:
+Hệ thống lưu trữ tiến độ tại 2 file đồng bộ trong workspace:
 1. **`docs/AGENT_PROGRESS.md` (Human & LLM Readable Ledger)**:
    - Bảng tổng quan trạng thái hiện tại (**Current Snapshot**): Cột mốc vừa xong, việc đang làm dở, danh sách các mục còn thiếu/chờ thực thi (**Pending / Missing Items**).
    - Nhật ký bàn giao theo thời gian (**Session Handoff Log**): Ghi rõ từng phiên Agent nào làm, đã hoàn thành gì, tạo/sửa những file nào, và bước tiếp theo là gì.
@@ -370,7 +370,7 @@ Vì hệ thống của chúng ta vận hành theo mô hình **4 Role (`SLPC`: `S
 ### 9.3. Vị trí cài đặt đồng bộ trên toàn bộ các tầng Agent
 | Tầng Môi trường | Đường dẫn cài đặt | Mục đích |
 | :--- | :--- | :--- |
-| **Project Claude Sub-Agents** | `/home/baoltb/Desktop/Paseo_Project/.claude/agents/*.md` | Cho phép Claude Code trong workspace gọi trực tiếp 3 sub-agents (`gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`). |
+| **Project Claude Sub-Agents** | `.claude/agents/*.md` | Cho phép Claude Code trong workspace gọi trực tiếp 3 sub-agents (`gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`). |
 | **Paseo Claude Config (`router9`/`claude`)** | `~/.paseo/claude-config/agents/*.md` & `~/.claude/agents/*.md` | Cho phép toàn bộ các Agent chạy trên Paseo Daemon (`Supervisor`, `Lead`, `Peer`, `QC`) gọi sub-agents ở cấp global. |
 | **Codex Room 4 Roles (`supervisor`/`lead`/`peer`/`qc`)** | `~/.codex/skills/claude-code-sub-agents/` (symlink tự động vào `~/.codex-runtime/{supervisor,lead,peer,qc}/skills/`) | Cung cấp skill `claude-code-sub-agents` cho cả 4 role trong Codex Room. |
 | **Project & Hermes Skills** | `.agents/skills/claude-code-sub-agents/SKILL.md` & `~/.hermes/skills/031_claude_code_sub_agents` | Đồng bộ skill chuẩn cho Antigravity, Hermes và `setup_home.sh`. |

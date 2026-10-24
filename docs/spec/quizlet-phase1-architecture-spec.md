@@ -18,7 +18,7 @@ Theo Mục 4.1 và Mục 7 của `docs/quizlet_specification.md`:
 - Lưu trữ dữ liệu cục bộ qua `localStorage` (key: `quizlet_study_sets_v1`) kèm bộ nhớ đệm in-memory (`Map<string, StudySetModel>`) để hoạt động đồng nhất trên trình duyệt, môi trường SSR và Jest JSDOM unit tests với độ trễ đọc/ghi `< 5ms`.
 
 ### 1.2. Target Workspace & Folder Structure
-Mã nguồn Phase 1 được đặt trong phân hệ `mfe-dashboard` tại `/home/baoltb/Desktop/Room_Agent/projects/wicx-crm-fe/apps/mfe-dashboard/src/app/quizlet` nhằm tận dụng hạ tầng Angular 18 + Signals + Tailwind CSS + Jest (`apps/mfe-dashboard/jest.config.ts`) mà không gây xung đột với các phân hệ CRM/CDP hiện hữu.
+Mã nguồn Phase 1 được đặt trong phân hệ `mfe-dashboard` tại `projects/wicx-crm-fe/apps/mfe-dashboard/src/app/quizlet` nhằm tận dụng hạ tầng Angular 18 + Signals + Tailwind CSS + Jest (`apps/mfe-dashboard/jest.config.ts`) mà không gây xung đột với các phân hệ CRM/CDP hiện hữu.
 
 ```text
 projects/wicx-crm-fe/apps/mfe-dashboard/src/app/quizlet/

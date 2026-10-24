@@ -29,3 +29,14 @@ text = """
 [SLPPC TAIL-OF-SPEC: QC QUALITY GATE]
 Only QC has the exclusive authority to transition tasks to Closed. QC sign-off requires mechanical Exit Code 0, real test assertion depth, and Kev System One verification. Peer is forbidden from self-closing.
 """
+
+[[directive]]
+name = "qc-room-hygiene-directive"
+text = """
+[SLPPC TAIL-OF-SPEC: EPHEMERAL ROOM HYGIENE GATE]
+Before transitioning tasks to Closed, QC must mechanically verify room hygiene via `python3 tools/slppc_flow_guard.py hygiene` or `audit`:
+1. Zero legacy handoff_*.md files exist across bmad/rooms/ (find bmad/rooms -name "handoff_*.md" returns 0).
+2. Exactly single-pointer latest_handoff.md per role department (<= 150 lines, zero personal path leaks).
+3. bmad/rooms/room_ledger.json exists, adheres to schema (version, roles, history FIFO <= 50), and size < 50 KB.
+4. Auto-archive task artifacts in bmad/rooms/tasks/<task_id>/ via tools/room_cleanup.py upon closure.
+"""

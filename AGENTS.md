@@ -89,6 +89,13 @@ Hệ sinh thái chuyển dịch từ nhóm Agent thường trực (Persistent Wo
 5. **Zombie Terminal Reaper (`tools/zombie_reaper.py`)**: Định kỳ quét đối chiếu terminals đang mở với danh sách task Active trong Harness DB; tự động đóng các PTY mồ côi để đưa RAM nền về 0.
 6. **Authority Fencing (Rào cản thẩm quyền)**: Cấm Sub-Agent spawn đệ quy (No nested delegation), cấm tự đóng task, cấm ghi đè bộ nhớ hệ thống.
 
+### 3.1. Điều Phối Tự Hành Qua Plugin Hooks (`plugins/slpc-lifecycle-hooks/slppc_orchestrator.py`):
+Toàn bộ luồng điều phối chuyển giao giữa các Agent được tự động hóa thông qua chốt chặn vòng đời plugin:
+- **Supervisor `agent.turn_ended`**: Tự động gọi Kev System One (<50ms) đánh giá Feasibility & Alignment, xuất `bmad/rooms/pm/decision_memo.md`, cập nhật task và đẩy thông báo sang Lead Dev.
+- **Lead `agent.turn_ended`**: Phát hiện Zero-Search Task mới, tự động spawn Ephemeral Peer Sub-Agent tab gắn `profiles/peer.md` với đầy đủ AC và test command.
+- **Peer `agent.turn_ended` (Resolved)**: Cưỡng chế đóng tab Peer Dev (`orca terminal close` đưa RAM về 0) và tự động spawn Ephemeral QC Sub-Agent tab gắn `profiles/qc.md`.
+- **QC `agent.turn_ended` (Closed)**: Cưỡng chế đóng tab QC, nén dọn artifacts vào `bmad/rooms/archive/task_<id>.tar.gz` và bắn thông báo nghiệm thu thành công về tab Supervisor.
+
 ---
 
 ## 4. RTK (Rust Token Killer) CLI Proxy (Issue #5)
@@ -148,10 +155,7 @@ Sau khi clone hoặc merge mã nguồn mới, thực hiện quy trình cài đ�
 - Nếu dùng Orca IDE: Đảm bảo lệnh `orca` có trong PATH (`~/.config/orca/linux-orca-cli-shim` hoặc Orca Desktop AppImage).
 
 ### Bước 2: Khởi Tạo File Cấu Hình `.env`
-```bash
-cp .env.example .env
-# Kiểm tra FLOCI_ENDPOINT (mặc định: http://<FLOCI_HOST>:14566)
-```
+`./setup.sh` tự động khởi tạo file `.env` chuẩn với model `ag/gemini-3.8-flash-high` và backend auto-detect nếu file chưa tồn tại.
 
 ### Bước 3: Chạy Script Cài Đặt Tự Động 1 Bước (`setup.sh`)
 Script thực hiện toàn bộ 6 khâu cài đặt:
@@ -161,16 +165,19 @@ Script thực hiện toàn bộ 6 khâu cài đặt:
 - Khởi tạo thư mục và liên kết Skills vào `~/.hermes/skills/`.
 - Cấu hình Git Pre-commit Guard (`.git/hooks/pre-commit`) chặn hardcoded hex và vi phạm vai trò.
 - Đồng bộ các Profile SLPPC vào `~/.paseo/config.json` qua `patch_paseo.py`.
-- Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB).
+- Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB / Local Fallback).
 
-### Bước 4: Khởi Chạy Các Agent Tabs Thường Trực Trong Phòng Ban
+### Bước 4: Khởi Chạy & Quản Trị Agent Tabs (`./agent-start`)
 ```bash
-# Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành.
-# Peer 1..4, Design, QC là Ephemeral Sub-Agents kích hoạt on-demand khi có task.
-./scripts/launch_room.sh
+# Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành:
+./agent-start
 
-# Hoặc vừa setup vừa launch:
-./setup.sh --launch
+# Xem trạng thái chi tiết tất cả Agent và nhịp tim:
+./agent-start status
+
+# Khởi chạy toàn bộ hoặc một agent cụ thể on-demand:
+./agent-start --all
+./agent-start peer
 ```
 
 ### Bước 5: Kiểm Tra & Giám Sát Sức Khỏe Phòng Ban
@@ -178,8 +185,14 @@ Script thực hiện toàn bộ 6 khâu cài đặt:
 # 1. Kiểm tra an ninh chống rò rỉ (phải đạt PASS 100%)
 python3 scripts/anti_leak_sentinel.py
 
-# 2. Chạy toàn bộ 26 unit tests của công cụ
+# 2. Chạy toàn bộ 92 unit tests của công cụ
 python3 -m unittest discover -s tools/tests
+
+# 3. Kiểm tra chốt chặn phân luồng SLPPC & vệ sinh phòng ban
+python3 tools/slppc_flow_guard.py audit
+
+# 4. Kiểm tra trạng thái 3 tầng Lifecycle Hooks
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py status
 
 # 3. Quét Zombie Terminals mồ côi và Watchdog timeout
 python3 tools/zombie_reaper.py --dry-run
@@ -221,3 +234,146 @@ python3 tools/agent_heartbeat.py status
    - 100% component FE có tương tác phải gắn directive `tdsTestId` từ `@wicx/core`.
    - Naming convention: `<domain>-<component>-<element>-<state?>` (100% tiếng Anh, kebab-case).
    - QC thẩm tra bằng `[tds-test-id="..."]` hoặc helper `getByTdsTestId()`, nghiêm cấm `getByText()` hay class CSS.
+
+---
+
+## 8. Sub-Agent Dispatch Directives & Autonomous Prompt Triggers
+
+Nhằm bảo đảm việc điều phối sub-agent diễn ra mượt mà và tự động trên cả hai môi trường **Orca** (Visual Workspace) và **Paseo** (Headless Daemon), quy chuẩn dưới đây xác lập bản đồ gọi Sub-Agent và các mẫu câu Prompt tự kích hoạt.
+
+### 8.1. Ma Trận Phân Bổ Sub-Agent Theo Vai Trò (Role-to-SubAgent Mapping)
+
+| Vai trò gọi | Sub-Agent cần gọi | Model & Khả năng | Khi nào kích hoạt? | Lệnh thực thi trực tiếp |
+| :--- | :--- | :--- | :--- | :--- |
+| **Supervisor** | `strategic-reasoning-architect` | `gpt-5` / `gemini-3.8-flash-high` (Codex reasoning) | Thẩm định phạm vi vĩ mô, đánh giá rủi ro hệ thống trước khi tạo Epic. | `codex -m "gpt-5" "<nội_dung>"` hoặc `/paseo-advisor` |
+| **PM Agent** | `strategic-reasoning-architect` | `kev-latest` + `gemini-3.8-flash-high` | Chấm điểm Feasibility & Alignment (<50ms) qua Kev System One. | Tự động qua `scripts/run_pipeline.py` / `kev_systemone` |
+| **Lead Dev** | `gemini-codebase-analyzer` | `gemini-3.8-flash-high` (1M+ context) | Quét toàn bộ monorepo tìm điểm chạm, mapping import/DTO trước khi bóc tách Zero-Search. | `gemini --prompt "<yêu_cầu>" --all-files` |
+| **Lead Dev** | `strategic-reasoning-architect` | `gpt-5` (Codex reasoning) | Chốt API contract, giải quyết tranh luận kiến trúc khi Peer khiếu nại (Peer Challenge). | `/paseo-advisor` |
+| **Lead Dev** | `slpc-qc-verifier` | `gemini-3.8-flash-high` + ISTQB tools | Chuyển giao nghiệm thu khi Peer nộp `Resolved`. | `python3 tools/call_agent.py --profile QC --prompt "Verify Task #<id>"` |
+| **Peer Dev** | `gemini-codebase-analyzer` | `gemini-3.8-flash-high` (1M+ context) | Tra cứu nhanh cách dùng component TDS, DTO mẫu mà không làm tràn context chính. | `gemini --prompt "<tìm_kiếm>" --include-directories projects/` |
+| **Peer Design** | `tds-ui-usage` / `tds_search.py` | CLI Tool + Vector/BM25 Index | Tra cứu SCSS token, màu sắc, font, spacing TDS UI. | `python3 tools/tds_search.py "<token_hoặc_component>"` |
+| **QC Verifier** | `slpc-qc-verifier` | `gemini-3.8-flash-high` + 5-Stage ISTQB | Độc quyền sinh Unit Test, kiểm tra cơ học (Exit 0) và đóng task (`Closed`). | `python3 tools/qc_test_generator.py --source <file> --task-id <id> --run` |
+
+---
+
+### 8.2. So Sánh Cơ Chế Kích Hoạt & Bộ Hook Điều Phối Hai Môi Trường (Orca vs Paseo)
+
+Hệ thống tích hợp **Universal Dual-IDE Hook Router** (`tools/dual_ide_hook.py` & `.claude/hooks/dual_ide_prompt_hook.sh`) tự động đánh chặn prompt tại cả hai IDE:
+
+```text
+┌───────────────────────────────────────┬───────────────────────────────────────┐
+│       ORCA (Visual Workspace PTY)     │       PASEO (Headless Daemon CLI)     │
+├───────────────────────────────────────┼───────────────────────────────────────┤
+│ • Giao diện: Tab/Pane trực quan       │ • Giao diện: Chạy ngầm background     │
+│ • Cơ chế: On-demand PTY tab launch    │ • Cơ chế: Fork process / subagent     │
+│ • Đổi tên: `orca terminal rename`     │ • Đổi tên: `paseo run -d --title`     │
+│ • Vòng đời: Tự đóng tab khi `Resolved`│ • Vòng đời: Tự exit(0) giải phóng RAM │
+│   và `Closed` đưa RAM nền về 0        │   ngay khi tiến trình kết thúc        │
+│ • Đồng bộ: Ghi nhận handle vào        │ • Đồng bộ: Ghi handoff vào            │
+│   `bmad/rooms/agent_terminals.json`   │   `bmad/rooms/<role>/latest_handoff`  │
+│ • Hook: `.claude/hooks/` + PTY Bridge │ • Hook: `UserPromptSubmit` + Plugin   │
+└───────────────────────────────────────┴───────────────────────────────────────┘
+```
+
+**Cơ chế hoạt động của Dual-IDE Hook (`tools/dual_ide_hook.py`)**:
+1. Nhận diện runtime đang chạy: Nếu có Orca Runtime ➔ Route lệnh sang Orca PTY và Workspace Board; Nếu chạy CLI/Headless ➔ Route sang Paseo Daemon.
+2. Tự động quét tiền tố (`[THUẬN]`, `[NGHỊCH]`, `[THẢO-LUẬN]`, `[TÍNH-NĂNG]`, `[FIX-BUG]`, `[BẪY-LỖI]`, `[REFACTOR]`, `[REVIEW]`, `[QUÉT]`, `[TEST]`).
+3. Tự động bơm khối `CHỈ THỊ BẮT BUỘC TRONG KHỐI THINKING` vào context của mô hình trước khi suy luận.
+
+
+---
+
+### 8.3. Mẫu Prompt Tự Kích Hoạt Trong Chat (Prompt Trigger Templates)
+
+Chỉ cần sao chép các mẫu prompt dưới đây và dán vào phiên chat với Supervisor để hệ thống tự động nhận diện và kích hoạt đúng luồng:
+
+#### Mẫu 1: Kích hoạt toàn bộ luồng SLPPC 5 cổng tự hành (Full Autonomous Flow)
+```text
+Kích hoạt flow: [Tên tính năng hoặc yêu cầu nghiệp vụ]
+- Target Module: [projects/wicx-crm-fe hoặc tools/]
+- Mô tả chi tiết: [Mô tả cụ thể hành vi cần làm]
+- Tiêu chí nghiệm thu: [Các điều kiện hoàn thành bắt buộc]
+```
+> **Hệ thống tự động**: Chạy qua PM (Kev System One) ➔ Lead bóc tách Zero-Search ➔ Mở tab Peer thi công ➔ Đóng tab Peer, mở tab QC kiểm thử ISTQB 5-Stage ➔ Đóng tab QC và báo cáo hoàn tất cho Supervisor.
+
+#### Mẫu 2: Phân tích kiến trúc & Đánh đổi kỹ thuật (Gọi `strategic-reasoning-architect`)
+```text
+/paseo-advisor [Vấn đề kiến trúc hoặc băn khoăn về giải pháp kỹ thuật cần second opinion]
+```
+hoặc:
+```text
+Tư vấn kiến trúc: Cần đánh giá trade-off giữa [Phương án A] và [Phương án B] cho module [Tên module].
+```
+
+#### Mẫu 3: Quét toàn bộ Codebase & Tìm điểm chạm (Gọi `gemini-codebase-analyzer`)
+```text
+Quét codebase: Tìm toàn bộ điểm chạm và luồng dữ liệu liên quan đến [Tên Service/Component/API].
+```
+
+#### Mẫu 4: Nghiệm thu chất lượng & Sinh Unit Test độc lập (Gọi `slpc-qc-verifier`)
+```text
+QC verify: Nghiệm thu Task #[ID] tại file [đường_dẫn_source_code] theo chuẩn ISTQB 5-Stage.
+```
+
+---
+
+### 8.4. Lệnh Kích Hoạt 1 Chạm Từ Terminal CLI
+
+Ngoài việc ra lệnh trong chat, bạn có thể chạy trực tiếp từ terminal máy trạm:
+
+```bash
+# 1. Kích hoạt toàn bộ chu trình 5 cổng tự hành (PM ➔ Lead ➔ Peer ➔ QC):
+./trigger-flow "Nâng cấp tính năng X trên module Y"
+
+# 2. Hoặc dùng script chi tiết với tùy chọn test:
+python3 scripts/run_pipeline.py "Nâng cấp tính năng X" --test-cmd "pytest ..."
+
+# 3. Kích hoạt riêng một vai trò Sub-Agent trong Orca / Paseo:
+python3 tools/call_agent.py --profile Lead --prompt "Thiết kế API contract cho tính năng X"
+python3 tools/call_agent.py --profile Peer --prompt "Thi công code tính năng X theo spec" --item-id <id>
+python3 tools/call_agent.py --profile QC --prompt "Nghiệm thu Task #<id> với ISTQB 5-Stage" --item-id <id>
+```
+
+---
+
+### 8.5. Tiền Tố Định Hướng Tư Duy Thuận - Nghịch (Dual-Anchor Thinking Prefixes)
+
+Để Agent và Sub-Agent suy luận đúng trọng tâm cho cả trường hợp thuận (Happy Path) và trường hợp nghịch (Adversarial/Edge Cases), hệ thống tích hợp bộ bóc tách tiền tố tự động:
+
+| Tiền tố (Prefix) | Ý nghĩa nghiệp vụ | Hành vi tư duy của Agent (Thinking Directive) |
+| :--- | :--- | :--- |
+| **`[THUẬN]`**<br>`[FORWARD]`<br>`[HAPPY-PATH]` | **Luồng Thuận (Happy Path / Golden Flow)** | Tập trung hoàn thiện nhanh luồng chạy chuẩn: input hợp lệ, kết quả mong đợi, DTO chuẩn, tối ưu diff theo triết lý Lazy Senior Dev / YAGNI, không over-engineering. |
+| **`[NGHỊCH]`**<br>`[REVERSE]`<br>`[EDGE-CASE]`<br>`[ADVERSARIAL]` | **Luồng Nghịch (Adversarial / Edge-Cases / Negative)** | Tập trung truy quét kịch bản biên và bẫy lỗi: dữ liệu rỗng/null/undefined, boundary values (BVA), timeout mạng, race condition, fail-safe degradation, rollback và cơ chế chống crash. |
+| **`[THẢO-LUẬN]`**<br>`[THẢO LUẬN]`<br>`[DISCUSS]` | **Luồng Thảo Luận Kiến Trúc (Architectural ADR)** | **KHÔNG viết code**. PM thẩm định tính khả thi (<50ms) ➔ Lead Dev & Sub-Agents phân tích đánh đổi (trade-offs) ➔ Tự động chốt giải pháp đồng thuận và lưu biên bản ADR vĩnh viễn tại `bmad/rooms/discussions/` & `bmad/adrs/`. |
+| **`[LƯỠNG-DIỆN]`**<br>`[DUAL]`<br>`[BOTH]`<br>*(Mặc định)* | **Lưỡng Diện (Dual-Anchor Thinking)** | BẮT BUỘC Agent tư duy 2 mặt song song trong khối Thinking:<br>1. `[THUẬN]`: Mặt thuận đáp ứng spec cốt lõi, hoàn tất AC.<br>2. `[NGHỊCH]`: Mặt nghịch bao phủ các bẫy lỗi và rủi ro phá vỡ kiến trúc. |
+
+**Ví dụ thực tế**:
+- Luồng Thuận: `./trigger-flow "[THUẬN] Tạo modal xác nhận xóa đơn hàng"`
+- Luồng Nghịch: `./trigger-flow "[NGHỊCH] Kiểm thử race condition khi 2 user cùng bấm thanh toán đơn hàng #123"`
+- Luồng Thảo Luận: `./trigger-flow "[THẢO LUẬN] Đánh giá phương án xác thực JWT vs HttpOnly Cookie"`
+- Luồng Lưỡng Diện: `./trigger-flow "[LƯỠNG-DIỆN] Refactor module auth token sang HttpOnly cookie"`
+
+---
+
+### 8.6. Quy Tắc Vệ Sinh Context & Lệnh Dọn Dẹp Sub-Agent (Anti-Context Bloat)
+
+Việc duy trì Sub-Agent chạy lâu dài qua nhiều task sẽ khiến **Context Window phình to (200k–500k tokens)**, làm tăng chi phí token gấp 5–10 lần, kéo dài độ trễ phản hồi (từ 2s lên 30s+) và sinh lỗi ảo giác ("ngáo" do nhiễm chéo biến/import của task cũ).
+
+**4 Cơ Chế Chống Phình To Context (Anti-Bloat Protocol)**:
+1. **Tự Hủy Ephemeral Sub-Agent (Single-Task Lifespan)**:
+   - `Peer Dev` nộp `Resolved` ➔ Tự động đóng tab Orca (`orca terminal close`) đưa RAM và Context về 0.
+   - `QC Verifier` duyệt `Closed` ➔ Tự động đóng tab Orca đưa RAM và Context về 0.
+   - Mọi task Zero-Search mới mở ra đều bắt đầu trên một **Context Window tinh khôi (<15k tokens)**.
+2. **Tự Động Nén Context Cho Vai Trò Thường Trực (`Supervisor`, `PM`, `Lead`)**:
+   - `tools/agent_context_manager.py` theo dõi token ngầm với ngưỡng trần `200k tokens`.
+   - Khi vượt ngưỡng, tự động gửi lệnh `/compact` vào terminal, gọt tỉa 60%–70% token lịch sử thừa nhưng vẫn bảo toàn trạng thái trên đĩa cứng (`.harness_progress.json`).
+3. **Lệnh Dọn Dẹp Tức Thì 1 Chạm (Manual Context Purge)**:
+   ```bash
+   ./agent-start clear    # Đóng toàn bộ tab Sub-Agent (Peer, QC, Design), giữ lại PM và Lead
+   ./agent-start stop --all # Đóng sạch toàn bộ
+   ```
+4. **Zombie Terminal Reaper (`tools/zombie_reaper.py`)**:
+   - Khống chế trần thời gian tối đa **300 giây (5 phút)**. Tự động thu hồi các terminal mồ côi không có task Active bảo trợ.
+
+
+

@@ -1,6 +1,6 @@
 ---
 name: qc
-description: "Chị Nguyên - QA & Release - Senior QA/QC & Release Engineer. Vận hành cổng kiểm định SLPC Gate 4, sinh Unit Test & Testcase theo chuẩn ISTQB 5-Stage (tools/qc_test_generator.py) và xác thực Test Matrix trên Harness."
+description: "Use when testing code via 5-Stage ISTQB and QC Gate."
 ---
 
 # Chị Nguyên - QA & Release (`qc`)
@@ -19,19 +19,24 @@ Khi QC nhận nhiệm vụ hoặc quét các task cần kiểm định trên Har
 python3 tools/harness_manager.py list --state Resolved --assigned-to-profile qc
 
 # Đọc chi tiết Task (kèm Acceptance Criteria và file code đính kèm)
-python3 tools/harness_manager.py get --id <TASK_ID>
+# Lưu ý: harness_manager.py get nhận positional argument id, không dùng cờ --id
+python3 tools/harness_manager.py get <TASK_ID>
 ```
 
 ### Bước 2: Kích hoạt bộ sinh Unit Test 5-Stage ISTQB theo Task ID
-Chạy `tools/qc_test_generator.py` truyền `--task-id <TASK_ID>` để tự động trích xuất AC từ Harness, sinh file test `*.spec.ts`, đẩy các `Testcase` con vào Harness DB và chạy verify:
+Chạy `tools/qc_test_generator.py` truyền `--task-id <TASK_ID>` để tự động trích xuất AC từ Harness, sinh file test `*.spec.ts` (hoặc `test_*.spec.py`), đẩy các `Testcase` con vào Harness DB và chạy verify:
 ```bash
+# Lưu ý quan trọng: Bắt buộc truyền --cwd . khi có cờ --run để runner thực thi tại root workspace,
+# tránh việc runner tự rơi vào thư mục chứa source (tools/) dẫn đến gãy relative path.
 python3 tools/qc_test_generator.py \
   --source <đường_dẫn_source_code_peer_viet> \
   --spec <đường_dẫn_spec_hoặc_ac_md> \
   --task-id <TASK_ID> \
-  --out-spec <đường_dẫn_file_spec_ts> \
+  --out-spec <đường_dẫn_file_spec> \
+  --cwd . \
   --sync-harness \
-  --run
+  --run \
+  --verify-cmd "<lệnh_chạy_test_cụ_thể>"
 ```
 
 - **Quy trình 5-Stage được sinh tự động**:
@@ -59,8 +64,8 @@ Trước khi chạy test và duyệt đóng task, QC BẮT BUỘC phải rà so�
 ### Bước 3: Đánh giá kết quả & Quyết định đóng mở trên Harness DB
 - **Nếu toàn bộ tests PASS và Coverage đạt 100%**:
   ```bash
-  # Đóng task nghiệm thu thành công
-  python3 tools/harness_manager.py update --id <TASK_ID> --state Closed --assigned-to-profile qc
+  # Đóng task nghiệm thu thành công (Chỉ QC/Lead có quyền chuyển sang Closed)
+  python3 tools/harness_manager.py update --id <TASK_ID> --state Closed --assigned-to-profile QC
   ```
 - **Nếu test FAIL hoặc phát hiện lỗi nghiệp vụ/code style**:
   1. Tạo `Bug` liên kết trực tiếp với Task gốc (`--parent-id <TASK_ID>`):
@@ -79,7 +84,8 @@ Trước khi chạy test và duyệt đóng task, QC BẮT BUỘC phải rà so�
      python3 tools/harness_manager.py update --id <TASK_ID> --state Active --assigned-to-profile peer --dispatch
      ```
 
-### Bước 4: Ghi nhật ký bàn giao vào Progress Ledger
+### Bước 4: Ghi nhật ký bàn giao vào Progress Ledger (Ephemeral State Architecture)
+Hệ thống sử dụng Single-Pointer In-Place `latest_handoff.md` ($\le 150$ dòng) và `bmad/rooms/room_ledger.json` (FIFO 50 bản ghi, $< 50$ KB). Không bao giờ tạo file `handoff_*.md`:
 ```bash
 python3 tools/agent_progress.py log \
   --agent "QC" \
@@ -93,9 +99,9 @@ python3 tools/agent_progress.py log \
 ---
 
 ## 2. 📚 Tài Liệu & Kỹ Năng Liên Quan
-- **17 Danh Mục Testcases Website Chuẩn:** [`.agents/skills/qc/references/web-test-cases-standards.md`](file:///home/baoltb/Desktop/Paseo_Project/.agents/skills/qc/references/web-test-cases-standards.md)
-- **SLPC Control Center & 5-Stage QC Lab:** [`.agents/skills/slpc-control-center/SKILL.md`](file:///home/baoltb/Desktop/Paseo_Project/.agents/skills/slpc-control-center/SKILL.md)
-- **Harness Operations:** [`.agents/skills/harness-ops/SKILL.md`](file:///home/baoltb/Desktop/Paseo_Project/.agents/skills/harness-ops/SKILL.md)
-- **Sub-Agent QC Verifier:** [`.claude/agents/slpc-qc-verifier.md`](file:///home/baoltb/Desktop/Paseo_Project/.claude/agents/slpc-qc-verifier.md)
+- **17 Danh Mục Testcases Website Chuẩn:** `skills/qc/references/web-test-cases-standards.md`
+- **SLPC Control Center & 5-Stage QC Lab:** `skills/supervisor/slpc-control-center/SKILL.md`
+- **Harness Operations:** `skills/shared/harness-ops/SKILL.md`
+- **Sub-Agent QC Verifier:** `.claude/agents/slpc-qc-verifier.md`
 - **Quy định TDS Design System:** `[[Quy-Dinh-Code-Review-Va-Chuan-TDS]]`
 - **Cổng kiểm soát SLPC:** `docs/spec/agent-orchestration-multi-agent-slp-spec.md`

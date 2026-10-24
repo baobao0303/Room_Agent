@@ -21,9 +21,10 @@ try:
     import boto3
 except ImportError:
     candidate_venvs = [
-        "/home/baoltb/.hermes/hermes-agent/venv/bin/python",
-        "/home/baoltb/ponytail/venv/bin/python",
-        os.path.expanduser("~/.hermes/hermes-agent/venv/bin/python")
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../.venv/bin/python")),
+        os.path.expanduser("~/.hermes/hermes-agent/venv/bin/python"),
+        os.path.expanduser("~/ponytail/venv/bin/python"),
+        os.path.expanduser("~/.local/bin/python3"),
     ]
     for venv_py in candidate_venvs:
         if os.path.exists(venv_py) and venv_py != sys.executable:
@@ -63,27 +64,79 @@ ALLOWED_PROFILES = [
     "Security"
 ]
 
-def cleanup_task_room(item_id: int) -> int:
-    """Clean up handoff records and memos in bmad/rooms/ when a task is Closed."""
-    bmad_rooms = Path(BASE_DIR) / "bmad" / "rooms"
-    if not bmad_rooms.is_dir():
-        return 0
-    removed_count = 0
-    for memo_file in bmad_rooms.rglob(f"*handoff_{item_id}_*.md"):
+def close_ephemeral_subagent(role: str) -> bool:
+    """Close an ephemeral sub-agent terminal (Peer or QC) to return RAM to 0."""
+    clean_role = role.lower().strip()
+    reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
+    if not reg_file.is_file() or not shutil.which("orca"):
+        return False
+    try:
+        data = json.loads(reg_file.read_text(encoding="utf-8"))
+        handle = None
+        for r, info in list(data.items()):
+            if clean_role in r.lower():
+                handle = info.get("handle") if isinstance(info, dict) else info
+                del data[r]
+                break
+        if handle:
+            reg_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            res = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"], capture_output=True, text=True, timeout=5)
+            if res.returncode == 0:
+                print(f"🛑 [Ephemeral Auto-Close]: Đã tự động đóng tab {role.upper()} ({handle}) để giải phóng tài nguyên.")
+                return True
+    except Exception as e:
+        print(f"⚠️ [close_ephemeral_subagent error]: {e}", file=sys.stderr)
+    return False
+
+
+def reap_orphaned_terminals() -> int:
+    """Trigger Zombie Reaper to close ephemeral sub-agent terminals when task is Closed."""
+    try:
+        if BASE_DIR not in sys.path:
+            sys.path.insert(0, BASE_DIR)
         try:
-            memo_file.unlink()
-            removed_count += 1
+            from zombie_reaper import audit_and_reap  # type: ignore
+        except ImportError:
+            from tools.zombie_reaper import audit_and_reap  # type: ignore
+        res = audit_and_reap(dry_run=False)
+        reaped = res.get("zombies_reaped", 0)
+        if reaped > 0:
+            print(f"🧟 [Zombie Reaper]: Đã tự động thu hồi {reaped} ephemeral sub-agent terminal sau khi đóng Task.")
+        return reaped
+    except Exception as e:
+        print(f"⚠️ [Zombie Reaper Error]: {e}", file=sys.stderr)
+        return 0
+
+
+def cleanup_task_room(item_id: int) -> int:
+    """Clean up handoff records, task artifacts, and zombie terminals when a task is Closed."""
+    # 1. Gọi room_cleanup.py để nén task-scoped directory an toàn
+    try:
+        from room_cleanup import cleanup_by_task  # type: ignore
+        cleanup_by_task(str(item_id), dry_run=False)
+    except Exception:
+        try:
+            from tools.room_cleanup import cleanup_by_task  # type: ignore
+            cleanup_by_task(str(item_id), dry_run=False)
         except Exception:
             pass
 
-    for latest_file in bmad_rooms.rglob("latest_handoff.md"):
-        try:
-            content = latest_file.read_text(encoding="utf-8")
-            if f"#{item_id}" in content or f"Work Item: `#{item_id}`" in content:
-                latest_file.unlink()
+    # 2. Xóa các memo files mồ côi
+    bmad_rooms = Path(BASE_DIR) / "bmad" / "rooms"
+    removed_count = 0
+    if bmad_rooms.is_dir():
+        for memo_file in bmad_rooms.rglob(f"*handoff_{item_id}_*.md"):
+            try:
+                memo_file.unlink()
                 removed_count += 1
-        except Exception:
-            pass
+            except Exception:
+                pass
+
+        # Lưu ý: Tuyệt đối KHÔNG xóa latest_handoff.md vì mỗi phòng ban bắt buộc
+        # phải duy trì duy nhất 1 file single-pointer latest_handoff.md theo spec.
+
+    # 3. Thu hồi terminal mồ côi (Phase 6: REAPED)
+    reap_orphaned_terminals()
     return removed_count
 
 def send_orca_notification(role: str, message: str) -> bool:
@@ -114,7 +167,57 @@ def send_orca_notification(role: str, message: str) -> bool:
             ]
             res = subprocess.run(cmd_launch, capture_output=True, text=True, check=False)
             if res.returncode == 0:
-                print(f"✅ [Ephemeral Auto-Launch]: Đã mở thành công AI Agent tab cho {role.upper()} trên Orca!")
+                handle = ""
+                tab_id = ""
+                if res.stdout:
+                    try:
+                        data = json.loads(res.stdout)
+                        outcome = data.get("result", {}).get("outcome", {})
+                        handle = outcome.get("handle") or ""
+                        pk = outcome.get("paneKey") or ""
+                        tab_id = pk.split(":")[0] if ":" in pk else pk
+                    except Exception:
+                        pass
+
+                titles_map = {
+                    "peer": "[Peer Dev 1] Code Executor",
+                    "qc": "[QC] 5-Stage ISTQB Verifier",
+                    "design": "[Peer Design] UI/UX & Tokens",
+                    "pm": "[PM] Feasibility & Alignment",
+                    "lead": "[Lead Dev] Architect & PM",
+                }
+                models_map = {
+                    "peer": "ag/gemini-3.8-flash-low",
+                    "qc": "ag/gemini-3.8-flash-high",
+                    "design": "ag/gemini-3.8-flash-high",
+                }
+                role_key = "peer" if any(k in clean_role for k in ("peer", "dev")) else ("qc" if "qc" in clean_role else ("design" if "design" in clean_role else clean_role))
+                term_title = titles_map.get(role_key, f"[{role.upper()}] Sub-Agent")
+                term_model = models_map.get(role_key, "ag/gemini-3.8-flash-high")
+
+                if handle:
+                    subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
+                    subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
+                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {term_title}", "--enter"], capture_output=True, check=False)
+                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {term_model}", "--enter"], capture_output=True, check=False)
+
+                    # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
+                    rtk_env_script = Path(BASE_DIR) / "scripts" / "rtk_profile_env.sh"
+                    if rtk_env_script.is_file():
+                        subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_env_script} {role_key}", "--enter"], capture_output=True, check=False)
+
+                    reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
+                    reg = {}
+                    if reg_file.is_file():
+                        try:
+                            reg = json.loads(reg_file.read_text(encoding="utf-8"))
+                        except Exception:
+                            reg = {}
+                    reg[role_key] = {"handle": handle, "tabId": tab_id}
+                    reg_file.parent.mkdir(parents=True, exist_ok=True)
+                    reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
+
+                print(f"✅ [Ephemeral Auto-Launch]: Đã mở và đổi tên thành công AI Agent tab '{term_title}' ({handle}) trên Orca!")
                 return True
             else:
                 print(f"⚠️ [Ephemeral Launch Error]: {res.stderr.strip()}", file=sys.stderr)
@@ -173,6 +276,8 @@ def auto_dispatch_agent(
         send_orca_notification("lead", msg_lead)
         send_orca_notification("qc", msg_qc)
         print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo cho Lead Dev và QC về Work Item #{item_id} (Resolved).")
+        # Ephemeral Sub-Agent: Tự động đóng tab Peer Dev khi hoàn thành code (Resolved) để giải phóng RAM
+        close_ephemeral_subagent("peer")
 
     # CASE 2: Giao việc thi công (target_state == "Active" hoặc "Accepted")
     # -> Báo ngay cho Peer được gán
@@ -195,6 +300,8 @@ def auto_dispatch_agent(
         send_orca_notification("lead", msg_done)
         send_orca_notification("supervisor", msg_done)
         print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Lead và Supervisor.")
+        # Ephemeral Sub-Agent: Tự động đóng tab QC khi Task Closed để đưa RAM về 0
+        close_ephemeral_subagent("qc")
 
 class HarnessManager:
     def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH, engine: str = "auto"):

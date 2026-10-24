@@ -29,7 +29,7 @@ tools/
 │   ├── agent_reprimand.py           # Lập biên bản chế tài và xử phạt vi phạm quy trình
 │   ├── agent_context_manager.py     # Giám sát ngân sách context window (<30k tokens)
 │   ├── call_agent.py                # Dispatcher kích hoạt Paseo agent profiles
-│   └── paseo_hooks.py               # Điều khiển Paseo Daemon Lifecycle Hooks (:6767)
+│   └── paseo_hooks.py               # Forwarding wrapper sang plugins/slpc-lifecycle-hooks/paseo_hooks.py
 │
 ├── 4. Testing & Code Generation
 │   ├── qc_test_generator.py         # Bộ sinh Test Matrix & Unit Test 5-Stage ISTQB
@@ -45,7 +45,8 @@ tools/
 │   ├── remote_sync.py               # Đồng bộ backlog từ Azure DevOps về DynamoDB
 │   └── doc_sync.py                  # Đồng bộ và kiểm tra cấu trúc đặc tả trong docs/spec/
 │
-├── 6. Orchestration Bridges
+├── 6. Orchestration Bridges & Autonomous Controllers
+│   ├── slppc_orchestrator.py        # Bộ điều phối tự hành SLPPC Autonomous Orchestrator (plugins/)
 │   ├── orca_slpc_bridge.py          # Bộ điều phối toàn diện SLPC trên Orca Orchestration
 │   ├── orca_harness_bridge.py       # Cầu nối đồng bộ Harness DB với Orca Workspace Board
 │   └── aevum_harness_bridge.py      # Cầu nối đồng bộ BlockSuite Aevum Real-Time Kanban

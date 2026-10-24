@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,22 @@ def split_files(raw: str | None) -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def sanitize_text(text: str | None) -> str:
+    """Loại bỏ các đường dẫn tuyệt đối cá nhân để chống leak và giữ tính linh động."""
+    if not text:
+        return ""
+    base_str = str(BASE_DIR)
+    text = text.replace(base_str + "/", "")
+    text = text.replace(base_str, ".")
+    home_str = str(Path.home())
+    if home_str and home_str != "/":
+        text = text.replace(home_str + "/", "~/")
+        text = text.replace(home_str, "~")
+    text = re.sub(r'/(?:Users|home)/[a-zA-Z0-9._-]+/?', '~/', text)
+    text = re.sub(r'[a-zA-Z]:\\(?:Users|home)\\[a-zA-Z0-9._-]+\\?', r'~\\', text)
+    return text
+
+
 def default_state() -> dict[str, Any]:
     return {
         "updated_at": now_iso(),
@@ -46,11 +63,11 @@ def default_state() -> dict[str, Any]:
         "next_action": (
             "1. Cài đặt Paseo v0.8.0 về ~/projects/supervisors/paseo (`cd codex-room-setup && ./scripts/install-paseo`). "
             "2. Nếu dùng Codex Room (3-role SLP): cài `@openai/codex`, `codex login`, tạo `~/.codex/{skills,plugins,config.toml,AGENTS.md}` rồi chạy `./install --apply`. "
-            "3. Nếu dùng kết hợp SLPC (Paseo_Project): chạy thêm `python3 patch_paseo.py` để bơm 4 profile Supervisor/Lead/Peer/QC vào `~/.paseo/config.json`."
+            "3. Nếu dùng kết hợp SLPC: chạy thêm `python3 patch_paseo.py` để bơm profiles SLPPC vào `~/.paseo/config.json`."
         ),
         "completed_items": [
-            "Đọc và phân tích toàn bộ mã nguồn workspace `/home/baoltb/Desktop/Paseo_Project` (AGENTS.md, CLAUDE.md, setup_home.sh, setup_harness.sh, patch_paseo.py, profiles/*, scripts/*, tools/*, docs/spec/*, game/*).",
-            "Clone repo `https://github.com/hoangnb24/codex-room-setup` vào `/home/baoltb/Desktop/Paseo_Project/codex-room-setup` và thêm `/codex-room-setup/` vào `.gitignore`.",
+            "Đọc và phân tích toàn bộ mã nguồn workspace Room_Agent (AGENTS.md, CLAUDE.md, setup_home.sh, setup_harness.sh, patch_paseo.py, profiles/*, scripts/*, tools/*, docs/spec/*).",
+            "Clone repo `https://github.com/hoangnb24/codex-room-setup` vào `codex-room-setup` và thêm `/codex-room-setup/` vào `.gitignore`.",
             "Đọc 100% mã nguồn của `codex-room-setup` (`install`, `scripts/install-room`, `scripts/install-paseo`, `scripts/verify`, `scripts/doctor`, `home/.local/bin/codex-room*`, `home/.config/codex-room/*`, `home/.paseo/config.json.template`).",
             "Chạy kiểm chứng mã nguồn `./scripts/verify --source` (đạt 100% `VERIFY_OK`) và chẩn đoán máy trạm qua `./scripts/doctor` & `./install --dry-run`.",
             "Tạo và hoàn thiện tài liệu đặc tả 8 mục tại `docs/spec/codex-room-setup-spec.md`.",
@@ -231,15 +248,20 @@ def cmd_status(state: dict[str, Any]) -> None:
 
 
 def cmd_log(args: argparse.Namespace, state: dict[str, Any]) -> None:
-    done_items = split_items(args.done)
-    missing_items = split_items(args.missing)
-    files = split_files(args.files)
+    done_items = [sanitize_text(d) for d in split_items(args.done)]
+    missing_items = [sanitize_text(m) for m in split_items(args.missing)]
+    files = [sanitize_text(f) for f in split_files(args.files)]
 
-    state["last_agent"] = args.agent
-    if args.focus:
-        state["current_focus"] = args.focus
-    if args.next:
-        state["next_action"] = args.next
+    agent_name = sanitize_text(args.agent)
+    summary_text = sanitize_text(args.summary)
+    focus_text = sanitize_text(args.focus) if args.focus else None
+    next_text = sanitize_text(args.next) if args.next else None
+
+    state["last_agent"] = agent_name
+    if focus_text:
+        state["current_focus"] = focus_text
+    if next_text:
+        state["next_action"] = next_text
 
     existing_completed = state.setdefault("completed_items", [])
     for item in done_items:
@@ -255,7 +277,7 @@ def cmd_log(args: argparse.Namespace, state: dict[str, Any]) -> None:
                 existing_missing.append(item)
 
     if args.resolve_missing:
-        resolved_keywords = split_items(args.resolve_missing)
+        resolved_keywords = [sanitize_text(kw) for kw in split_items(args.resolve_missing)]
         state["missing_items"] = [
             m for m in state.get("missing_items", [])
             if not any(kw.lower() in m.lower() for kw in resolved_keywords)
@@ -263,40 +285,40 @@ def cmd_log(args: argparse.Namespace, state: dict[str, Any]) -> None:
 
     session_entry = {
         "timestamp": now_iso(),
-        "agent": args.agent,
-        "summary": args.summary,
+        "agent": agent_name,
+        "summary": summary_text,
         "done": done_items,
         "files": files,
-        "next": args.next or state.get("next_action", ""),
+        "next": next_text or state.get("next_action", ""),
     }
     state.setdefault("sessions", []).append(session_entry)
     save_state(state)
 
     # Automatically save handoff memo into bmad/rooms/<role>/
-    agent_lower = (args.agent or "").lower()
+    agent_lower = agent_name.lower()
     room = "peer"
     if "supervisor" in agent_lower:
         room = "supervisor"
+    elif "pm" in agent_lower:
+        room = "pm"
     elif "lead" in agent_lower:
         room = "lead"
     elif "qc" in agent_lower:
         room = "qc"
 
     room_dir = BASE_DIR / "bmad" / "rooms" / room
-    if room_dir.is_dir():
-        try:
-            ts_str = datetime.now(VN_TZ).strftime("%Y%m%d_%H%M%S")
-            memo_file = room_dir / f"handoff_{ts_str}.md"
-            latest_file = room_dir / "latest_handoff.md"
-            done_bullets = "\n".join(f"- [x] {d}" for d in done_items) if done_items else "- (Không có mục chi tiết)"
-            file_bullets = "\n".join(f"- `{f}`" for f in files) if files else "- (Không có file)"
-            missing_bullets = "\n".join(f"- [ ] {m}" for m in missing_items) if missing_items else ""
+    try:
+        room_dir.mkdir(parents=True, exist_ok=True)
+        latest_file = room_dir / "latest_handoff.md"
+        done_bullets = "\n".join(f"- [x] {d}" for d in done_items) if done_items else "- (Không có mục chi tiết)"
+        file_bullets = "\n".join(f"- `{f}`" for f in files) if files else "- (Không có file)"
+        missing_bullets = "\n" + "\n".join(f"- [ ] {m}" for m in missing_items) if missing_items else ""
 
-            handoff_memo = f"""# BIÊN BẢN BÀN GIAO: {args.agent}
+        handoff_memo = f"""# BIÊN BẢN BÀN GIAO: {agent_name}
 
 - **Thời gian**: `{now_iso()}`
-- **Agent bàn giao**: `{args.agent}`
-- **Tóm tắt**: {args.summary}
+- **Agent bàn giao**: `{agent_name}`
+- **Tóm tắt**: {summary_text}
 
 ## 1. Đã hoàn thành trong phiên
 {done_bullets}
@@ -305,23 +327,129 @@ def cmd_log(args: argparse.Namespace, state: dict[str, Any]) -> None:
 {file_bullets}
 
 ## 3. Trọng tâm & Bước tiếp theo
-- **Trọng tâm hiện tại**: {args.focus or state.get('current_focus', '')}
-- **Bàn giao hành động tiếp**: {args.next or state.get('next_action', '')}
-{missing_bullets}
+- **Trọng tâm hiện tại**: {focus_text or state.get('current_focus', '')}
+- **Bàn giao hành động tiếp**: {next_text or state.get('next_action', '')}{missing_bullets}
 """
-            memo_file.write_text(handoff_memo, encoding="utf-8")
-            latest_file.write_text(handoff_memo, encoding="utf-8")
-            print(f"Đã lưu biên bản bàn giao vào {memo_file.relative_to(BASE_DIR)}.")
+        handoff_memo = sanitize_text(handoff_memo)
+        memo_lines = handoff_memo.strip().splitlines()
+        if len(memo_lines) > 150:
+            memo_lines = memo_lines[:149] + ["- ... (đã cắt bớt để bảo đảm trần <=150 dòng)"]
+        latest_file.write_text("\n".join(memo_lines) + "\n", encoding="utf-8")
+        try:
+            rel_latest = latest_file.relative_to(BASE_DIR)
         except Exception:
-            pass
+            rel_latest = latest_file.name
+        print(f"Đã lưu biên bản bàn giao vào {rel_latest}.")
+    except Exception:
+        pass
 
-    print(f"Đã cập nhật tiến độ vào {MARKDOWN_FILE} và {STATE_FILE}.")
+    # Update bmad/rooms/room_ledger.json (FIFO 50, < 50KB)
+    ledger_path = BASE_DIR / "bmad" / "rooms" / "room_ledger.json"
+    try:
+        ledger: dict[str, Any] = {}
+        if ledger_path.is_file():
+            try:
+                ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+            except Exception:
+                ledger = {}
+        if not isinstance(ledger, dict) or "version" not in ledger:
+            ledger = {
+                "version": "1.0.0",
+                "updated_at": now_iso(),
+                "roles": {
+                    "supervisor": {"status": "IDLE", "last_action": "", "active_task_id": None, "updated_at": now_iso()},
+                    "pm": {"status": "IDLE", "last_action": "", "active_task_id": None, "updated_at": now_iso()},
+                    "lead": {"status": "IDLE", "last_action": "", "active_task_id": None, "updated_at": now_iso()},
+                    "peer": {"status": "IDLE", "last_action": "", "active_task_id": None, "updated_at": now_iso()},
+                    "qc": {"status": "IDLE", "last_action": "", "active_task_id": None, "updated_at": now_iso()},
+                },
+                "history": [],
+            }
+        ledger["updated_at"] = now_iso()
+        roles = ledger.setdefault("roles", {})
+        if room not in roles or not isinstance(roles[room], dict):
+            roles[room] = {}
+        roles[room]["status"] = "IDLE"
+        roles[room]["last_action"] = summary_text
+        roles[room]["updated_at"] = now_iso()
+
+        task_id = getattr(args, "task_id", None)
+        if not task_id and summary_text:
+            m = re.search(r'#(\d+)', summary_text)
+            if m:
+                try:
+                    task_id = int(m.group(1))
+                except Exception:
+                    pass
+        if task_id:
+            roles[room]["active_task_id"] = task_id
+
+        history = ledger.setdefault("history", [])
+        history.append({
+            "timestamp": now_iso(),
+            "agent": agent_name,
+            "action": "log",
+            "task_id": task_id,
+            "summary": summary_text,
+        })
+        if len(history) > 50:
+            ledger["history"] = history[-50:]
+
+        ledger_str = json.dumps(ledger, indent=2, ensure_ascii=False) + "\n"
+        while len(ledger_str.encode("utf-8")) > 50 * 1024 and len(ledger.get("history", [])) > 1:
+            ledger["history"].pop(0)
+            ledger_str = json.dumps(ledger, indent=2, ensure_ascii=False) + "\n"
+
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_text(ledger_str, encoding="utf-8")
+    except Exception:
+        pass
+
+    try:
+        md_rel = MARKDOWN_FILE.relative_to(BASE_DIR)
+    except Exception:
+        md_rel = MARKDOWN_FILE
+    try:
+        st_rel = STATE_FILE.relative_to(BASE_DIR)
+    except Exception:
+        st_rel = STATE_FILE
+    print(f"Đã cập nhật tiến độ vào {md_rel} và {st_rel}.")
+
+
+def _get_paseo_dirs() -> tuple[Path, Path]:
+    home = Path.home()
+    slug = str(BASE_DIR).strip("/").replace("/", "-")
+    
+    paseo_agents_dir = home / ".paseo" / "agents" / slug
+    if not paseo_agents_dir.exists():
+        agents_parent = home / ".paseo" / "agents"
+        if agents_parent.is_dir():
+            matches = sorted(
+                [d for d in agents_parent.iterdir() if d.is_dir() and ("Room_Agent" in d.name or "Paseo_Project" in d.name)],
+                key=lambda p: p.stat().st_mtime,
+                reverse=True
+            )
+            if matches:
+                paseo_agents_dir = matches[0]
+
+    claude_proj_dir = home / ".paseo" / "claude-config" / "projects" / f"-{slug}"
+    if not claude_proj_dir.exists():
+        proj_parent = home / ".paseo" / "claude-config" / "projects"
+        if proj_parent.is_dir():
+            matches = sorted(
+                [d for d in proj_parent.iterdir() if d.is_dir() and ("Room_Agent" in d.name or "Paseo_Project" in d.name)],
+                key=lambda p: p.stat().st_mtime,
+                reverse=True
+            )
+            if matches:
+                claude_proj_dir = matches[0]
+
+    return paseo_agents_dir, claude_proj_dir
 
 
 def cmd_sessions() -> None:
     home = Path.home()
-    paseo_agents_dir = home / ".paseo" / "agents" / "home-baoltb-Desktop-Paseo_Project"
-    claude_proj_dir = home / ".paseo" / "claude-config" / "projects" / "-home-baoltb-Desktop-Paseo-Project"
+    paseo_agents_dir, claude_proj_dir = _get_paseo_dirs()
     codex_rt_dir = home / ".codex-runtime"
 
     print("======================================================================")
@@ -357,7 +485,7 @@ def cmd_sessions() -> None:
 def _collect_all_thread_files() -> list[tuple[str, Path]]:
     home = Path.home()
     candidates: list[tuple[str, Path]] = []
-    claude_proj_dir = home / ".paseo" / "claude-config" / "projects" / "-home-baoltb-Desktop-Paseo-Project"
+    _, claude_proj_dir = _get_paseo_dirs()
     if claude_proj_dir.is_dir():
         for p in claude_proj_dir.glob("*.jsonl"):
             candidates.append(("paseo-claude", p))
@@ -461,6 +589,7 @@ def main() -> int:
     log_parser.add_argument("--resolve-missing", help="Từ khóa các mục còn thiếu đã được giải quyết (ngăn cách bởi dấu ';')")
     log_parser.add_argument("--next", help="Bước tiếp theo cần làm khi User bảo 'làm tiếp'")
     log_parser.add_argument("--files", help="Danh sách file đã tạo/sửa (ngăn cách bởi dấu ',')")
+    log_parser.add_argument("--task-id", help="Task ID hoặc Work Item ID đang xử lý")
 
     args = parser.parse_args()
     state = load_state()

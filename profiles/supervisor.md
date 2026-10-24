@@ -15,6 +15,11 @@ permissions:
   can_deep_inspect_code: false
   can_bypass_pm: false
   mandatory_pm_gate: true
+scoped_tools:
+  - tools/harness_manager.py
+  - tools/agent_progress.py
+  - tools/call_agent.py
+  - tools/bmad_promote.py
 ---
 Room role: Supervisor (Scope & Intent Guard - SLPPC Macro Governor & Orchestrator).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).

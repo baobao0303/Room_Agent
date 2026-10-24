@@ -270,6 +270,48 @@ def send_to_terminal_safely(terminal_handle: str, text: str, wait_timeout_ms: in
         pass
 
 
+def launch_and_rename_agent(role: str, title: str, prompt: str, model: str = "ag/gemini-3.8-flash-high") -> Optional[str]:
+    """Khởi chạy Orca agent và lập tức đổi tên terminal + pane title."""
+    if not shutil.which("orca"):
+        return None
+    cmd = [
+        "orca", "agent", "launch",
+        "--worktree", "active",
+        "--agent", "hermes",
+        "--prompt", prompt,
+        "--json"
+    ]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if res.returncode == 0 and res.stdout:
+            data = json.loads(res.stdout)
+            outcome = data.get("result", {}).get("outcome", {})
+            handle = outcome.get("handle") or ""
+            pk = outcome.get("paneKey") or ""
+            tab_id = pk.split(":")[0] if ":" in pk else pk
+            if handle:
+                subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
+                subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
+                subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True, check=False)
+                if model:
+                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True, check=False)
+
+                reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
+                reg = {}
+                if reg_file.is_file():
+                    try:
+                        reg = json.loads(reg_file.read_text(encoding="utf-8"))
+                    except Exception:
+                        reg = {}
+                reg[role.lower()] = {"handle": handle, "tabId": tab_id}
+                reg_file.parent.mkdir(parents=True, exist_ok=True)
+                reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
+                return handle
+    except Exception as e:
+        print(f"⚠️ [launch_and_rename_agent error]: {e}", file=sys.stderr)
+    return None
+
+
 def cmd_dispatch_design(task_id: str, prompt: str, figma_node: Optional[str] = None):
     """Lead dispatch nhiệm vụ bóc tách Figma/UI token cho Peer Design."""
     print(f"=== [DISPATCH CHO PEER DESIGN TASK #{task_id}] ===")
@@ -292,18 +334,11 @@ def cmd_dispatch_design(task_id: str, prompt: str, figma_node: Optional[str] = N
             print(f"✅ Đã gửi lệnh trực tiếp vào terminal của Peer Design!")
             return
 
-        try:
-            cmd = [
-                "orca", "agent", "launch",
-                "--worktree", "active",
-                "--agent", "hermes",
-                "--prompt", f"[Peer Design] #{task_id}: {prompt}",
-                "--json"
-            ]
-            run_cmd(cmd, check=True)
-            print(f"🚀 [Orca Agent Launch]: Đã spawn Peer Design Hermes cho Task #{task_id}.")
-        except Exception as e:
-            print(f"⚠️ Không thể launch: {e}")
+        h = launch_and_rename_agent("design", "[Peer Design] UI/UX & Tokens", f"[Peer Design] #{task_id}: {prompt}", "ag/gemini-3.8-flash-high")
+        if h:
+            print(f"🚀 [Orca Agent Launch]: Đã spawn và đổi tên Peer Design ({h}) cho Task #{task_id}.")
+        else:
+            print(f"⚠️ Không thể launch Peer Design.")
 
 
 def cmd_report_design_done(task_id: str, spec_file: str):
@@ -368,19 +403,12 @@ def cmd_dispatch_peer(task_id: str, prompt: str, parent_task_id: Optional[str] =
             print(f"✅ Đã gửi lệnh trực tiếp vào terminal của {peer_label} Hermes!")
             return
 
-        # Fallback launch Hermes agent mới
-        try:
-            cmd = [
-                "orca", "agent", "launch",
-                "--worktree", "active",
-                "--agent", "hermes",
-                "--prompt", f"[Peer] #{task_id}: {prompt}",
-                "--json"
-            ]
-            run_cmd(cmd, check=True)
-            print(f"🚀 [Orca Agent Launch]: Đã spawn Peer Hermes thực thi Task #{task_id}.")
-        except Exception as e:
-            print(f"⚠️ Không thể launch agent: {e}")
+        # Fallback launch Hermes agent mới và đổi tên
+        h = launch_and_rename_agent(chosen_role, f"[{peer_label}] Task #{task_id}", f"[Peer] #{task_id}: {prompt}", "ag/gemini-3.8-flash-low")
+        if h:
+            print(f"🚀 [Orca Agent Launch]: Đã spawn và đổi tên {peer_label} ({h}) cho Task #{task_id}.")
+        else:
+            print(f"⚠️ Không thể launch agent cho {peer_label}.")
 
 
 def cmd_report_done(task_id: str, files: str):
@@ -530,19 +558,12 @@ def cmd_lead_review(task_id: str, repo_dir: str = "projects/wicx-crm-fe") -> boo
         # Mở lại Terminal Orca cho Peer vào fix tiếp
         if shutil.which("orca"):
             print(f"🔄 [Reopen Peer Terminal]: Lead Review REJECTED Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
-            try:
-                cmd_reopen = [
-                    "orca", "agent", "launch",
-                    "--worktree", "active",
-                    "--agent", "hermes",
-                    "--focus",
-                    "--prompt", f"[Peer Fix Task #{task_id}]: Lead Review REJECTED. Hãy đọc bmad/rooms/tasks/{task_id}/lead_review_report_to_supervisor.md và khắc phục vi phạm!",
-                    "--json"
-                ]
-                run_cmd(cmd_reopen, check=False)
-                print(f"🚀 Đã mở lại Orca terminal cho Peer vào sửa lỗi Task #{task_id}!")
-            except Exception as e:
-                print(f"⚠️ Không thể mở lại terminal Peer: {e}")
+            prompt_fix = f"[Peer Fix Task #{task_id}]: Lead Review REJECTED. Hãy đọc bmad/rooms/tasks/{task_id}/lead_review_report_to_supervisor.md và khắc phục vi phạm!"
+            h = launch_and_rename_agent("peer", f"[Peer Dev 1] Fix Task #{task_id}", prompt_fix, "ag/gemini-3.8-flash-low")
+            if h:
+                print(f"🚀 Đã mở lại và đổi tên Orca terminal cho Peer ({h}) vào sửa lỗi Task #{task_id}!")
+            else:
+                print(f"⚠️ Không thể mở lại terminal Peer.")
         return False
 
     print("✅ [LEAD CODE REVIEW: APPROVED]! Mã nguồn đạt chuẩn kiến trúc 100%.")

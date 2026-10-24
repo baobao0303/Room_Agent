@@ -4,15 +4,15 @@
 
 ## 1. Problem Statement & Scope
 - **Research Topic**: `Raw Data Mapping Step 1 Channel Connector List Flattened 12 Column Table ISTQB Test Cases`
-- **Workspace**: `/home/baoltb/Desktop/Paseo_Project`
+- **Workspace**: `.`
 - **Architecture Mode**: 4-Role SLPC (`Supervisor` - `Lead` - `Peer` - `QC`) with `031_claude_code_sub_agents` & `knowledge` skill.
 
 ## 2. Core Architecture & Codebase Evidence
 ### Local Evidence (docs):
-🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: /home/baoltb/Desktop/Paseo_Project/docs
+🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: ./docs
 📊 Found 187 matches across 16 files. Top 3 shown:
 
-┌── [Rank #1 | Score: 104.09] /home/baoltb/Desktop/Paseo_Project/docs/spec/wicx-crm-fe/testcases/US-raw-data-mapping-testcases.md:1-14
+┌── [Rank #1 | Score: 104.09] ./docs/spec/wicx-crm-fe/testcases/US-raw-data-mapping-testcases.md:1-14
 │   Section: # Bộ Test Case Kiểm Thử 5 Giai Đoạn ISTQB: Phân Hệ Ánh Xạ Dữ Liệu Thô (Raw Data Mapping)
 ├── ────────────────────────────────────────────────────────
 │   # Bộ Test Case Kiểm Thử 5 Giai Đoạn ISTQB: Phân Hệ Ánh Xạ Dữ Liệu Thô (Raw Data Mapping)
@@ -30,14 +30,14 @@
 │   ---
 └── ────────────────────────────────────────────────────────
 
-┌── [Rank #2 | Score: 82.98] /home/baoltb/Desktop/Paseo_Project/docs/spec/research-raw-data-mapping-projection.md:1-9
+┌── [Rank #2 | Score: 82.98] ./docs/spec/research-raw-data-mapping-projection.md:1-9
 │   Section: # Nghiên cứu Chuyên sâu: CDP Raw Data Mapping & Event Pr
 
 ### Local Evidence (profiles):
-🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: /home/baoltb/Desktop/Paseo_Project/profiles
+🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: ./profiles
 📊 Found 4 matches across 4 files. Top 3 shown:
 
-┌── [Rank #1 | Score: 7.29] /home/baoltb/Desktop/Paseo_Project/profiles/qc.md:1-61 (truncated to 30 lines)
+┌── [Rank #1 | Score: 7.29] ./profiles/qc.md:1-61 (truncated to 30 lines)
 │   Section: Top of File
 ├── ────────────────────────────────────────────────────────
 │   ---
@@ -62,10 +62,10 @@
 │        `python3 tools/qc_test_generator.py --source <path/to/file.ts> --spec <path/to/spec.md> --task-id <id>
 
 ### Local Evidence (tools):
-🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: /home/baoltb/Desktop/Paseo_Project/tools
+🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: ./tools
 📊 Found 318 matches across 40 files. Top 3 shown:
 
-┌── [Rank #1 | Score: 92.15] /home/baoltb/Desktop/Paseo_Project/tools/research/research_supervisor_cdp_raw_data_mapping_even.md:1-4
+┌── [Rank #1 | Score: 92.15] ./tools/research/research_supervisor_cdp_raw_data_mapping_even.md:1-4
 │   Section: # Research Report: [Supervisor] CDP Raw Data Mapping & Event Projection Field Mapping UI
 ├── ────────────────────────────────────────────────────────
 │   # Research Report: [Supervisor] CDP Raw Data Mapping & Event Projection Field Mapping UI
@@ -73,7 +73,7 @@
 │   > Generated via **Local BM25 Evidence Synthesizer (query_reader + crm_doc_reader)** on 2026-10-15 11:26:58
 └── ────────────────────────────────────────────────────────
 
-┌── [Rank #2 | Score: 87.64] /home/baoltb/Desktop/Paseo_Project/tools/research/research_qc_th_c_thi_ki_m_th_tr_c_tdd_theo_ch.md:1-4
+┌── [Rank #2 | Score: 87.64] ./tools/research/research_qc_th_c_thi_ki_m_th_tr_c_tdd_theo_ch.md:1-4
 │   Section: # Research Report: [QC] Thực thi kiểm thử trước (TDD) theo chuẩn 5 giai đoạn ISTQB: Viết Unit Test cho Step 1 (Channel List, General Config & Bảng mẫu 12 cột) theo Task #278 và spec docs/spec/raw-data-mapping-spec.md
 ├── ────────────────────────────────────────────────────────
 │   # Research Report: [QC] Thực thi kiểm thử trước (TDD) theo chuẩn 5 giai đoạn ISTQB: Viết Unit Test cho Step 1 (Channel List, General Config & Bảng mẫu 12 cột) theo Task #278 và spec docs/spec/raw-data-mapping-spec.md
@@ -82,16 +82,16 @@
 └── ──────────
 
 ### Local Evidence (projects):
-🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: /home/baoltb/Desktop/Paseo_Project/projects
+🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Target: ./projects
 📊 Found 15760 matches across 5864 files. Top 3 shown:
 
-┌── [Rank #1 | Score: 51.63] /home/baoltb/Desktop/Paseo_Project/projects/fe-mfes/docs/superpowers/specs/2026-08-06-wi-mfes-i18n-design.md:232-233
+┌── [Rank #1 | Score: 51.63] ./projects/fe-mfes/docs/superpowers/specs/2026-08-06-wi-mfes-i18n-design.md:232-233
 │   Section: ## Data flow
 ├── ────────────────────────────────────────────────────────
 │   ## Data flow
 └── ────────────────────────────────────────────────────────
 
-┌── [Rank #2 | Score: 48.12] /home/baoltb/Desktop/Paseo_Project/projects/wicx-crm-fe/libs/features/raw-event-data/data-access/src/auto-gen/models/social-channel-payload-request.ts:51-65
+┌── [Rank #2 | Score: 48.12] ./projects/wicx-crm-fe/libs/features/raw-event-data/data-access/src/auto-gen/models/social-channel-payload-request.ts:51-65
 │   Section: Lines 51-65
 ├── ────────────────────────────────────────────────────────
 │   * Channel unique name.
@@ -111,7 +111,7 @@
 │   }
 └── ────────────────────────────────────────────────────────
 
-┌── [Rank #3 | Score: 47.95] /home/baoltb/Desktop/Paseo_Project/projects/wicx-crm-fe/libs/features/raw-event-data/data-access/src/auto-gen/models/list-members-request.ts:1-35 (truncated to 30 lines)
+┌── [Rank #3 | Score: 47.95] ./projects/wicx-crm-fe/libs/features/raw-event-data/data-access/src/auto-gen/models/list-members-request.ts:1-35 (truncated to 30 lines)
 │   Section: Lines 1-35
 ├── ────────────────────────────────────────────────────────
 │   /* tslint:disable */
@@ -122,7 +122,7 @@
 🔍 Query: "Raw Data Mapping Step 1 Channel Connector List" | Category: all
 📊 Tìm thấy 4865 kết quả (Đã quét 785 files, 8414 sections). Top 3:
 
-┌── [Rank #1 | Score: 74.91] /home/baoltb/Desktop/wicx-crm-doc/BA/planning-artifacts/epic-breakdown/phase1-epic-breakdown.md:113-132
+┌── [Rank #1 | Score: 74.91] ../crm-doc/BA/planning-artifacts/epic-breakdown/phase1-epic-breakdown.md:113-132
 │   Section: ## Epic E2 — Connector mở rộng (TPOS + Kill-switch)
 ├── ────────────────────────────────────────────────────────
 │   ## Epic E2 — Connector mở rộng (TPOS + Kill-switch)

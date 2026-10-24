@@ -12,6 +12,10 @@ permissions:
   can_parse_figma: true
   can_code_features: false
   can_close_task: false
+scoped_tools:
+  - patch
+  - write_file
+  - tools/agent_progress.py
 ---
 Room role: Peer Design (UI/UX, Figma & Design Token Specialist in SLPC).
 

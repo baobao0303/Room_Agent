@@ -1,25 +1,51 @@
-# Paseo Project Command Cheatsheet
+# Room_Agent Command Cheatsheet (SLPPC Architecture)
 
-## 1. Slash Commands (Claude Code / Chat)
+## 1. Quản lý Vòng đời Agent (All-in-One CLI: `./agent-start`)
 
-| Command | Mục đích |
-|---|---|
-| `/paseo` | Trạng thái bot SLPC, cron heartbeat, bàn cờ Harness |
-| `/paseo-agent` | Hướng dẫn vai trò agent (Supervisor, Lead, Peer, QC) |
-| `/paseo-advisor` | Spawn sub-agent tư vấn ý kiến thứ hai (second opinion) |
-| `/paseo-committee` | Spawn 2 sub-agent phân tích RCA và lập kế hoạch |
-| `/paseo-review` | Spawn sub-agents review chéo (Code, Spec, UI) |
-| `/paseo-handoff` | Bàn giao task sang profile khác |
-| `/harness-ops` | Thao tác CRUD work item trên Harness DB |
-| `/code-review` | Review code song song (Standards & Spec) |
-| `/simplify` | Rút gọn diff, tối ưu code theo YAGNI |
-| `/supervisor-call` | Supervisor phân rã task và gọi Lead/Peer |
+```bash
+# Khởi chạy 2 tabs Agent thường trực (PM, Lead Dev) - Supervisor là terminal hiện hành
+./agent-start
+
+# Khởi chạy toàn bộ 8 vai trò (khi cần chạy full pool)
+./agent-start --all
+
+# Khởi chạy một vai trò cụ thể on-demand
+./agent-start peer
+./agent-start qc
+
+# Xem bảng trạng thái chi tiết của tất cả Agent & nhịp tim
+./agent-start status
+
+# Khởi động lại toàn bộ các Agent
+./agent-start restart
+
+# Đóng tab của một agent hoặc đóng tất cả
+./agent-start stop peer
+./agent-start stop --all
+```
 
 ---
 
-## 2. Harness Manager CLI (`tools/harness_manager.py`)
+## 2. Điều phối Tự hành Plugin Hooks (`plugins/slpc-lifecycle-hooks/`)
 
-### Danh sách & Thống kê
+```bash
+# Kiểm tra trạng thái 3 tầng hooks và cấu hình Paseo daemon
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py status
+
+# Kích hoạt điều phối tự hành thủ công (State Navigation)
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py orchestrate --role supervisor --json
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py orchestrate --role lead --json
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py orchestrate --role peer --json
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py orchestrate --role qc --json
+
+# Dọn dẹp task đã Closed và xoay vòng FIFO sổ cái
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py clean-rooms --keep 2
+```
+
+---
+
+## 3. Quản trị Work Item & Bàn cờ Harness (`tools/harness_manager.py`)
+
 ```bash
 # Xem danh sách work item
 python3 tools/harness_manager.py list
@@ -30,24 +56,15 @@ python3 tools/harness_manager.py get --id <ITEM_ID>
 # Xem thống kê work item
 python3 tools/harness_manager.py stats
 
-# Xem danh sách Agent Profiles
-python3 tools/harness_manager.py profiles
-```
-
-### Thêm Work Item
-```bash
+# Thêm Work Item mới
 python3 tools/harness_manager.py add \
   --type {Epic,Feature,"User Story","Technical Story",Task,Bug,Testcase} \
   --title "<Title>" \
   [--description "<Desc>"] \
   [--priority {P0,P1,P2,P3}] \
-  [--assigned-to-profile <profile>] \
-  [--created-by-profile <profile>] \
-  [--dispatch]
-```
+  [--assigned-to-profile <profile>]
 
-### Cập nhật Work Item
-```bash
+# Cập nhật trạng thái Work Item (State Transition)
 python3 tools/harness_manager.py update \
   --id <ITEM_ID> \
   --state {New,Accepted,Active,Resolved,Closed,Blocked,Removed} \
@@ -56,33 +73,35 @@ python3 tools/harness_manager.py update \
 
 ---
 
-## 3. Agent Dispatch CLI (`tools/call_agent.py`)
+## 4. Kiểm tra Chất lượng & Chốt chặn An ninh (Quality & Governance Gates)
 
 ```bash
-# Gọi agent thực thi task
-python3 tools/call_agent.py --profile <Profile> --prompt "<Task>"
+# 1. Chạy toàn bộ 92 unit tests của bộ công cụ
+python3 -m unittest discover -s tools/tests
 
-# Gắn kèm Work Item ID
-python3 tools/call_agent.py --profile <Profile> --prompt "<Task>" --item-id <ITEM_ID>
+# 2. Kiểm tra tuân thủ phân luồng SLPPC & vệ sinh phòng ban
+python3 tools/slppc_flow_guard.py audit
 
-# Dry run (kiểm tra lệnh, không chạy)
-python3 tools/call_agent.py --profile <Profile> --prompt "<Task>" --dry-run
+# 3. Quét an ninh chống lộ dữ liệu nội bộ, địa chỉ và secrets (Fail-Closed)
+python3 scripts/anti_leak_sentinel.py
+
+# 4. Quét Zombie Terminals mồ côi và Watchdog timeout
+python3 tools/zombie_reaper.py --dry-run
 ```
 
 ---
 
-## 4. Scripts & Utilities
+## 5. Tiến độ & Bàn giao Context (`tools/agent_progress.py`)
 
 ```bash
-# Mở dashboard Harness UI
-python3 scripts/harness_dashboard.py
+# Xem trạng thái tiến độ hiện hành
+python3 tools/agent_progress.py status
 
-# Dọn dẹp dữ liệu harness cũ/rác
-python3 scripts/harness_cleanup.py
-
-# Sinh unit test tự động (QC)
-python3 tools/qc_test_generator.py
-
-# Đồng bộ tài liệu
-python3 tools/doc_sync.py
+# Ghi log tiến độ và đồng bộ latest_handoff.md + room_ledger.json
+python3 tools/agent_progress.py log \
+  --agent "Supervisor" \
+  --summary "<Tóm tắt việc đã làm>" \
+  --done "<Chi tiết mục hoàn thành>" \
+  --next "<Hành động tiếp theo>" \
+  --files "<Danh sách file đã sửa>"
 ```

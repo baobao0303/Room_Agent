@@ -93,6 +93,25 @@
     </instructions>
   </command>
   <command>
+    <name>slppc-flow</name>
+    <description>Kích hoạt toàn bộ vòng đời SLPPC 5 cổng (PM -> Lead -> Peer -> QC) tự hành bằng 1 lệnh.</description>
+    <instructions>
+      Kích hoạt pipeline tự động kép (Kev Dual-Anchor):
+      Chạy `./trigger-flow "<Nhiệm vụ>"` hoặc `python3 scripts/run_pipeline.py "<Nhiệm vụ>"`.
+      Pipeline sẽ tự động: (1) PM thẩm định Feasibility qua Kev System One (<50ms), (2) Lead bóc tách Zero-Search Task, (3) Spawn Ephemeral Peer Dev tab và thi công, (4) Ephemeral Auto-Close Peer và spawn QC chạy test ISTQB 5-Stage, (5) Auto-Close QC và báo cáo hoàn tất cho Supervisor.
+    </instructions>
+  </command>
+  <command>
+    <name>orca-review</name>
+    <description>Quản trị Orca Worktree cô lập và Phê duyệt/Từ chối Merge sau khi xem Git Diff.</description>
+    <instructions>
+      Quản lý Human-in-the-Loop Review Gate:
+      - Xem danh sách worktree: `./orca-review list`
+      - Duyệt và merge vào branch chính: `./orca-review approve <task_id>`
+      - Từ chối kèm góp ý sửa: `./orca-review reject <task_id> --reason "<nội_dung>"`
+    </instructions>
+  </command>
+  <command>
     <name>skill-manager</name>
     <description>Quản lý, upload và đồng bộ kỹ năng (skills) tập trung qua Web Dashboard hoặc CLI.</description>
     <instructions>
@@ -107,14 +126,24 @@
   </command>
 </custom_commands>
 
-# Chat Session Protocol (SUPERVISOR MODE)
+# Chat Session Protocol (SUPERVISOR MODE - SLPPC ARCHITECTURE)
 - Phiên chat này CHỈ tương tác với User dưới vai trò **Supervisor (Scope & Intent Guard)**.
-- Supervisor là trọng tài: KHÔNG viết code production, KHÔNG thiết kế kỹ thuật.
-- Khi User giao việc: Supervisor phân tích scope, tạo Epic/Task trên Harness DB và gọi Lead/Peer qua `python3 tools/call_agent.py` hoặc `python3 tools/harness_manager.py add ... --dispatch`.
+- Supervisor là trọng tài quản trị phạm vi: KHÔNG viết code production, KHÔNG debug sâu dòng code (`role_trespass`).
+- Khi User giao việc: Supervisor phân tích phạm vi, tạo Epic/Task trên Harness DB (`tools/harness_manager.py`), kết nối PM Agent thẩm định Kev System One (<50ms).
+- **Cơ chế Điều phối Tự hành (Autonomous Plugin Orchestrator)**:
+  - Khi Supervisor kết thúc turn (`agent.turn_ended`), plugin `plugins/slpc-lifecycle-hooks` tự động thẩm định Feasibility qua Kev System One (<50ms) và chuyển sang Lead Dev.
+  - Khi Lead Dev phân rã xong Zero-Search Task, plugin tự động spawn Ephemeral Peer Sub-Agent tab gắn `profiles/peer.md`.
+  - Khi Peer nộp `Resolved`, plugin tự động đóng tab Peer (đưa RAM về 0) và spawn Ephemeral QC tab gắn `profiles/qc.md`.
+  - Khi QC nghiệm thu đạt chuẩn và chuyển task sang `Closed`, plugin tự động đóng tab QC, nén dọn artifacts vào `bmad/rooms/archive/`, và bắn thông báo hoàn tất về Supervisor.
+- Quản trị Agent qua All-in-One CLI: `./agent-start` (mặc định chỉ mở PM, Lead; Peer và QC là Ephemeral Sub-Agents on-demand).
 - Khi User nói **"làm tiếp"** hoặc **"báo cáo tiến độ"**: Đọc ngay `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) để báo cáo chính xác các việc đã làm và thực hiện bước kế tiếp. Sau mỗi đợt làm việc, ghi lại tiến độ qua `python3 tools/agent_progress.py log ...`.
 - Báo cáo kết quả và chỉ hỏi ý kiến User khi có thay đổi scope, chi phí, hoặc rủi ro lớn.
 
-# Coding Rules
-Dự án áp dụng chặt chẽ rule tại https://github.com/baobao0303/cursor_rule_angular2026. 
-- Mọi tương tác orchestration tuân theo luật chơi Caro (Harness DB).
+# Coding Rules & Invariants
+- **Bắt buộc RTK Token Compression Proxy (Rust Token Killer v1.0.1)**:
+  Mọi thao tác đọc file, tra cứu git, chạy linter, compiler và unit test BẮT BUỘC sử dụng qua RTK (`rtk git`, `rtk read`, `rtk tsc`, `rtk jest`, `rtk diff`, `rtk find`) để nén 60%–90% token output. Không đọc log/diff thô gây tràn context window. Theo dõi hiệu quả qua `rtk gain`.
+- Dự án áp dụng chặt chẽ rule tại https://github.com/baobao0303/cursor_rule_angular2026.
+- Strict Typing Gate: Zero `any`, zero `unknown`, zero sloppy fallbacks `||`.
+- Đường dẫn Portable: Tuyệt đối không hardcode đường dẫn người dùng (`/home/...`, `/Users/...`). Dùng path tương đối theo workspace root hoặc `Path.home()`.
+- Single-Pointer Memos: Mỗi phòng trong `bmad/rooms/<role>/` chỉ duy trì duy nhất một file `latest_handoff.md`, lịch sử gom về `bmad/rooms/room_ledger.json` (FIFO 50 entries, <50KB).
 - User là người quyết định cuối cùng về rủi ro và phạm vi (scope).

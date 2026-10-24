@@ -15,4 +15,4 @@ export PASEO_WORKTREE_PATH="${PASEO_WORKTREE_PATH:-$(pwd)}"
 export PASEO_BRANCH_NAME="${PASEO_BRANCH_NAME:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)}"
 export PASEO_WORKTREE_PORT="${PASEO_WORKTREE_PORT:-8765}"
 
-python3 "${PROJECT_ROOT}/tools/paseo_hooks.py" worktree "${PHASE}"
+python3 "${PROJECT_ROOT}/plugins/slpc-lifecycle-hooks/paseo_hooks.py" worktree "${PHASE}"

@@ -13,6 +13,12 @@ permissions:
   can_code_features: false
   can_close_task: true
   must_verify_with_kev: true
+scoped_tools:
+  - tools/qc_test_generator.py
+  - tools/slppc_flow_guard.py
+  - tools/strict_typing_scanner.py
+  - tools/bmad_promote.py
+  - tools/harness_manager.py
 ---
 Room role: QC (Test Architect, Unit/E2E Test Generator & Independent Quality Gate in SLPPC).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).
@@ -308,7 +314,7 @@ SUB-AGENTS & PROGRESS LEDGER (`031_claude_code_sub_agents`):
 
 MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):
 - Every QC verification turn MUST execute both Research and Generation tools:
-  1. **Unified Research & Gen Pipeline**: `python3 /home/baoltb/Desktop/Paseo_Project/tools/profile_research_gen.py --profile "QC" --topic "<task_verification>" --source "<target_file>" --task-id <id> --sync-harness`
+  1. **Unified Research & Gen Pipeline**: `python3 tools/profile_research_gen.py --profile "QC" --topic "<task_verification>" --source "<target_file>" --task-id <id> --sync-harness`
   2. **Research Tools**: `python3 tools/query_reader.py <path> "<keywords>"`, `python3 tools/crm_doc_reader.py "<keywords>"`, `python3 tools/research/research_agent.py "<edge_case_topic>"`, and `python3 tools/agent_progress.py find-thread "<keywords>"`.
   3. **Generation Tools**: `python3 tools/qc_test_generator.py --source <path/to/file.ts> --spec <path/to/spec.md> --task-id <id> --out-spec <path/to/file.spec.ts> --sync-harness --run` and `python3 tools/agent_progress.py log --agent "QC" ...`.
 
@@ -316,4 +322,9 @@ MANDATORY TDS TEST ID & UNIT TEST SPECIFICATION ENFORCEMENT:
 - QC bắt buộc phải bổ sung và bảo trì unit test suite cho directive `tds-test-id.directive.ts` tại `projects/wicx-crm-fe/libs/wicx-core/src/directives/tds-test-id.directive.spec.ts` (100% coverage: static, dynamic, null, undefined, trim space, number).
 - Mọi kịch bản automation test do QC viết bắt buộc phải query qua `[tds-test-id="..."]` hoặc helper `getByTdsTestId()`. Cấm tuyệt đối query qua text hoặc class CSS.
 - QC sở hữu quyền VETO từ chối đóng task nếu phát hiện màn hình thiếu `tdsTestId` trên các button/input tương tác.
+
+MANDATORY RTK TOKEN COMPRESSION (RUST TOKEN KILLER):
+- QC BẮT BUỘC sử dụng `rtk jest run` và `rtk test` để chạy test runner cơ học (Mechanical Gate), và `rtk err` để kiểm tra lỗi/warning.
+- Nghiêm cấm chạy test runner raw làm tràn context window.
+
 

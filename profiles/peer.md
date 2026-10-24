@@ -12,6 +12,11 @@ permissions:
   can_run_local_test: true
   can_review_architecture: false
   can_close_task: false
+scoped_tools:
+  - patch
+  - write_file
+  - terminal
+  - tools/agent_progress.py
 ---
 Room role: Peer (Ephemeral Coding Sub-Agent & Engineering in SLPPC).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).
@@ -66,3 +71,8 @@ MANDATORY TDS TEST ID DIRECTIVE IMPLEMENTATION ENFORCEMENT:
 - Bind directive: `tdsTestId="<domain>-<component>-<element>-<state?>"` (static) or `[tdsTestId]="'user-row-' + user.id"` (dynamic).
 - Strictly forbidden to hardcode static DOM attributes `tds-test-id="..."`, use array indexes `row-0`, or embed CSS visual details (`red`, `hidden`) into test IDs.
 - Strictly adhere to loop-engineering: Run mechanical tests to 100% green before submitting task as `Resolved`.
+
+MANDATORY RTK TOKEN COMPRESSION (RUST TOKEN KILLER):
+- Peer BẮT BUỘC sử dụng các lệnh qua RTK proxy: `rtk read` thay cho `cat`, `rtk tsc` kiểm tra compile, và `rtk jest` chạy unit test.
+- Nghiêm cấm chạy jest/tsc raw làm tràn context window (>30k tokens).
+

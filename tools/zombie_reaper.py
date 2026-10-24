@@ -72,7 +72,7 @@ def close_terminal(handle: str, dry_run: bool = False) -> bool:
     if dry_run:
         print(f"  [DRY-RUN] Sẽ đóng terminal: {handle}")
         return True
-    res = run_cmd(["orca", "terminal", "close", "--terminal", handle, "--json"])
+    res = run_cmd(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"])
     return res.returncode == 0
 
 
@@ -84,10 +84,16 @@ def interrupt_terminal(handle: str, dry_run: bool = False) -> bool:
     return res.returncode == 0
 
 
-def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S) -> Dict[str, Any]:
+def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S, exclude_handles: Optional[List[str]] = None) -> Dict[str, Any]:
     terminals = get_orca_terminals()
     registered = get_registered_handles()
-    
+    exclude = set(exclude_handles or [])
+
+    import os
+    env_h = os.environ.get("ORCA_TERMINAL_HANDLE")
+    if env_h:
+        exclude.add(env_h)
+
     active_handles = {t.get("handle"): t for t in terminals if t.get("handle")}
     zombies = []
     stalled = []
@@ -95,16 +101,18 @@ def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S) ->
     # 1. Phát hiện Zombie / Orphaned Terminals
     for handle, term in active_handles.items():
         title = (term.get("title") or "").lower()
-        # Không reap supervisor hoặc terminal chính
-        if "supervisor" in title or "scope" in title or handle in registered:
+        preview = (term.get("preview") or "").lower()
+        # Không reap supervisor, terminal chính đã đăng ký, hoặc terminal được exclude/đang chạy reaper
+        if "supervisor" in title or "scope" in title or handle in registered or handle in exclude:
             continue
-        # Nếu là ephemeral sub-agent nhưng không nằm trong registered list
-        if "peer" in title or "subagent" in title or "task" in title or "worker" in title:
-            zombies.append({
-                "handle": handle,
-                "title": term.get("title", ""),
-                "reason": "Orphaned ephemeral sub-agent with no registered task"
-            })
+        if any(kw in preview for kw in ("zombie_reaper", "audit_and_reap", "harness_manager", "room_cleanup")):
+            continue
+        # Mọi terminal ngoài danh bạ đăng ký chính thức đều là ephemeral zombie
+        zombies.append({
+            "handle": handle,
+            "title": term.get("title", ""),
+            "reason": "Orphaned ephemeral sub-agent outside canonical room registry"
+        })
 
     # 2. Xử lý Watchdog Timeout nếu có heartbeat
     if HEARTBEAT_FILE.exists():
@@ -151,9 +159,10 @@ def main():
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_S, help="Ngưỡng timeout watchdog (giây)")
     parser.add_argument("--json", action="store_true", help="Xuất kết quả dạng JSON")
     parser.add_argument("--interrupt-stalled", action="store_true", help="Gửi interrupt tới các agent bị timeout")
+    parser.add_argument("--exclude", action="append", default=[], help="Handle terminal cần giữ lại (không reap)")
     args = parser.parse_args()
 
-    report = audit_and_reap(dry_run=args.dry_run, timeout_s=args.timeout)
+    report = audit_and_reap(dry_run=args.dry_run, timeout_s=args.timeout, exclude_handles=args.exclude)
 
     if args.interrupt_stalled:
         for s in report.get("stalled", []):

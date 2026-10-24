@@ -72,12 +72,45 @@ def print_banner(stage: str, title: str, details: List[tuple[str, str]], status:
     print(f"{c}└{'─' * width}┘{reset}\n")
 
 
+def resolve_thinking_directive(prompt: str) -> tuple[str, str, str]:
+    """
+    Phân tích tiền tố tư duy [THUẬN], [NGHỊCH], [LƯỠNG-DIỆN], [THẢO-LUẬN] từ prompt.
+    Returns: (cleaned_prompt, mode_name, directive_text)
+    """
+    p_lower = prompt.lower()
+    if any(k in p_lower for k in ("[thảo luận]", "[thảo-luận]", "[thao luan]", "[thao-luan]", "[discuss]", "[advisory]")):
+        cleaned = re.sub(r"\[(thảo luận|thảo-luận|thao luan|thao-luan|discuss|advisory)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "THẢO LUẬN (Discussion / Architectural ADR)"
+        directive = "Không code trực tiếp; tập trung phân tích trade-off các phương án, thu thập bằng chứng codebase, chốt giải pháp đồng thuận và xuất biên bản ADR (bmad/adrs/)."
+        return cleaned, mode, directive
+    elif any(k in p_lower for k in ("[thuận]", "[thuan]", "[forward]", "[happy-path]", "[happy]")):
+        cleaned = re.sub(r"\[(thuận|thuan|forward|happy-path|happy)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "THUẬN (Forward / Happy Path)"
+        directive = "Tập trung tư duy luồng thuận: hoàn thiện nhanh logic cốt lõi, chuẩn DTO, tối ưu diff theo YAGNI, không over-engineering."
+        return cleaned, mode, directive
+    elif any(k in p_lower for k in ("[nghịch]", "[nghich]", "[reverse]", "[edge-case]", "[adversarial]", "[edge]")):
+        cleaned = re.sub(r"\[(nghịch|nghich|reverse|edge-case|adversarial|edge)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "NGHỊCH (Reverse / Edge / Adversarial)"
+        directive = "Tập trung tư duy luồng nghịch: bẫy lỗi biên (BVA), dữ liệu rỗng/null/undefined, timeout, race condition, fail-safe degradation, rollback."
+        return cleaned, mode, directive
+    elif any(k in p_lower for k in ("[lưỡng-diện]", "[luong-dien]", "[dual]", "[both]")):
+        cleaned = re.sub(r"\[(lưỡng-diện|luong-dien|dual|both)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "LƯỠNG DIỆN (Dual-Anchor: Forward + Reverse)"
+        directive = "BẮT BUỘC tư duy 2 mặt song song trong khối Thinking: (1) [THUẬN]: Happy path chuẩn spec; (2) [NGHỊCH]: Dữ liệu biên, trường hợp ngoại lệ, testcase fail, fail-safe."
+        return cleaned, mode, directive
+    else:
+        mode = "LƯỠNG DIỆN (Mặc định: Forward + Reverse)"
+        directive = "Tư duy 2 mặt song song trong khối Thinking: (1) [THUẬN]: Happy path chuẩn spec; (2) [NGHỊCH]: Ngoại lệ, dữ liệu biên và bẫy lỗi."
+        return prompt, mode, directive
+
+
 # ==============================================================================
 # STEP 1: HEAD-OF-SPEC GATE (PM + KEV SYSTEM ONE)
 # ==============================================================================
-def run_pm_head_gate(prompt: str) -> Dict[str, Any]:
+def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinking_directive: str = "") -> Dict[str, Any]:
     print_banner("HEAD", "PM Intake & Feasibility Check", [
         ("Evaluator", "PM Agent (Kev System One)"),
+        ("Thinking Mode", thinking_mode),
         ("Endpoint", KEV_ENDPOINT),
         ("Target Prompt", prompt[:48])
     ])
@@ -170,9 +203,10 @@ def run_pm_head_gate(prompt: str) -> Dict[str, Any]:
 # ==============================================================================
 # STEP 2: ARCHITECT GATE (LEAD DEV TASK BREAKDOWN)
 # ==============================================================================
-def run_lead_architect_gate(prompt: str, pm_memo: str) -> Dict[str, Any]:
+def run_lead_architect_gate(prompt: str, pm_memo: str, thinking_mode: str = "LƯỠNG DIỆN", thinking_directive: str = "") -> Dict[str, Any]:
     print_banner("ARCHITECT", "Lead Dev Zero-Search Decomposition", [
         ("Architect", "Lead Dev (gemini-3.8-flash-high)"),
+        ("Thinking Mode", thinking_mode),
         ("Spec Contract", "Zero-Search 5-Section Mandate"),
         ("Traps Query", "Harness Learn Database")
     ])
@@ -187,18 +221,31 @@ def run_lead_architect_gate(prompt: str, pm_memo: str) -> Dict[str, Any]:
     epic = mgr.add_work_item(
         wi_type="Epic",
         title=f"[Pipeline] - {prompt[:60]}",
-        description=f"Automated pipeline run. PM Memo: {pm_memo}",
+        description=f"Automated pipeline run. PM Memo: {pm_memo}\nThinking Mode: {thinking_mode}",
         assigned_to="lead",
         assigned_to_profile="lead",
         source="bot"
     )
     epic_id = epic["id"]
 
+    # Nếu là THẢO LUẬN: Không sinh Task thi công cho Peer
+    if thinking_mode.startswith("THẢO LUẬN"):
+        print_banner("ARCHITECT", "Architectural Discussion Intake", [
+            ("Epic ID", f"#{epic_id}"),
+            ("Lead Architect", "Lead Dev (gemini-3.8-flash-high)"),
+            ("Action", "Analyzing options & preparing ADR minutes")
+        ], status="ANALYZING")
+        return {
+            "epic_id": epic_id,
+            "task_id": None
+        }
+
     # 2. Tạo Task cho Peer
     task = mgr.add_work_item(
         wi_type="Task",
         title=f"[Exec] - {prompt[:50]}",
         description=(
+            f"[THINKING MODE: {thinking_mode}]\n{thinking_directive}\n\n"
             "Zero-Search Mandate:\n"
             "1. Target Files: tools/ / scripts/ / docs/\n"
             "2. Anchors: Pipeline runner execution\n"
@@ -226,10 +273,13 @@ def run_lead_architect_gate(prompt: str, pm_memo: str) -> Dict[str, Any]:
     }
 
 
+DEFAULT_TEST_CMD = "python3 -m unittest tools/tests/test_slppc_orchestrator.py tools/tests/test_harness.py tools/tests/test_role_fence_audit.py tools/tests/test_scoped_tools.py tools/tests/test_strict_typing_scanner.py"
+
+
 # ==============================================================================
 # STEP 3: MAKER SUB-AGENT EXECUTION (PEER DISPATCH)
 # ==============================================================================
-def run_peer_maker_gate(task_id: int) -> bool:
+def run_peer_maker_gate(task_id: int, test_cmd: str = DEFAULT_TEST_CMD) -> bool:
     print_banner("MAKER", "Peer Dev Ephemeral Execution", [
         ("Sub-Agent Role", "Peer Dev 1 (Low/Medium Ceiling)"),
         ("Model Tier", "gemini-3.8-flash-low / medium (CAPPED)"),
@@ -247,8 +297,10 @@ def run_peer_maker_gate(task_id: int) -> bool:
     mgr.update_state(task_id, "Active", assigned_to_profile="peer")
 
     # Run mechanical verification command
+    import shlex
+    cmd_parts = shlex.split(test_cmd)
     res = subprocess.run(
-        ["python3", "-m", "unittest", "discover", "-s", "tools/tests"],
+        cmd_parts,
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True
@@ -275,7 +327,7 @@ def run_peer_maker_gate(task_id: int) -> bool:
 # ==============================================================================
 # STEP 4: TAIL-OF-SPEC GATE (QC INDEPENDENT VERIFICATION & CLOSURE)
 # ==============================================================================
-def run_qc_tail_gate(task_id: int, epic_id: int) -> bool:
+def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CMD) -> bool:
     print_banner("TAIL", "QC Independent Quality Gate", [
         ("Verifier", "QC Verifier (gemini-3.8-flash-high)"),
         ("Double Anchor", "Mechanical Exit 0 + Kev Verification"),
@@ -283,8 +335,10 @@ def run_qc_tail_gate(task_id: int, epic_id: int) -> bool:
     ], status="VERIFYING")
 
     # 1. Mechanical Test Run
+    import shlex
+    cmd_parts = shlex.split(test_cmd)
     test_res = subprocess.run(
-        ["python3", "-m", "unittest", "discover", "-s", "tools/tests"],
+        cmd_parts,
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True
@@ -385,6 +439,7 @@ def flush_realtime_memory(task_id: int, summary: str):
 def main():
     parser = argparse.ArgumentParser(description="Run SLPPC Dual-Anchor Pipeline with Live Visual Banners")
     parser.add_argument("prompt", nargs="?", default="Nâng cấp và kiểm tra quy chuẩn pipeline SLPPC", help="Task requirement prompt")
+    parser.add_argument("--test-cmd", default=DEFAULT_TEST_CMD, help="Custom test command to run for mechanical verification")
     parser.add_argument("--status", action="store_true", help="Print live pipeline status")
     args = parser.parse_args()
 
@@ -396,24 +451,62 @@ def main():
         sys.exit(0)
 
     start_time = time.time()
+    cleaned_prompt, thinking_mode, thinking_directive = resolve_thinking_directive(args.prompt)
+
     print("\n" + "=" * 78)
     print("  🚀 KHỞI CHẠY SLPPC REAL-TIME PIPELINE (KEV DUAL-ANCHOR + HOOK BANNERS)")
+    print(f"  🧠 CHẾ ĐỘ TƯ DUY: {thinking_mode}")
     print("=" * 78)
 
     # 1. Head Gate
-    pm_res = run_pm_head_gate(args.prompt)
+    pm_res = run_pm_head_gate(cleaned_prompt, thinking_mode=thinking_mode, thinking_directive=thinking_directive)
 
     # 2. Architect Gate
-    lead_res = run_lead_architect_gate(args.prompt, pm_res["memo_file"])
+    lead_res = run_lead_architect_gate(cleaned_prompt, pm_res["memo_file"], thinking_mode=thinking_mode, thinking_directive=thinking_directive)
+
+    # BRANCH: Nếu là chế độ [THẢO LUẬN], chuyển sang luồng lập biên bản ADR đồng thuận (không code)
+    if thinking_mode.startswith("THẢO LUẬN"):
+        print_banner("ARCHITECT", "Architectural Discussion & ADR Recording", [
+            ("Epic ID", f"#{lead_res['epic_id']}"),
+            ("Parties", "Supervisor, PM Agent, Lead Dev"),
+            ("Action", "Recording ADR Discussion Minutes"),
+            ("Directory", "bmad/rooms/discussions/ & bmad/adrs/")
+        ], status="CONSENSUS")
+
+        res_disc = subprocess.run([
+            "python3", "tools/record_discussion.py",
+            "--task-id", str(lead_res["epic_id"]),
+            "--topic", cleaned_prompt[:50],
+            "--parties", "Supervisor, PM Agent, Lead Dev",
+            "--conflict", f"Thảo luận đánh giá phương án kiến trúc cho yêu cầu: {cleaned_prompt}",
+            "--consensus", f"PM Kev Feasibility ({pm_res['score']:.2f}/3.0) & Alignment ({pm_res['alignment']}). Lead Dev chốt phương án tuân thủ Zero-Search & YAGNI.",
+            "--actions", "Chuyển giao cho User xác nhận trước khi phân rã task code [THUẬN].",
+            "--adr"
+        ], cwd=PROJECT_ROOT, capture_output=True, text=True)
+
+        try:
+            from harness_manager import HarnessManager
+        except ImportError:
+            from tools.harness_manager import HarnessManager
+        mgr = HarnessManager(engine="auto")
+        mgr.update_state(lead_res["epic_id"], "Closed")
+
+        flush_realtime_memory(lead_res["epic_id"], f"[Thảo luận ADR] {cleaned_prompt}")
+        duration = time.time() - start_time
+        print(f"\n🎉 [THẢO LUẬN HOÀN TẤT]: Đã lưu biên bản ADR thành công trong {duration:.2f}s!")
+        print(f"📄 Biên bản thảo luận: bmad/rooms/discussions/latest_discussion.md")
+        print(f"🏛️ Kho lưu trữ ADR: bmad/adrs/")
+        print("=" * 78 + "\n")
+        sys.exit(0)
 
     # 3. Maker Gate
-    peer_ok = run_peer_maker_gate(lead_res["task_id"])
+    peer_ok = run_peer_maker_gate(lead_res["task_id"], test_cmd=args.test_cmd)
     if not peer_ok:
         print("⛔ Pipeline dừng do Peer thi công kiểm thử thất bại.")
         sys.exit(1)
 
     # 4. Tail Gate
-    qc_ok = run_qc_tail_gate(lead_res["task_id"], lead_res["epic_id"])
+    qc_ok = run_qc_tail_gate(lead_res["task_id"], lead_res["epic_id"], test_cmd=args.test_cmd)
     if not qc_ok:
         print("⛔ Pipeline dừng do QC từ chối nghiệm thu.")
         sys.exit(1)

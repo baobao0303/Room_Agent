@@ -33,7 +33,35 @@ def get_profiles():
     profiles = data.get("daemon", {}).get("agentProfiles", [])
     return {p["name"].lower(): p for p in profiles}
 
-def print_hook_banner(status: str, role: str, task_id: Any, model: str, from_role: str, details: str = ""):
+import re
+
+def resolve_thinking_directive(prompt: str) -> tuple[str, str, str]:
+    """
+    Phân tích tiền tố tư duy [THUẬN], [NGHỊCH], [LƯỠNG-DIỆN] từ prompt.
+    Returns: (cleaned_prompt, mode_name, directive_text)
+    """
+    p_lower = prompt.lower()
+    if any(k in p_lower for k in ("[thuận]", "[thuan]", "[forward]", "[happy-path]", "[happy]")):
+        cleaned = re.sub(r"\[(thuận|thuan|forward|happy-path|happy)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "THUẬN (Forward / Happy Path)"
+        directive = "Tập trung tư duy luồng thuận: hoàn thiện nhanh logic cốt lõi, chuẩn DTO, tối ưu diff theo YAGNI, không over-engineering."
+        return cleaned, mode, directive
+    elif any(k in p_lower for k in ("[nghịch]", "[nghich]", "[reverse]", "[edge-case]", "[adversarial]", "[edge]")):
+        cleaned = re.sub(r"\[(nghịch|nghich|reverse|edge-case|adversarial|edge)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "NGHỊCH (Reverse / Edge / Adversarial)"
+        directive = "Tập trung tư duy luồng nghịch: bẫy lỗi biên (BVA), dữ liệu rỗng/null/undefined, timeout, race condition, fail-safe degradation, rollback."
+        return cleaned, mode, directive
+    elif any(k in p_lower for k in ("[lưỡng-diện]", "[luong-dien]", "[dual]", "[both]")):
+        cleaned = re.sub(r"\[(lưỡng-diện|luong-dien|dual|both)\]", "", prompt, flags=re.IGNORECASE).strip()
+        mode = "LƯỠNG DIỆN (Dual-Anchor: Forward + Reverse)"
+        directive = "BẮT BUỘC tư duy 2 mặt song song trong khối Thinking: (1) [THUẬN]: Happy path chuẩn spec; (2) [NGHỊCH]: Dữ liệu biên, trường hợp ngoại lệ, testcase fail, fail-safe."
+        return cleaned, mode, directive
+    else:
+        mode = "LƯỠNG DIỆN (Mặc định: Forward + Reverse)"
+        directive = "Tư duy 2 mặt song song trong khối Thinking: (1) [THUẬN]: Happy path chuẩn spec; (2) [NGHỊCH]: Ngoại lệ, dữ liệu biên và bẫy lỗi."
+        return prompt, mode, directive
+
+def print_hook_banner(status: str, role: str, task_id: Any, model: str, from_role: str, details: str = "", thinking_mode: str = ""):
     width = 76
     print("\n" + "─" * width)
     print(f"🚀 [SLPPC SUB-AGENT HOOK DISPATCH] - {status}")
@@ -42,6 +70,8 @@ def print_hook_banner(status: str, role: str, task_id: Any, model: str, from_rol
     print(f"• Task / Work Item : #{task_id if task_id else 'N/A'}")
     print(f"• Model / Tier     : {model}")
     print(f"• Handoff Boundary : {from_role} ➔ {role}")
+    if thinking_mode:
+        print(f"• Thinking Mode    : {thinking_mode}")
     if details:
         print(f"• Instructions     : {details[:60]}")
     print("─" * width + "\n")
@@ -193,11 +223,19 @@ def main():
         except Exception as exc:
             print(f"[Warning] Pre-pipeline Research+Gen notice: {exc}", file=sys.stderr)
 
-    task_body = args.prompt
+    cleaned_prompt, thinking_mode, thinking_directive = resolve_thinking_directive(args.prompt)
+    thinking_block = (
+        f"\n\n=== MANDATORY THINKING DIRECTIVE (CHẾ ĐỘ TƯ DUY) ===\n"
+        f"• Mode: {thinking_mode}\n"
+        f"• Yêu cầu: {thinking_directive}\n"
+        f"Trong khối Thinking, hãy cấu trúc rõ ràng các trường hợp tư duy theo chỉ thị trên."
+    )
+
+    task_body = cleaned_prompt
     if args.item_id:
         task_body = f"[Harness Item #{args.item_id}] {task_body}"
 
-    full_prompt = f"{instructions}{room_block}{pre_gen_block}\n\n=== TASK ASSIGNMENT ===\n{task_body}" if instructions else f"{room_block}{pre_gen_block}\n\n{task_body}"
+    full_prompt = f"{instructions}{room_block}{pre_gen_block}{thinking_block}\n\n=== TASK ASSIGNMENT ===\n{task_body}" if instructions else f"{room_block}{pre_gen_block}{thinking_block}\n\n{task_body}"
     title = f"{profile_name}: {task_body[:40]}"
 
     cmd = [
@@ -213,6 +251,7 @@ def main():
 
     if args.dry_run:
         print("Dry run command:", " ".join(cmd[:10]), "...")
+        print(f"Thinking Mode: {thinking_mode}")
         if pre_gen_block:
             print(pre_gen_block)
         sys.exit(0)
@@ -224,26 +263,68 @@ def main():
             from orca_slpc_bridge import find_live_terminal_for_role  # type: ignore
             target_term = find_live_terminal_for_role(profile_name)
             if target_term:
-                print_hook_banner("ORCA DIRECT DISPATCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body)
+                print_hook_banner("ORCA DIRECT DISPATCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body, thinking_mode=thinking_mode)
                 print(f"🎯 [Orca Direct Dispatch]: Tìm thấy live terminal của {profile_name} ({target_term}). Bắn lệnh trực tiếp...")
-                subprocess.run(["orca", "terminal", "send", "--terminal", target_term, "--text", f"{task_body}\n{room_block}", "--enter"], check=True)
+                subprocess.run(["orca", "terminal", "send", "--terminal", target_term, "--text", f"{task_body}\n{thinking_block}\n{room_block}", "--enter"], check=True)
                 print(f"✅ Đã gửi lệnh trực tiếp tới {profile_name} trên Orca Workspace Board!")
                 sys.exit(0)
             else:
                 # EPHEMERAL SUB-AGENT AUTO-LAUNCH IN ORCA:
-                print_hook_banner("ORCA AGENT LAUNCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body)
+                print_hook_banner("ORCA AGENT LAUNCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body, thinking_mode=thinking_mode)
                 print(f"🚀 [Orca Agent Launch]: Chưa có tab cho {profile_name}. Đang mở AI Agent tab mới trên Orca...")
                 launch_cmd = [
                     "orca", "agent", "launch",
                     "--worktree", "active",
                     "--agent", "hermes",
-                    "--prompt", f"[{profile_name}] {task_body}\n{room_block}",
+                    "--prompt", f"[{profile_name}] {task_body}\n{thinking_block}\n{room_block}",
                     "--focus",
                     "--json"
                 ]
                 lres = subprocess.run(launch_cmd, capture_output=True, text=True, check=False)
                 if lres.returncode == 0:
-                    print(f"✅ Đã spawn thành công AI Agent tab cho {profile_name} trên Orca Workspace!")
+                    handle = ""
+                    tab_id = ""
+                    if lres.stdout:
+                        try:
+                            data = json.loads(lres.stdout)
+                            outcome = data.get("result", {}).get("outcome", {})
+                            handle = outcome.get("handle") or ""
+                            pk = outcome.get("paneKey") or ""
+                            tab_id = pk.split(":")[0] if ":" in pk else pk
+                        except Exception:
+                            pass
+
+                    clean_name = profile_name.lower().strip()
+                    titles_map = {
+                        "peer": "[Peer Dev 1] Code Executor",
+                        "qc": "[QC] 5-Stage ISTQB Verifier",
+                        "design": "[Peer Design] UI/UX & Tokens",
+                        "pm": "[PM] Feasibility & Alignment",
+                        "lead": "[Lead Dev] Architect & PM",
+                        "supervisor": "[Supervisor] Scope & Intent Guard",
+                    }
+                    role_key = "peer" if any(k in clean_name for k in ("peer", "dev")) else ("qc" if "qc" in clean_name else ("design" if "design" in clean_name else clean_name))
+                    term_title = titles_map.get(role_key, f"[{profile_name}] Sub-Agent")
+
+                    if handle:
+                        subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
+                        subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
+                        subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {term_title}", "--enter"], capture_output=True, check=False)
+                        if model:
+                            subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True, check=False)
+
+                        reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
+                        reg = {}
+                        if reg_file.is_file():
+                            try:
+                                reg = json.loads(reg_file.read_text(encoding="utf-8"))
+                            except Exception:
+                                reg = {}
+                        reg[role_key] = {"handle": handle, "tabId": tab_id}
+                        reg_file.parent.mkdir(parents=True, exist_ok=True)
+                        reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
+
+                    print(f"✅ Đã spawn và đổi tên thành công AI Agent tab '{term_title}' ({handle}) trên Orca Workspace!")
                     sys.exit(0)
                 else:
                     print(f"⚠️ [Orca Agent Launch Warning]: {lres.stderr.strip()}", file=sys.stderr)

@@ -97,18 +97,23 @@ def check_zero_search_compliance(description: str) -> Tuple[bool, List[str]]:
     return len(missing) == 0, missing
 
 
-def audit_lead_role_trespass() -> List[Dict[str, Any]]:
+def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     Kiểm tra xem Lead Dev có vi phạm role_trespass:
     Tự ý sửa mã nguồn production thay vì phân rã giao cho Peer.
     """
     violations = []
-    bmad_rooms = PROJECT_ROOT / "bmad" / "rooms" / "lead"
+    bmad_rooms = lead_dir if lead_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "lead")
     if not bmad_rooms.is_dir():
         return violations
 
     now = time.time()
-    for memo_file in bmad_rooms.glob("handoff_*.md"):
+    candidates = list(bmad_rooms.glob("handoff_*.md"))
+    latest_file = bmad_rooms / "latest_handoff.md"
+    if latest_file.is_file():
+        candidates.append(latest_file)
+
+    for memo_file in candidates:
         try:
             # Chỉ quét các biên bản gần nhất trong vòng 2 giờ
             if (now - memo_file.stat().st_mtime) > 7200:
@@ -119,7 +124,7 @@ def audit_lead_role_trespass() -> List[Dict[str, Any]]:
                 if "crates/harness-cli/src" in content or "apps/app-shell/src" in content or "projects/wicx-crm-fe" in content:
                     tid_match = re.search(r"#(\d+)", content)
                     violations.append({
-                        "file": str(memo_file.relative_to(PROJECT_ROOT)),
+                        "file": str(memo_file.relative_to(PROJECT_ROOT)) if memo_file.is_relative_to(PROJECT_ROOT) else memo_file.name,
                         "evidence": "Lead Dev ghi nhận trực tiếp sửa mã nguồn sản phẩm thay vì giao cho Peer",
                         "task_id": tid_match.group(1) if tid_match else None,
                     })
@@ -129,25 +134,27 @@ def audit_lead_role_trespass() -> List[Dict[str, Any]]:
     return violations
 
 
-def audit_pm_bypass() -> List[Dict[str, Any]]:
+def audit_pm_bypass(supervisor_dir: Optional[Path] = None, pm_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     Kiểm tra xem có bỏ qua cổng PM (pm_bypass):
     Tạo hoặc kích hoạt Epic mà chưa có Intake Memo từ PM Agent.
     """
     violations = []
-    supervisor_dir = PROJECT_ROOT / "bmad" / "rooms" / "supervisor"
-    pm_dir = PROJECT_ROOT / "bmad" / "rooms" / "pm"
+    sup_dir = supervisor_dir if supervisor_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "supervisor")
+    pm_d = pm_dir if pm_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "pm")
 
-    if not supervisor_dir.is_dir():
+    if not sup_dir.is_dir():
         return violations
 
     now = time.time()
-    for handoff in supervisor_dir.glob("handoff_*.md"):
+    candidates = list(sup_dir.glob("handoff_*.md"))
+    latest_file = sup_dir / "latest_handoff.md"
+    if latest_file.is_file():
+        candidates.append(latest_file)
+
+    for handoff in candidates:
         try:
             # Chỉ quét các biên bản gần nhất trong vòng 2 giờ
-            if (now - handoff.stat().st_mtime) > 7200:
-                continue
-            now = time.time()
             if (now - handoff.stat().st_mtime) > 7200:
                 continue
             content = handoff.read_text(encoding="utf-8")
@@ -158,14 +165,14 @@ def audit_pm_bypass() -> List[Dict[str, Any]]:
                 if int(epic_id) < 4116:
                     continue
                 has_pm_memo = False
-                if pm_dir.is_dir():
-                    for pm_memo in pm_dir.glob("*.md"):
+                if pm_d.is_dir():
+                    for pm_memo in pm_d.glob("*.md"):
                         if epic_id in pm_memo.name or f"#{epic_id}" in pm_memo.read_text(encoding="utf-8"):
                             has_pm_memo = True
                             break
                 if not has_pm_memo:
                     violations.append({
-                        "file": str(handoff.relative_to(PROJECT_ROOT)),
+                        "file": str(handoff.relative_to(PROJECT_ROOT)) if handoff.is_relative_to(PROJECT_ROOT) else handoff.name,
                         "evidence": f"Epic #{epic_id} được khởi tạo/giao việc mà chưa qua cổng thẩm định Feasibility/Alignment của PM Agent",
                         "task_id": epic_id,
                     })
@@ -175,18 +182,23 @@ def audit_pm_bypass() -> List[Dict[str, Any]]:
     return violations
 
 
-def audit_premature_close() -> List[Dict[str, Any]]:
+def audit_premature_close(peer_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     Kiểm tra xem Dev/Peer có tự ý đóng task (premature_close):
     Peer chỉ được phép chuyển trạng thái sang Resolved; cấm tự chuyển sang Closed.
     """
     violations = []
-    peer_dir = PROJECT_ROOT / "bmad" / "rooms" / "peer"
-    if not peer_dir.is_dir():
+    p_dir = peer_dir if peer_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "peer")
+    if not p_dir.is_dir():
         return violations
 
     now = time.time()
-    for memo in peer_dir.glob("handoff_*.md"):
+    candidates = list(p_dir.glob("handoff_*.md"))
+    latest_file = p_dir / "latest_handoff.md"
+    if latest_file.is_file():
+        candidates.append(latest_file)
+
+    for memo in candidates:
         try:
             # Chỉ quét các biên bản gần nhất trong vòng 2 giờ
             if (now - memo.stat().st_mtime) > 7200:
@@ -196,7 +208,7 @@ def audit_premature_close() -> List[Dict[str, Any]]:
             if "trạng thái: closed" in lower or "state: closed" in lower or "đã đóng task" in lower or "chuyển sang closed" in lower:
                 tid_match = re.search(r"#(\d+)", content)
                 violations.append({
-                    "file": str(memo.relative_to(PROJECT_ROOT)),
+                    "file": str(memo.relative_to(PROJECT_ROOT)) if memo.is_relative_to(PROJECT_ROOT) else memo.name,
                     "evidence": "Peer Dev tự ý tuyên bố hoặc cập nhật trạng thái Task sang Closed thay vì nộp Resolved cho QC",
                     "task_id": tid_match.group(1) if tid_match else None,
                 })
@@ -206,28 +218,140 @@ def audit_premature_close() -> List[Dict[str, Any]]:
     return violations
 
 
-def audit_vague_specs() -> List[Dict[str, Any]]:
+def audit_ephemeral_room_hygiene(rooms_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """Kiểm tra vệ sinh phòng ban BMAD Rooms theo kiến trúc Ephemeral State:
+    1. Không có file timestamp legacy (handoff_*.md).
+    2. File bmad/rooms/room_ledger.json phải tồn tại, schema hợp lệ và dung lượng < 50KB.
+    3. Mỗi phòng ban (supervisor, pm, lead, peer, qc) duy trì duy nhất 1 file latest_handoff.md <= 150 dòng, không leak path cá nhân.
+    """
+    violations = []
+    r_dir = rooms_dir if rooms_dir is not None else (PROJECT_ROOT / "bmad" / "rooms")
+    if not r_dir.exists():
+        return violations
+
+    # Check 1: Legacy handoff files có timestamp
+    legacy_files = [f for f in r_dir.rglob("handoff_*.md") if "archive" not in f.parts]
+    if legacy_files:
+        violations.append({
+            "evidence": f"Phát hiện {len(legacy_files)} file handoff timestamp cũ: {[f.name for f in legacy_files[:5]]}",
+            "type": "room_hygiene_violation"
+        })
+
+    # Check 2: room_ledger.json tồn tại và kiểm soát trần kích thước (< 50KB, history <= 50)
+    ledger_file = r_dir / "room_ledger.json"
+    if not ledger_file.is_file():
+        violations.append({
+            "evidence": "Thiếu file sổ cái tập trung bmad/rooms/room_ledger.json",
+            "type": "missing_ledger_violation"
+        })
+    else:
+        size_bytes = ledger_file.stat().st_size
+        if size_bytes > 50 * 1024:
+            violations.append({
+                "evidence": f"File room_ledger.json phình to vượt trần: {size_bytes} bytes > 50KB",
+                "type": "ledger_bloat_violation"
+            })
+        try:
+            ledger_data = json.loads(ledger_file.read_text(encoding="utf-8"))
+            if not isinstance(ledger_data, dict):
+                violations.append({
+                    "evidence": "File room_ledger.json root phải là JSON object",
+                    "type": "ledger_schema_violation"
+                })
+            else:
+                for req_key in ("version", "roles", "history"):
+                    if req_key not in ledger_data:
+                        violations.append({
+                            "evidence": f"room_ledger.json thiếu trường bắt buộc: '{req_key}'",
+                            "type": "ledger_schema_violation"
+                        })
+                history = ledger_data.get("history", [])
+                if not isinstance(history, list):
+                    violations.append({
+                        "evidence": "Trường 'history' trong room_ledger.json phải là danh sách (list)",
+                        "type": "ledger_schema_violation"
+                    })
+                elif len(history) > 50:
+                    violations.append({
+                        "evidence": f"room_ledger.json vượt quá trần FIFO 50: {len(history)} entries",
+                        "type": "ledger_overflow_violation"
+                    })
+        except Exception as e:
+            violations.append({
+                "evidence": f"File room_ledger.json hỏng định dạng hoặc không thể đọc: {e}",
+                "type": "ledger_schema_violation"
+            })
+
+    # Check 3: latest_handoff.md <= 150 dòng cho mỗi role, Zero-Leak, và không thừa file handoff
+    for role in ("supervisor", "pm", "lead", "peer", "qc"):
+        role_dir = r_dir / role
+        if not role_dir.is_dir():
+            continue
+
+        latest_file = role_dir / "latest_handoff.md"
+        if not latest_file.is_file():
+            violations.append({
+                "evidence": f"Phòng ban {role} thiếu file bắt buộc {role}/latest_handoff.md",
+                "type": "missing_handoff_memo",
+                "role": role,
+            })
+        else:
+            try:
+                lines = latest_file.read_text(encoding="utf-8").splitlines()
+                if len(lines) > 150:
+                    violations.append({
+                        "evidence": f"{role}/latest_handoff.md vượt quá 150 dòng: {len(lines)} dòng",
+                        "type": "oversized_handoff_memo",
+                        "role": role,
+                    })
+                content = "\n".join(lines)
+                if re.search(r"/(?:Users|home)/[a-zA-Z0-9_-]+", content):
+                    violations.append({
+                        "evidence": f"File {role}/latest_handoff.md chứa đường dẫn máy tính cá nhân (vi phạm Zero-Leak)",
+                        "type": "anti_leak_violation",
+                        "role": role,
+                    })
+            except Exception:
+                pass
+
+        extra_handoffs = [f for f in role_dir.glob("*handoff*.md") if f.name != "latest_handoff.md"]
+        if extra_handoffs:
+            violations.append({
+                "evidence": f"Phòng {role} chứa file handoff dư thừa: {[f.name for f in extra_handoffs]}",
+                "type": "room_hygiene_violation",
+                "role": role,
+            })
+
+    return violations
+
+
+def audit_vague_specs(tasks_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     Kiểm tra xem có vi phạm giao task cẩu thả / mơ hồ (vague_specs):
     Task giao cho Peer thiếu các mục định danh Zero-Search.
     """
     violations = []
-    tasks_dir = PROJECT_ROOT / "bmad" / "rooms" / "tasks"
-    if not tasks_dir.is_dir():
+    t_dir = tasks_dir if tasks_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "tasks")
+    if not t_dir.is_dir():
         return violations
 
-    for task_folder in tasks_dir.iterdir():
+    for task_folder in t_dir.iterdir():
         if not task_folder.is_dir():
             continue
         task_id = task_folder.name
-        for memo in task_folder.glob("handoff_*.md"):
+        candidates = list(task_folder.glob("handoff_*.md"))
+        latest_file = task_folder / "latest_handoff.md"
+        if latest_file.is_file():
+            candidates.append(latest_file)
+
+        for memo in candidates:
             try:
                 content = memo.read_text(encoding="utf-8")
                 if "supervisor" in memo.name or "lead" in memo.name:
                     is_compliant, missing = check_zero_search_compliance(content)
                     if not is_compliant and len(content.strip()) < 200:
                         violations.append({
-                            "file": str(memo.relative_to(PROJECT_ROOT)),
+                            "file": str(memo.relative_to(PROJECT_ROOT)) if memo.is_relative_to(PROJECT_ROOT) else memo.name,
                             "evidence": f"Mô tả task #{task_id} thiếu các mục Zero-Search bắt buộc: {', '.join(missing)}",
                             "task_id": task_id,
                         })
@@ -343,6 +467,29 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
+    # 5. Kiểm tra Ephemeral Room Hygiene
+    hygiene_issues = audit_ephemeral_room_hygiene()
+    for v in hygiene_issues:
+        results["violations_detected"] += 1
+        v_info = {
+            "from": "QC",
+            "to": "Supervisor",
+            "type": v.get("type", "room_hygiene_violation"),
+            "evidence": v["evidence"],
+            "message": "Vi phạm quy chuẩn vệ sinh phòng ban BMAD Rooms (file rác timestamp hoặc phình to ledger).",
+        }
+        results["violations_list"].append(v_info)
+        if auto_record:
+            path = record_violation_minute(
+                from_role="QC",
+                to_role="Supervisor",
+                violation_type=v.get("type", "room_hygiene_violation"),
+                task_id=None,
+                evidence=v["evidence"],
+                message=v_info["message"],
+            )
+            results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
+
     if results["violations_detected"] > 0:
         results["status"] = "violations_found"
 
@@ -351,10 +498,26 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
 
 def main():
     parser = argparse.ArgumentParser(description="SLPPC Flow Guard & Violation Auditor")
-    parser.add_argument("command", nargs="?", default="audit", help="Action to run (default: audit)")
+    parser.add_argument("command", nargs="?", default="audit", choices=["audit", "hygiene"], help="Action to run: 'audit' (default) or 'hygiene'")
     parser.add_argument("--record", action="store_true", default=True, help="Tự động ghi biên bản vi phạm vào bmad/rooms/violations/")
     parser.add_argument("--json", action="store_true", help="Xuất kết quả JSON")
     args = parser.parse_args()
+
+    if args.command == "hygiene":
+        issues = audit_ephemeral_room_hygiene()
+        if args.json:
+            print(json.dumps({"hygiene_violations": issues, "count": len(issues)}, indent=2, ensure_ascii=False))
+            sys.exit(0 if not issues else 1)
+        print("=" * 75)
+        print("🧹 EPHEMERAL ROOM HYGIENE AUDIT")
+        print("=" * 75)
+        print(f"• Số lượng vi phạm: {len(issues)}")
+        for idx, iss in enumerate(issues, 1):
+            print(f"  {idx}. [{iss.get('type')}] {iss.get('evidence')}")
+        if not issues:
+            print("✅ PASS: 100% đạt chuẩn Ephemeral Room Hygiene (Zero-Leak, FIFO <= 50, Single-Pointer).")
+        print("=" * 75)
+        sys.exit(0 if not issues else 1)
 
     res = run_slppc_audit(auto_record=args.record)
 
