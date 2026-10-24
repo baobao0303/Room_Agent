@@ -232,7 +232,7 @@ User: "Document the auth refactor from last week"
 
 ## Paseo & 4-Role SLPC (`Supervisor - Lead - Peer - QC`) Native Tool Mapping
 
-When executing this 6-Phase pipeline inside `/home/baoltb/Desktop/Paseo_Project` (where threads are stored as `.jsonl` files under `~/.paseo/claude-config/projects/` and `~/.codex-runtime/{supervisor,lead,peer,qc}/sessions/`), map the pipeline tools as follows:
+When executing this 6-Phase pipeline inside Room_Agent (where threads are stored as `.jsonl` files under `~/.paseo/claude-config/projects/` and `~/.codex-runtime/{supervisor,lead,peer,qc}/sessions/`), map the pipeline tools as follows:
 
 | Pipeline Phase | Amp Tool (Reference) | Native Command / Sub-Agent in `Paseo_Project` |
 | :--- | :--- | :--- |

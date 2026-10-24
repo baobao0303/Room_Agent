@@ -134,9 +134,9 @@ python3 tools/qc_test_generator.py \
 
 ## 4. Vị trí cài đặt đồng bộ trên máy
 
-- **Claude Code Sub-Agents (Workspace)**: `/home/baoltb/Desktop/Paseo_Project/.claude/agents/`
-- **Claude Code Sub-Agents (Paseo Runtime)**: `/home/baoltb/.paseo/claude-config/agents/`
-- **Claude Code Sub-Agents (User Global)**: `/home/baoltb/.claude/agents/`
-- **Workspace Skills**: `/home/baoltb/Desktop/Paseo_Project/.agents/skills/claude-code-sub-agents/`
-- **Codex Shared Skills (tự động symlink sang 4 role `supervisor`, `lead`, `peer`, `qc`)**: `/home/baoltb/.codex/skills/claude-code-sub-agents/`
-- **Hermes Skills**: `/home/baoltb/.hermes/skills/031_claude_code_sub_agents/`
+- **Claude Code Sub-Agents (Workspace)**: `.claude/agents/`
+- **Claude Code Sub-Agents (Paseo Runtime)**: `~/.paseo/claude-config/agents/`
+- **Claude Code Sub-Agents (User Global)**: `~/.claude/agents/`
+- **Workspace Skills**: `.agents/skills/claude-code-sub-agents/`
+- **Codex Shared Skills (tự động symlink sang 4 role `supervisor`, `lead`, `peer`, `qc`)**: `~/.codex/skills/claude-code-sub-agents/`
+- **Hermes Skills**: `~/.hermes/skills/031_claude_code_sub_agents/`

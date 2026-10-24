@@ -19,7 +19,7 @@ Bộ kỹ năng thực chiến sử dụng **REA (`rea-agents@6.5.0`)** — côn
 
 Hệ thống hỗ trợ 2 cơ chế thực thi:
 - **CLI Native (Khuyên dùng trong terminal/scripts)**:
-  `rea <command> [options]` (Đã cài tại `/home/baoltb/.local/bin/rea`)
+  `rea <command> [options]` (Đã cài tại `~/.local/bin/rea`)
   *Fallback*: `npx -y rea-agents@6.5.0 <command>`
 - **MCP Tools (Trong Agent Sessions)**:
   Hermes đã nạp sẵn **209 công cụ** tiền tố `mcp__rea__*` (`mcp__rea__analyze_web_bundle`, `mcp__rea__recover_javascript_sources`...).
