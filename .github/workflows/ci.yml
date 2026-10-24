@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m compileall -q tools scripts
-      - run: bash -n setup_harness.sh setup_home.sh
+      - run: bash -n setup.sh
       - run: python -m unittest discover -s tools/tests
         env:
           HARNESS_BACKEND: sqlite
