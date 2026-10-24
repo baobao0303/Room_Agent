@@ -12,7 +12,7 @@ class TestSupervisionKevIntegration(unittest.TestCase):
         # Locate project root and cargo binary
         cls.repo_root = Path(__file__).resolve().parent.parent / "projects" / "harness"
         if not cls.repo_root.is_dir():
-            cls.repo_root = Path("/home/baoltb/Desktop/Room_Agent/projects/harness")
+            raise unittest.SkipTest("projects/harness directory not found (Rust source not present)")
         
         # Build binary
         subprocess.run(
