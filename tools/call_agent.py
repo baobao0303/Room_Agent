@@ -272,14 +272,17 @@ def main():
                 # EPHEMERAL SUB-AGENT AUTO-LAUNCH IN ORCA:
                 print_hook_banner("ORCA AGENT LAUNCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body, thinking_mode=thinking_mode)
                 print(f"🚀 [Orca Agent Launch]: Chưa có tab cho {profile_name}. Đang mở AI Agent tab mới trên Orca...")
+                wt_target = "name:main" if target_room == "supervisor" else (f"name:room-{target_room}" if target_room in ("pm", "lead", "peer", "qc") else "active")
                 launch_cmd = [
                     "orca", "agent", "launch",
-                    "--worktree", "active",
+                    "--worktree", wt_target,
                     "--agent", "hermes",
                     "--prompt", f"[{profile_name}] {task_body}\n{thinking_block}\n{room_block}",
+                    "--surface", "terminal",
                     "--focus",
                     "--json"
                 ]
+                # Hermes uses ~/.hermes/config.yaml directly; Orca rejects launch-time --model for hermes
                 lres = subprocess.run(launch_cmd, capture_output=True, text=True, check=False)
                 if lres.returncode == 0:
                     handle = ""
@@ -309,9 +312,6 @@ def main():
                     if handle:
                         subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
                         subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
-                        subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {term_title}", "--enter"], capture_output=True, check=False)
-                        if model:
-                            subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True, check=False)
 
                         reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
                         reg = {}
@@ -323,6 +323,19 @@ def main():
                         reg[role_key] = {"handle": handle, "tabId": tab_id}
                         reg_file.parent.mkdir(parents=True, exist_ok=True)
                         reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
+
+                        # Dọn dẹp terminal shell mặc định trong room này
+                        try:
+                            t_out = subprocess.run(["orca", "terminal", "list", "--json"], capture_output=True, text=True, check=False)
+                            if t_out.returncode == 0 and t_out.stdout:
+                                t_data = json.loads(t_out.stdout).get("result", {}).get("terminals", [])
+                                for t_item in t_data:
+                                    t_h = t_item.get("handle")
+                                    is_room_term = t_item.get("worktreePath", "").rstrip("/").endswith(f"/room-{target_room}")
+                                    if t_h and t_h != handle and is_room_term and not any(v.get("handle") == t_h for k, v in reg.items() if k != role_key):
+                                        subprocess.run(["orca", "terminal", "close", "--terminal", t_h, "--json"], capture_output=True, check=False)
+                        except Exception:
+                            pass
 
                     print(f"✅ Đã spawn và đổi tên thành công AI Agent tab '{term_title}' ({handle}) trên Orca Workspace!")
                     sys.exit(0)

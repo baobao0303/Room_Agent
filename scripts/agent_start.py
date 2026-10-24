@@ -25,6 +25,11 @@ REG_FILE = SCRIPT_DIR / "bmad" / "rooms" / "agent_terminals.json"
 HB_FILE = SCRIPT_DIR / "bmad" / "rooms" / "heartbeats.json"
 
 AGENTS = {
+    "supervisor": (
+        "[Supervisor] Scope & Intent Guard in SLPPC. "
+        "Chuyên trách quản trị phạm vi, tạo Epic/Task trên Harness DB, "
+        "điều phối PM, Lead, Peer, QC và bảo vệ Single-Ownership Invariant."
+    ),
     "pm": (
         "[PM Agent] Product Manager & Decision Arbiter in SLPPC. "
         "Chuyên trách đánh giá Feasibility và Alignment qua Kev System One (<50ms), "
@@ -76,10 +81,10 @@ MODELS = {
     "supervisor": "ag/gemini-3.8-flash-high",
     "pm": "ag/gemini-3.8-flash-high",
     "lead": "ag/gemini-3.8-flash-high",
-    "peer": "ag/gemini-3.8-flash-low",
-    "peer2": "ag/gemini-3.8-flash-medium",
+    "peer": "ag/gemini-3.8-flash-medium",
+    "peer2": "ag/gemini-3.8-flash-low",
     "peer3": "ag/gemini-3.8-flash-high",
-    "peer4": "ag/gemini-3.8-flash-high",
+    "peer4": "ag/gemini-4-argon-high",
     "design": "ag/gemini-3.8-flash-high",
     "qc": "ag/gemini-3.8-flash-high",
 }
@@ -88,16 +93,16 @@ REASONINGS = {
     "supervisor": "high",
     "pm": "high",
     "lead": "high",
-    "peer": "low",
-    "peer2": "medium",
+    "peer": "medium",
+    "peer2": "low",
     "peer3": "high",
-    "peer4": "max",
+    "peer4": "high",
     "design": "high",
     "qc": "high",
 }
 
-PERSISTENT_ROLES = ["pm", "lead"]
-ALL_ROLES = ["pm", "lead", "peer", "peer2", "peer3", "peer4", "design", "qc"]
+PERSISTENT_ROLES = ["supervisor", "pm", "lead"]
+ALL_ROLES = ["supervisor", "pm", "lead", "peer", "peer2", "peer3", "peer4", "design", "qc"]
 
 
 def run_cmd(args: list[str]) -> tuple[int, str]:
@@ -159,13 +164,21 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
     title = TITLES.get(role, role)
     print(f"--- 🚀 Đang khởi chạy: {title} ({role}) ---")
 
-    code, out = run_cmd([
+    wt_target = "name:main" if role == "supervisor" else (f"name:room-{role}" if role in ("pm", "lead", "peer", "qc") else "active")
+    model = MODELS.get(role)
+    effort = REASONINGS.get(role)
+
+    launch_cmd = [
         "orca", "agent", "launch",
-        "--worktree", "active",
+        "--worktree", wt_target,
         "--agent", "hermes",
         "--prompt", prompt,
+        "--surface", "terminal",
         "--json"
-    ])
+    ]
+    # Hermes đọc model & effort trực tiếp từ ~/.hermes/config.yaml (Orca chặn --model đối với agent hermes)
+
+    code, out = run_cmd(launch_cmd)
 
     handle = ""
     tab_id = ""
@@ -183,23 +196,18 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         print(f"  ✅ Khởi chạy thành công: {handle} (Tab: {tab_id})")
         run_cmd(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"])
         run_cmd(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"])
-        run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"])
-
-        model = MODELS.get(role)
-        if model:
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"])
-
-        reasoning = REASONINGS.get(role)
-        if reasoning:
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/reasoning {reasoning}", "--enter"])
-
-        # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
-        rtk_script = SCRIPT_DIR / "scripts" / "rtk_profile_env.sh"
-        if rtk_script.is_file():
-            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_script} {role}", "--enter"])
 
         registry[role] = {"handle": handle, "tabId": tab_id}
         save_registry(registry)
+
+        # Dọn dẹp terminal shell mặc định trong worktree nếu có tab thừa
+        current_terms = get_live_terminals()
+        for t_h, t_val in current_terms.items():
+            if t_h != handle:
+                wt_path = t_val.get("worktreePath", "").rstrip("/")
+                is_target_wt = (wt_path == str(SCRIPT_DIR).rstrip("/")) if role == "supervisor" else wt_path.endswith(f"/room-{role}")
+                if is_target_wt and not any(v.get("handle") == t_h for k, v in registry.items() if k != role):
+                    run_cmd(["orca", "terminal", "close", "--terminal", t_h, "--json"])
     else:
         print(f"  ⚠️  Không nhận được handle từ Orca cho agent {role}.")
 
@@ -224,28 +232,14 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
         roles_to_run = ALL_ROLES
     else:
         roles_to_run = PERSISTENT_ROLES
-        print("💡 [Ephemeral Architecture]: Mặc định khởi chạy các tab thường trực (PM, Lead Dev).")
+        print("💡 [SLPPC Architecture]: Mặc định khởi chạy các tab thường trực (Supervisor, PM, Lead Dev).")
         print("   Các vai trò Peer 1..4, Design, QC kích hoạt tự động theo task on-demand (hoặc dùng --all).")
 
     for role in roles_to_run:
-        if role not in AGENTS and role != "supervisor":
+        if role not in AGENTS:
             print(f"⚠️  Không tìm thấy vai trò '{role}'. Các vai trò khả dụng: {', '.join(ALL_ROLES)}")
             continue
-        if role == "supervisor":
-            continue
         launch_single(role, registry, live_terms)
-
-    # Đăng ký Supervisor handle nếu có tab đang chạy
-    live_terms = get_live_terminals()
-    spawned_handles = {v.get("handle") for k, v in registry.items() if k != "supervisor"}
-    for handle, t in live_terms.items():
-        if handle not in spawned_handles:
-            sup_title = TITLES["supervisor"]
-            registry["supervisor"] = {"handle": handle, "tabId": t.get("tabId", "")}
-            run_cmd(["orca", "terminal", "rename", "--terminal", handle, "--title", sup_title, "--json"])
-            run_cmd(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", sup_title, "--json"])
-            save_registry(registry)
-            break
 
     print("\n🎉 HOÀN TẤT KHỞI CHẠY!")
     cmd_status()
@@ -268,7 +262,7 @@ def cmd_status() -> int:
     print(f"{'VAI TRÒ (ROLE)':<22} | {'HANDLE':<24} | {'STATUS':<12} | {'MODEL':<24} | {'HEARTBEAT':<12}")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
 
-    all_check = ["supervisor"] + ALL_ROLES
+    all_check = ALL_ROLES
     for role in all_check:
         title = TITLES.get(role, role)
         reg_info = registry.get(role, {})

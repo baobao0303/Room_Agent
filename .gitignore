@@ -116,6 +116,7 @@ bmad/rooms/archive/
 bmad/rooms/discussions/
 bmad/adrs/
 .worktrees/
+.rooms
 bmad/rooms/*.json
 !bmad/rooms/README.md
 !bmad/rooms/template-handoff.md

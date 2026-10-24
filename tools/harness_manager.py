@@ -155,11 +155,13 @@ def send_orca_notification(role: str, message: str) -> bool:
         # FALLBACK CHO EPHEMERAL SUB-AGENTS (Peer, QC, Design):
         # Nếu tab chưa mở sẵn, tự động spawn tab mới trên Orca để User nhìn thấy AI làm việc
         clean_role = role.lower().strip()
-        if shutil.which("orca") and any(k in clean_role for k in ("peer", "dev", "design", "qc")):
+        if shutil.which("orca") and any(k in clean_role for k in ("peer", "dev", "design", "qc", "lead", "pm")):
             print(f"🚀 [Ephemeral Auto-Launch]: Chưa có tab cho {role.upper()}. Đang mở AI Agent tab mới trên Orca...")
+            target_room = "peer" if "peer" in clean_role or "dev" in clean_role else ("qc" if "qc" in clean_role else ("lead" if "lead" in clean_role else ("pm" if "pm" in clean_role else "active")))
+            wt_target = f"name:room-{target_room}" if target_room in ("pm", "lead", "peer", "qc") else "active"
             cmd_launch = [
                 "orca", "agent", "launch",
-                "--worktree", "active",
+                "--worktree", wt_target,
                 "--agent", "hermes",
                 "--prompt", message,
                 "--focus",
