@@ -127,8 +127,9 @@ def main():
 
     print("🚀 Bắt đầu khởi động các Agent Tabs...")
 
-    # Khởi chạy 4 Agent cốt lõi trong pipeline SLPPC (pm, lead, peer, qc).
-    roles = ["pm", "lead", "peer", "qc"]
+    # Khởi chạy các Agent thường trực (Supervisor, PM, Lead).
+    # Các Sub-Agent (Peer, QC) là Ephemeral - kích hoạt tự động theo task on-demand.
+    roles = ["pm", "lead"]
     for role in roles:
         prompt = AGENTS[role]
         title = TITLES[role]
@@ -167,6 +168,11 @@ def main():
             reasoning = REASONINGS.get(role)
             if reasoning:
                 run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/reasoning {reasoning}", "--enter"])
+
+            # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
+            rtk_script = SCRIPT_DIR / "scripts" / "rtk_profile_env.sh"
+            if rtk_script.is_file():
+                run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_script} {role}", "--enter"])
 
             registry[role] = {"handle": handle, "tabId": tab_id}
             REG_FILE.write_text(json.dumps(registry, indent=2), encoding="utf-8")

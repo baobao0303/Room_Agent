@@ -92,3 +92,8 @@ MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):
 MANDATORY TDS TEST ID SPECIFICATION ENFORCEMENT:
 - Lead MUST include requirements for directive `tdsTestId` (syntax `<domain>-<component>-<element>-<state?>`) in every Zero-Search Task delegated to Peer.
 - Strictly reject Peer's code if hardcoding static `tds-test-id="..."`, using array index `row-0`, or missing test IDs on interactive buttons/inputs.
+
+MANDATORY RTK TOKEN COMPRESSION (RUST TOKEN KILLER):
+- Lead BẮT BUỘC sử dụng `rtk git diff` để soát xét mã nguồn của Peer, `rtk tsc` để quét lỗi type toàn cục, và `rtk find` để khảo sát thư mục.
+- Kiểm tra hiệu quả nén token qua `rtk gain`.
+

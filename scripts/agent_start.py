@@ -96,7 +96,7 @@ REASONINGS = {
     "qc": "high",
 }
 
-PERSISTENT_ROLES = ["pm", "lead", "peer", "qc"]
+PERSISTENT_ROLES = ["pm", "lead"]
 ALL_ROLES = ["pm", "lead", "peer", "peer2", "peer3", "peer4", "design", "qc"]
 
 
@@ -192,6 +192,11 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         reasoning = REASONINGS.get(role)
         if reasoning:
             run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"/reasoning {reasoning}", "--enter"])
+
+        # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
+        rtk_script = SCRIPT_DIR / "scripts" / "rtk_profile_env.sh"
+        if rtk_script.is_file():
+            run_cmd(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_script} {role}", "--enter"])
 
         registry[role] = {"handle": handle, "tabId": tab_id}
         save_registry(registry)
@@ -309,6 +314,20 @@ def cmd_stop(target_roles: list[str], stop_all: bool = False) -> int:
     return 0
 
 
+def cmd_clear_ephemerals() -> int:
+    """Đóng tất cả các sub-agent tạm thời (Peer, Design, QC) để chống phình to Context."""
+    ephemeral_roles = ["peer", "peer2", "peer3", "peer4", "design", "qc"]
+    print("🧹 [CONTEXT HYGIENE]: Đang dọn dẹp và đóng tất cả Sub-Agent tạm thời để chống phình to context...")
+    res = cmd_stop(ephemeral_roles)
+    if shutil.which("orca"):
+        try:
+            subprocess.run(["python3", str(SCRIPT_DIR / "tools" / "zombie_reaper.py")], capture_output=True, text=True, timeout=5)
+        except Exception:
+            pass
+    print("✨ Toàn bộ sub-agent tạm thời đã được đóng. Context đưa về trạng thái sạch sẽ, RAM đưa về 0.")
+    return res
+
+
 def cmd_restart(target_roles: list[str]) -> int:
     print("🔄 Đang khởi động lại các Agent...")
     cmd_stop(target_roles, stop_all=(not target_roles))
@@ -322,7 +341,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ví dụ:
-  ./agent-start                  Khởi chạy toàn bộ phòng multi-agent
+  ./agent-start                  Khởi chạy toàn bộ phòng multi-agent (PM, Lead thường trực)
+  ./agent-start clear            Đóng toàn bộ Sub-Agent (Peer, QC) để chống phình to Context
   ./agent-start pm               Khởi chạy riêng PM Agent
   ./agent-start lead peer qc     Khởi chạy Lead, Peer 1 và QC
   ./agent-start status           Xem bảng trạng thái chi tiết
@@ -330,7 +350,7 @@ Ví dụ:
   ./agent-start stop --all       Đóng tất cả agent
 """
     )
-    parser.add_argument("roles", nargs="*", help="Tên vai trò (pm, lead, peer, peer2, peer3, peer4, design, qc, status, restart, stop)")
+    parser.add_argument("roles", nargs="*", help="Tên vai trò (pm, lead, peer, peer2, peer3, peer4, design, qc, status, restart, stop, clear)")
     parser.add_argument("--status", action="store_true", help="Xem bảng trạng thái")
     parser.add_argument("--stop", action="store_true", help="Dừng agent")
     parser.add_argument("--all", action="store_true", help="Áp dụng cho tất cả agent")
@@ -339,6 +359,8 @@ Ví dụ:
     args = parser.parse_args()
 
     # Route subcommands passed as first positional arg
+    if args.roles and args.roles[0].lower() in ("clear", "purge", "clean"):
+        return cmd_clear_ephemerals()
     if args.roles and args.roles[0].lower() == "status":
         return cmd_status()
     if args.roles and args.roles[0].lower() == "restart":

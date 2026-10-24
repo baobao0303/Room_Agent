@@ -323,3 +323,8 @@ MANDATORY TDS TEST ID & UNIT TEST SPECIFICATION ENFORCEMENT:
 - Mọi kịch bản automation test do QC viết bắt buộc phải query qua `[tds-test-id="..."]` hoặc helper `getByTdsTestId()`. Cấm tuyệt đối query qua text hoặc class CSS.
 - QC sở hữu quyền VETO từ chối đóng task nếu phát hiện màn hình thiếu `tdsTestId` trên các button/input tương tác.
 
+MANDATORY RTK TOKEN COMPRESSION (RUST TOKEN KILLER):
+- QC BẮT BUỘC sử dụng `rtk jest run` và `rtk test` để chạy test runner cơ học (Mechanical Gate), và `rtk err` để kiểm tra lỗi/warning.
+- Nghiêm cấm chạy test runner raw làm tràn context window.
+
+

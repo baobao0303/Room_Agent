@@ -167,7 +167,57 @@ def send_orca_notification(role: str, message: str) -> bool:
             ]
             res = subprocess.run(cmd_launch, capture_output=True, text=True, check=False)
             if res.returncode == 0:
-                print(f"✅ [Ephemeral Auto-Launch]: Đã mở thành công AI Agent tab cho {role.upper()} trên Orca!")
+                handle = ""
+                tab_id = ""
+                if res.stdout:
+                    try:
+                        data = json.loads(res.stdout)
+                        outcome = data.get("result", {}).get("outcome", {})
+                        handle = outcome.get("handle") or ""
+                        pk = outcome.get("paneKey") or ""
+                        tab_id = pk.split(":")[0] if ":" in pk else pk
+                    except Exception:
+                        pass
+
+                titles_map = {
+                    "peer": "[Peer Dev 1] Code Executor",
+                    "qc": "[QC] 5-Stage ISTQB Verifier",
+                    "design": "[Peer Design] UI/UX & Tokens",
+                    "pm": "[PM] Feasibility & Alignment",
+                    "lead": "[Lead Dev] Architect & PM",
+                }
+                models_map = {
+                    "peer": "ag/gemini-3.8-flash-low",
+                    "qc": "ag/gemini-3.8-flash-high",
+                    "design": "ag/gemini-3.8-flash-high",
+                }
+                role_key = "peer" if any(k in clean_role for k in ("peer", "dev")) else ("qc" if "qc" in clean_role else ("design" if "design" in clean_role else clean_role))
+                term_title = titles_map.get(role_key, f"[{role.upper()}] Sub-Agent")
+                term_model = models_map.get(role_key, "ag/gemini-3.8-flash-high")
+
+                if handle:
+                    subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
+                    subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", term_title, "--json"], capture_output=True, check=False)
+                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {term_title}", "--enter"], capture_output=True, check=False)
+                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {term_model}", "--enter"], capture_output=True, check=False)
+
+                    # Tự động nạp RTK (Rust Token Killer) Profile Environment để nén 60-90% token
+                    rtk_env_script = Path(BASE_DIR) / "scripts" / "rtk_profile_env.sh"
+                    if rtk_env_script.is_file():
+                        subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_env_script} {role_key}", "--enter"], capture_output=True, check=False)
+
+                    reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
+                    reg = {}
+                    if reg_file.is_file():
+                        try:
+                            reg = json.loads(reg_file.read_text(encoding="utf-8"))
+                        except Exception:
+                            reg = {}
+                    reg[role_key] = {"handle": handle, "tabId": tab_id}
+                    reg_file.parent.mkdir(parents=True, exist_ok=True)
+                    reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
+
+                print(f"✅ [Ephemeral Auto-Launch]: Đã mở và đổi tên thành công AI Agent tab '{term_title}' ({handle}) trên Orca!")
                 return True
             else:
                 print(f"⚠️ [Ephemeral Launch Error]: {res.stderr.strip()}", file=sys.stderr)

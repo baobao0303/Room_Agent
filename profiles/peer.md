@@ -71,3 +71,8 @@ MANDATORY TDS TEST ID DIRECTIVE IMPLEMENTATION ENFORCEMENT:
 - Bind directive: `tdsTestId="<domain>-<component>-<element>-<state?>"` (static) or `[tdsTestId]="'user-row-' + user.id"` (dynamic).
 - Strictly forbidden to hardcode static DOM attributes `tds-test-id="..."`, use array indexes `row-0`, or embed CSS visual details (`red`, `hidden`) into test IDs.
 - Strictly adhere to loop-engineering: Run mechanical tests to 100% green before submitting task as `Resolved`.
+
+MANDATORY RTK TOKEN COMPRESSION (RUST TOKEN KILLER):
+- Peer BẮT BUỘC sử dụng các lệnh qua RTK proxy: `rtk read` thay cho `cat`, `rtk tsc` kiểm tra compile, và `rtk jest` chạy unit test.
+- Nghiêm cấm chạy jest/tsc raw làm tràn context window (>30k tokens).
+
