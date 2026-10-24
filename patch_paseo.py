@@ -224,17 +224,17 @@ def patch():
     global_research_gen_directive = (
         "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):\n"
         "Whenever Paseo runs any profile (Supervisor, Lead, Peer, QC, Lead BA, Peer BA, Lead Dev, Peer Dev, Lead design, Peer Design), "
-        f"you MUST execute the workspace Research and Generation tools in `{PROJECT_ROOT}`:\n"
-        f"1. Unified Research & Gen Pipeline: `python3 {PROJECT_ROOT}/tools/profile_research_gen.py --profile \"<Role>\" --topic \"<Task>\" [--source <file>] [--task-id <id>]`\n"
-        f"2. Research Tools: `python3 {PROJECT_ROOT}/tools/research/research_agent.py \"<topic>\"`, "
-        f"`python3 {PROJECT_ROOT}/tools/query_reader.py <path> \"<query>\"`, "
-        f"`python3 {PROJECT_ROOT}/tools/crm_doc_reader.py \"<query>\" [--uc <UC>]`, "
-        f"and `python3 {PROJECT_ROOT}/tools/agent_progress.py find-thread \"<keyword>\"`.\n"
+        "you MUST execute the workspace Research and Generation tools:\n"
+        "1. Unified Research & Gen Pipeline: `python3 tools/profile_research_gen.py --profile \"<Role>\" --topic \"<Task>\" [--source <file>] [--task-id <id>]`\n"
+        "2. Research Tools: `python3 tools/research/research_agent.py \"<topic>\"`, "
+        "`python3 tools/query_reader.py <path> \"<query>\"`, "
+        "`python3 tools/crm_doc_reader.py \"<query>\" [--uc <UC>]`, "
+        "and `python3 tools/agent_progress.py find-thread \"<keyword>\"`.\n"
         "3. Sub-Agents (`031_claude_code_sub_agents`): `gemini-codebase-analyzer`, `strategic-reasoning-architect`, `slpc-qc-verifier`.\n"
-        f"4. Generation Tools: `python3 {PROJECT_ROOT}/tools/qc_test_generator.py --source <file> --spec <spec> --out-spec <spec_ts> --sync-harness`, "
-        f"`python3 {PROJECT_ROOT}/tools/distill_ba_beats.py`, "
-        f"`python3 {PROJECT_ROOT}/tools/harness_manager.py`, "
-        f"and `python3 {PROJECT_ROOT}/tools/agent_progress.py log --agent \"<Role>\" ...`."
+        "4. Generation Tools: `python3 tools/qc_test_generator.py --source <file> --spec <spec> --out-spec <spec_ts> --sync-harness`, "
+        "`python3 tools/distill_ba_beats.py`, "
+        "`python3 tools/harness_manager.py`, "
+        "and `python3 tools/agent_progress.py log --agent \"<Role>\" ...`."
     )
 
     data["pluginsEnabled"] = True

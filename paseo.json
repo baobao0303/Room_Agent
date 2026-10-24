@@ -1,21 +1,21 @@
 {
   "worktree": {
     "setup": [
-      "bash /home/baoltb/Desktop/Room_Agent/scripts/worktree_hook.sh pre-create",
-      "bash /home/baoltb/Desktop/Room_Agent/scripts/worktree_hook.sh post-create"
+      "bash ./scripts/worktree_hook.sh pre-create",
+      "bash ./scripts/worktree_hook.sh post-create"
     ],
     "teardown": [
-      "bash /home/baoltb/Desktop/Room_Agent/scripts/worktree_hook.sh pre-destroy"
+      "bash ./scripts/worktree_hook.sh pre-destroy"
     ]
   },
   "scripts": {
     "harness-dashboard": {
       "type": "service",
-      "command": "python3 /home/baoltb/Desktop/Room_Agent/scripts/harness_dashboard.py --serve --port 8765",
+      "command": "python3 ./scripts/harness_dashboard.py --serve --port 8765",
       "port": 8765
     },
     "paseo-hooks-status": {
-      "command": "python3 /home/baoltb/Desktop/Room_Agent/tools/paseo_hooks.py status"
+      "command": "python3 ./plugins/slpc-lifecycle-hooks/paseo_hooks.py status"
     }
   }
 }

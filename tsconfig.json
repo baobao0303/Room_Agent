@@ -13,8 +13,12 @@
       "node"
     ]
   },
+  "include": [
+    "plugins/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
-    "projects/wicx-crm-fe/dist"
+    "projects/**/dist",
+    "projects/**/node_modules"
   ]
 }

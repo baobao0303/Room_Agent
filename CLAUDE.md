@@ -107,14 +107,22 @@
   </command>
 </custom_commands>
 
-# Chat Session Protocol (SUPERVISOR MODE)
+# Chat Session Protocol (SUPERVISOR MODE - SLPPC ARCHITECTURE)
 - Phiên chat này CHỈ tương tác với User dưới vai trò **Supervisor (Scope & Intent Guard)**.
-- Supervisor là trọng tài: KHÔNG viết code production, KHÔNG thiết kế kỹ thuật.
-- Khi User giao việc: Supervisor phân tích scope, tạo Epic/Task trên Harness DB và gọi Lead/Peer qua `python3 tools/call_agent.py` hoặc `python3 tools/harness_manager.py add ... --dispatch`.
+- Supervisor là trọng tài quản trị phạm vi: KHÔNG viết code production, KHÔNG debug sâu dòng code (`role_trespass`).
+- Khi User giao việc: Supervisor phân tích phạm vi, tạo Epic/Task trên Harness DB (`tools/harness_manager.py`), kết nối PM Agent thẩm định Kev System One (<50ms).
+- **Cơ chế Điều phối Tự hành (Autonomous Plugin Orchestrator)**:
+  - Khi Supervisor kết thúc turn (`agent.turn_ended`), plugin `plugins/slpc-lifecycle-hooks` tự động thẩm định Feasibility qua Kev System One (<50ms) và chuyển sang Lead Dev.
+  - Khi Lead Dev phân rã xong Zero-Search Task, plugin tự động spawn Ephemeral Peer Sub-Agent tab gắn `profiles/peer.md`.
+  - Khi Peer nộp `Resolved`, plugin tự động đóng tab Peer (đưa RAM về 0) và spawn Ephemeral QC tab gắn `profiles/qc.md`.
+  - Khi QC nghiệm thu đạt chuẩn và chuyển task sang `Closed`, plugin tự động đóng tab QC, nén dọn artifacts vào `bmad/rooms/archive/`, và bắn thông báo hoàn tất về Supervisor.
+- Quản trị Agent qua All-in-One CLI: `./agent-start` (mặc định chỉ mở PM, Lead; Peer và QC là Ephemeral Sub-Agents on-demand).
 - Khi User nói **"làm tiếp"** hoặc **"báo cáo tiến độ"**: Đọc ngay `docs/AGENT_PROGRESS.md` (hoặc chạy `python3 tools/agent_progress.py status`) để báo cáo chính xác các việc đã làm và thực hiện bước kế tiếp. Sau mỗi đợt làm việc, ghi lại tiến độ qua `python3 tools/agent_progress.py log ...`.
 - Báo cáo kết quả và chỉ hỏi ý kiến User khi có thay đổi scope, chi phí, hoặc rủi ro lớn.
 
-# Coding Rules
-Dự án áp dụng chặt chẽ rule tại https://github.com/baobao0303/cursor_rule_angular2026. 
-- Mọi tương tác orchestration tuân theo luật chơi Caro (Harness DB).
+# Coding Rules & Invariants
+- Dự án áp dụng chặt chẽ rule tại https://github.com/baobao0303/cursor_rule_angular2026.
+- Strict Typing Gate: Zero `any`, zero `unknown`, zero sloppy fallbacks `||`.
+- Đường dẫn Portable: Tuyệt đối không hardcode đường dẫn người dùng (`/home/...`, `/Users/...`). Dùng path tương đối theo workspace root hoặc `Path.home()`.
+- Single-Pointer Memos: Mỗi phòng trong `bmad/rooms/<role>/` chỉ duy trì duy nhất một file `latest_handoff.md`, lịch sử gom về `bmad/rooms/room_ledger.json` (FIFO 50 entries, <50KB).
 - User là người quyết định cuối cùng về rủi ro và phạm vi (scope).

@@ -89,6 +89,13 @@ Hệ sinh thái chuyển dịch từ nhóm Agent thường trực (Persistent Wo
 5. **Zombie Terminal Reaper (`tools/zombie_reaper.py`)**: Định kỳ quét đối chiếu terminals đang mở với danh sách task Active trong Harness DB; tự động đóng các PTY mồ côi để đưa RAM nền về 0.
 6. **Authority Fencing (Rào cản thẩm quyền)**: Cấm Sub-Agent spawn đệ quy (No nested delegation), cấm tự đóng task, cấm ghi đè bộ nhớ hệ thống.
 
+### 3.1. Điều Phối Tự Hành Qua Plugin Hooks (`plugins/slpc-lifecycle-hooks/slppc_orchestrator.py`):
+Toàn bộ luồng điều phối chuyển giao giữa các Agent được tự động hóa thông qua chốt chặn vòng đời plugin:
+- **Supervisor `agent.turn_ended`**: Tự động gọi Kev System One (<50ms) đánh giá Feasibility & Alignment, xuất `bmad/rooms/pm/decision_memo.md`, cập nhật task và đẩy thông báo sang Lead Dev.
+- **Lead `agent.turn_ended`**: Phát hiện Zero-Search Task mới, tự động spawn Ephemeral Peer Sub-Agent tab gắn `profiles/peer.md` với đầy đủ AC và test command.
+- **Peer `agent.turn_ended` (Resolved)**: Cưỡng chế đóng tab Peer Dev (`orca terminal close` đưa RAM về 0) và tự động spawn Ephemeral QC Sub-Agent tab gắn `profiles/qc.md`.
+- **QC `agent.turn_ended` (Closed)**: Cưỡng chế đóng tab QC, nén dọn artifacts vào `bmad/rooms/archive/task_<id>.tar.gz` và bắn thông báo nghiệm thu thành công về tab Supervisor.
+
 ---
 
 ## 4. RTK (Rust Token Killer) CLI Proxy (Issue #5)
@@ -148,10 +155,7 @@ Sau khi clone hoặc merge mã nguồn mới, thực hiện quy trình cài đ�
 - Nếu dùng Orca IDE: Đảm bảo lệnh `orca` có trong PATH (`~/.config/orca/linux-orca-cli-shim` hoặc Orca Desktop AppImage).
 
 ### Bước 2: Khởi Tạo File Cấu Hình `.env`
-```bash
-cp .env.example .env
-# Kiểm tra FLOCI_ENDPOINT (mặc định: http://<FLOCI_HOST>:14566)
-```
+`./setup.sh` tự động khởi tạo file `.env` chuẩn với model `ag/gemini-3.8-flash-high` và backend auto-detect nếu file chưa tồn tại.
 
 ### Bước 3: Chạy Script Cài Đặt Tự Động 1 Bước (`setup.sh`)
 Script thực hiện toàn bộ 6 khâu cài đặt:
@@ -161,16 +165,19 @@ Script thực hiện toàn bộ 6 khâu cài đặt:
 - Khởi tạo thư mục và liên kết Skills vào `~/.hermes/skills/`.
 - Cấu hình Git Pre-commit Guard (`.git/hooks/pre-commit`) chặn hardcoded hex và vi phạm vai trò.
 - Đồng bộ các Profile SLPPC vào `~/.paseo/config.json` qua `patch_paseo.py`.
-- Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB).
+- Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB / Local Fallback).
 
-### Bước 4: Khởi Chạy Các Agent Tabs Thường Trực Trong Phòng Ban
+### Bước 4: Khởi Chạy & Quản Trị Agent Tabs (`./agent-start`)
 ```bash
-# Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành.
-# Peer 1..4, Design, QC là Ephemeral Sub-Agents kích hoạt on-demand khi có task.
-./scripts/launch_room.sh
+# Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành:
+./agent-start
 
-# Hoặc vừa setup vừa launch:
-./setup.sh --launch
+# Xem trạng thái chi tiết tất cả Agent và nhịp tim:
+./agent-start status
+
+# Khởi chạy toàn bộ hoặc một agent cụ thể on-demand:
+./agent-start --all
+./agent-start peer
 ```
 
 ### Bước 5: Kiểm Tra & Giám Sát Sức Khỏe Phòng Ban
@@ -178,8 +185,14 @@ Script thực hiện toàn bộ 6 khâu cài đặt:
 # 1. Kiểm tra an ninh chống rò rỉ (phải đạt PASS 100%)
 python3 scripts/anti_leak_sentinel.py
 
-# 2. Chạy toàn bộ 26 unit tests của công cụ
+# 2. Chạy toàn bộ 92 unit tests của công cụ
 python3 -m unittest discover -s tools/tests
+
+# 3. Kiểm tra chốt chặn phân luồng SLPPC & vệ sinh phòng ban
+python3 tools/slppc_flow_guard.py audit
+
+# 4. Kiểm tra trạng thái 3 tầng Lifecycle Hooks
+python3 plugins/slpc-lifecycle-hooks/paseo_hooks.py status
 
 # 3. Quét Zombie Terminals mồ côi và Watchdog timeout
 python3 tools/zombie_reaper.py --dry-run

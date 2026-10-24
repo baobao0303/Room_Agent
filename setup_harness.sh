@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "=== Setting up Harness for Paseo Project (Floci Cloud Storage) ==="
+echo "=== Setting up Harness for Room_Agent (Floci Cloud / Local Fallback) ==="
 
 # 1. Check prerequisites
 for cmd in curl git; do
@@ -15,7 +15,7 @@ done
 if [ ! -f .env ]; then
     echo "--> Initializing .env configuration..."
     cat << 'EOF' > .env
-HARNESS_MODEL=gemini-3.7-medium
+HARNESS_MODEL=ag/gemini-3.8-flash-high
 HARNESS_BACKEND=floci
 FLOCI_ENDPOINT=http://<FLOCI_HOST>:14566
 AWS_REGION=us-east-1
