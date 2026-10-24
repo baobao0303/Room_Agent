@@ -64,6 +64,31 @@ ALLOWED_PROFILES = [
     "Security"
 ]
 
+def close_ephemeral_subagent(role: str) -> bool:
+    """Close an ephemeral sub-agent terminal (Peer or QC) to return RAM to 0."""
+    clean_role = role.lower().strip()
+    reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
+    if not reg_file.is_file() or not shutil.which("orca"):
+        return False
+    try:
+        data = json.loads(reg_file.read_text(encoding="utf-8"))
+        handle = None
+        for r, info in list(data.items()):
+            if clean_role in r.lower():
+                handle = info.get("handle") if isinstance(info, dict) else info
+                del data[r]
+                break
+        if handle:
+            reg_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            res = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"], capture_output=True, text=True, timeout=5)
+            if res.returncode == 0:
+                print(f"🛑 [Ephemeral Auto-Close]: Đã tự động đóng tab {role.upper()} ({handle}) để giải phóng tài nguyên.")
+                return True
+    except Exception as e:
+        print(f"⚠️ [close_ephemeral_subagent error]: {e}", file=sys.stderr)
+    return False
+
+
 def reap_orphaned_terminals() -> int:
     """Trigger Zombie Reaper to close ephemeral sub-agent terminals when task is Closed."""
     try:
@@ -201,6 +226,8 @@ def auto_dispatch_agent(
         send_orca_notification("lead", msg_lead)
         send_orca_notification("qc", msg_qc)
         print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo cho Lead Dev và QC về Work Item #{item_id} (Resolved).")
+        # Ephemeral Sub-Agent: Tự động đóng tab Peer Dev khi hoàn thành code (Resolved) để giải phóng RAM
+        close_ephemeral_subagent("peer")
 
     # CASE 2: Giao việc thi công (target_state == "Active" hoặc "Accepted")
     # -> Báo ngay cho Peer được gán
@@ -223,6 +250,8 @@ def auto_dispatch_agent(
         send_orca_notification("lead", msg_done)
         send_orca_notification("supervisor", msg_done)
         print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Lead và Supervisor.")
+        # Ephemeral Sub-Agent: Tự động đóng tab QC khi Task Closed để đưa RAM về 0
+        close_ephemeral_subagent("qc")
 
 class HarnessManager:
     def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH, engine: str = "auto"):
