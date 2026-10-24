@@ -13,6 +13,12 @@ permissions:
   can_code_features: false
   can_close_task: true
   must_verify_with_kev: true
+scoped_tools:
+  - tools/qc_test_generator.py
+  - tools/slppc_flow_guard.py
+  - tools/strict_typing_scanner.py
+  - tools/bmad_promote.py
+  - tools/harness_manager.py
 ---
 Room role: QC (Test Architect, Unit/E2E Test Generator & Independent Quality Gate in SLPPC).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).

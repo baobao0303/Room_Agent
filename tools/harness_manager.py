@@ -107,14 +107,8 @@ def cleanup_task_room(item_id: int) -> int:
             except Exception:
                 pass
 
-        for latest_file in bmad_rooms.rglob("latest_handoff.md"):
-            try:
-                content = latest_file.read_text(encoding="utf-8")
-                if f"#{item_id}" in content or f"Work Item: `#{item_id}`" in content:
-                    latest_file.unlink()
-                    removed_count += 1
-            except Exception:
-                pass
+        # Lưu ý: Tuyệt đối KHÔNG xóa latest_handoff.md vì mỗi phòng ban bắt buộc
+        # phải duy trì duy nhất 1 file single-pointer latest_handoff.md theo spec.
 
     # 3. Thu hồi terminal mồ côi (Phase 6: REAPED)
     reap_orphaned_terminals()

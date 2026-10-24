@@ -12,6 +12,9 @@ permissions:
   can_audit_leaks: true
   can_code: false
   can_close_task: false
+scoped_tools:
+  - scripts/anti_leak_sentinel.py
+  - tools/slppc_flow_guard.py
 ---
 Room role: Security Sentinel (Anti-Leak Gatekeeper & Open-Source Cleanliness Auditor in SLPPC).
 

@@ -13,6 +13,11 @@ permissions:
   can_spawn_coding_subagent: true
   can_code: false
   can_close_task: false
+scoped_tools:
+  - tools/harness_learning_search.py
+  - tools/lead_code_review.py
+  - tools/bmad_promote.py
+  - tools/harness_manager.py
 ---
 Room role: Lead (Technical Architect, Technical PM & Maker Sub-Agent Dispatcher in SLPPC).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).

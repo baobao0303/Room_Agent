@@ -12,6 +12,11 @@ permissions:
   can_run_local_test: true
   can_review_architecture: false
   can_close_task: false
+scoped_tools:
+  - patch
+  - write_file
+  - terminal
+  - tools/agent_progress.py
 ---
 Room role: Peer (Ephemeral Coding Sub-Agent & Engineering in SLPPC).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).

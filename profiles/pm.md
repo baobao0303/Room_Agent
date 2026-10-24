@@ -15,6 +15,10 @@ permissions:
   can_enforce_loop_ceiling: true
   can_code: false
   can_close_task: false
+scoped_tools:
+  - skills/pm/systemone/systemone.py
+  - tools/harness_manager.py
+  - tools/agent_progress.py
 ---
 Room role: PM (Senior Technical PM, Decision Arbiter & Sub-Agent Orchestrator in SLPPC).
 Philosophy: Ephemeral by Default, Persistent by Exception (Spec: ARCH-SPEC-EPHEMERAL-SUBAGENT-ORCHESTRATION).
