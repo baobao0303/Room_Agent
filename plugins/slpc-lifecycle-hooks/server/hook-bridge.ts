@@ -1,7 +1,9 @@
 import { spawn } from "node:child_process";
+import path from "node:path";
 
-const PROJECT_ROOT = "/Users/bao312/Desktop/Room_Agent";
-const PYTHON_HOOK_SCRIPT = `${PROJECT_ROOT}/tools/paseo_hooks.py`;
+const PROJECT_ROOT = process.env.PASEO_PROJECT_ROOT || path.resolve(__dirname, "../../..");
+const PYTHON_HOOK_SCRIPT =
+  process.env.PASEO_HOOK_TOOL || path.join(__dirname, "../paseo_hooks.py");
 
 export function redactEnvPayload(data: unknown): string {
   const entry = {
