@@ -48,6 +48,8 @@ tools/
 ├── 6. Orchestration Bridges & Autonomous Controllers
 │   ├── slppc_orchestrator.py        # Bộ điều phối tự hành SLPPC Autonomous Orchestrator (plugins/)
 │   ├── orca_slpc_bridge.py          # Bộ điều phối toàn diện SLPC trên Orca Orchestration
+│   ├── orca_worktree_manager.py     # Quản trị Worktree cô lập & Human-in-the-Loop Review Gate (./orca-review)
+│   ├── dual_ide_hook.py             # Bộ định tuyến Universal Dual-IDE Hook Router (Orca & Paseo)
 │   ├── orca_harness_bridge.py       # Cầu nối đồng bộ Harness DB với Orca Workspace Board
 │   └── aevum_harness_bridge.py      # Cầu nối đồng bộ BlockSuite Aevum Real-Time Kanban
 │

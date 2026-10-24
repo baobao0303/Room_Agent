@@ -165,7 +165,86 @@ Mở trình duyệt truy cập: `http://localhost:8765`.
 
 ---
 
-## 4. Hướng Dẫn Sử Dụng Bộ Công Cụ Cốt Lõi (Core Tools)
+## 4. Pipeline Tự Hành 7 Luồng & Bộ Tiền Tố (`./trigger-flow`)
+
+Hệ thống tích hợp bộ định tuyến **7 luồng tự hành chuẩn hóa** (Đặc tả: `docs/spec/slppc-7-flow-orchestration-spec.md` - `ARCH-SPEC-SLPPC-7-FLOW-ORCHESTRATION-2026-V1`). Mọi yêu cầu được phân loại và tự động nạp chỉ thị tư duy vào khối Thinking của các Agent:
+
+| # | Tiền Tố (Prefix) | Tên Luồng (Flow Name) | Hành Vi Điều Phối | Code? |
+|---|---|---|---|:---:|
+| **1** | `[FEATURE]` / `[THUẬN]` | **Constructive Feature** | PM (Kev) ➔ Lead (Zero-Search) ➔ Mở Peer code ➔ Đóng Peer, mở QC test ➔ Đóng QC | **CÓ** |
+| **2** | `[BUGFIX]` / `[FIX-BUG]` | **Root Cause & Minimal Fix** | Lead tìm RCA ➔ Peer viết regression test trước, vá sau ➔ QC verify | **CÓ** |
+| **3** | `[ADVERSARIAL]` / `[NGHỊCH]`| **Boundary & Stress Defense**| Lead lên kịch bản biên ➔ Peer bọc fail-safe/rollback ➔ QC test cực hạn | **CÓ** |
+| **4** | `[REFACTOR]` / `[TỐI-ƯU]` | **YAGNI Simplification** | Xóa dead code, chuyển sang native signals. 0 đổi logic, 100% test cũ pass | **CÓ** |
+| **5** | `[DISCUSS]` / `[THẢO-LUẬN]` | **Architectural Debate & ADR** | **KHÔNG CODE**. Phân tích trade-off A vs B, xuất biên bản ADR (`bmad/adrs/`) | **KHÔNG** |
+| **6** | `[REVIEW]` / `[RÀ-SOÁT]` | **Cross-Role Code Review** | **KHÔNG CODE**. Bộ 3 sub-agent soi diff 3 chiều: Spec, Angular 18, Anti-Leak | **KHÔNG** |
+| **7** | `[EXPLORE]` / `[QUÉT]` | **Deep Codebase Mapping** | Quét monorepo (1M+ context), lập bản đồ phụ thuộc và vùng ảnh hưởng | **KHÔNG** |
+| *(8)*| `[TEST]` / `[KIỂM-THỬ]` | **5-Stage ISTQB Generation** | Bỏ qua khâu Dev, chạy thẳng QC Gate (`tools/qc_test_generator.py`) | **TEST** |
+
+### Cách Kích Hoạt 1 Chạm:
+```bash
+./trigger-flow "[FEATURE] Thêm bộ lọc khách hàng theo ngày trong wicx-crm-fe"
+./trigger-flow "[BUGFIX] Vá lỗi null pointer trong CartService"
+./trigger-flow "[DISCUSS] Đánh giá phương án xác thực JWT vs HttpOnly Cookie"
+./trigger-flow "[ADVERSARIAL] Test bẫy lỗi timeout mạng và cơ chế rollback"
+./trigger-flow --status  # Xem trạng thái luồng vừa chạy
+```
+
+---
+
+## 5. Quản Trị Worktree Cô Lập & User-Review Gate Trên Orca (`./orca-review`)
+
+Tận dụng thế mạnh trực quan của **Orca Desktop Worktrees**, hệ thống rẽ nhánh cô lập cho từng task và giữ quyền quyết định Merge cho con người (Human-in-the-Loop Gate):
+
+```text
+1. Lead giao Task #<id> ──► Tự động tạo Worktree riêng: `.worktrees/task-<id>-<slug>/` trên branch `peer/task-...`
+2. Peer Dev & QC        ──► Thi công và chạy test 100% trong thư mục cô lập (Branch chính sạch tinh).
+3. QC nghiệm thu PASS   ──► Bắn Desktop Notification, chuyển thẻ sang [AWAITING USER REVIEW].
+4. User quyết định      ──► Xem Git Diff trên Orca:
+                            • Duyệt Merge: `./orca-review approve <id>` (Fast-forward merge vào main).
+                            • Yêu cầu sửa: `./orca-review reject <id> --reason "<góp ý>"` (Peer sửa tiếp).
+```
+
+### Lệnh Quản Trị:
+```bash
+./orca-review list                     # Xem danh sách Worktree Cards đang mở
+./orca-review approve <task_id>        # Phê duyệt & Merge vào branch chính
+./orca-review reject <task_id> --reason "Cần sửa lại màu nút bấm sang TDS token"
+```
+
+---
+
+## 6. Nén Token RTK Proxy (Rust Token Killer v1.0.1)
+
+Dự án tích hợp bộ proxy hiệu năng cao viết bằng Rust (`rtk`) nén từ **60% đến 90%** output dòng lệnh trước khi nạp vào context LLM:
+
+- **Tự động kích hoạt qua Hook**: Đăng ký `PreToolUse` trong `.claude/settings.json`, tự động nén `git`, `read`, `tsc`, `jest`, `diff`, `find`.
+- **Tự động nạp alias vào Orca**: Script `scripts/rtk_profile_env.sh` tự động kích hoạt khi mở tab.
+- **Kỹ năng chuẩn**: Thư mục `skills/shared/rtk/` (đã liên kết vào `~/.claude/skills/rtk`, `~/.paseo/skills/rtk`).
+- **Theo dõi hiệu quả**:
+  ```bash
+  rtk gain      # Báo cáo tổng token đã tiết kiệm (đạt > 51.1K tokens saved)
+  rtk discover  # Khám phá cơ hội tiết kiệm token
+  rtk verify    # Kiểm tra tính toàn vẹn bộ lọc (151/151 tests PASS)
+  ```
+
+---
+
+## 7. Vệ Sinh Context & Xóa Sạch Sub-Agent (Anti-Context Bloat)
+
+Việc để Sub-Agent sống lâu qua nhiều task sẽ khiến context phình to (200k–500k tokens), tăng chi phí gấp 5-10 lần và sinh ảo giác ("ngáo"). Hệ thống áp dụng 4 nguyên tắc vệ sinh:
+
+1. **Tự Hủy Ephemeral Sub-Agent**: Peer xong việc (`Resolved`) và QC duyệt (`Closed`) đều tự động đóng tab PTY (`orca terminal close`), đưa RAM và Context về 0.
+2. **Auto-Compact cho Quản Lý (`Supervisor`, `PM`, `Lead`)**: Tự động bắn `/compact` khi vượt ngưỡng trần 200k tokens.
+3. **Lệnh Dọn Dẹp 1 Chạm**:
+   ```bash
+   ./agent-start clear    # Đóng toàn bộ Sub-Agent (Peer, QC, Design), giữ lại PM và Lead
+   ./agent-start stop --all # Đóng sạch toàn bộ
+   ```
+4. **Zombie Terminal Reaper (`tools/zombie_reaper.py`)**: Watchdog ngắt và thu hồi terminal mồ côi sau 300s timeout.
+
+---
+
+## 8. Hướng Dẫn Sử Dụng Bộ Công Cụ Cốt Lõi (Core Tools)
 
 ### A. Harness Manager Tool (`tools/harness_manager.py`)
 Hỗ trợ quản lý Work Items qua Floci DynamoDB và SQLite fallback, tích hợp rào cản vai trò cứng (Role Fence Gate cấm gán Task cho Lead/Supervisor):

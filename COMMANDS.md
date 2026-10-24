@@ -105,3 +105,61 @@ python3 tools/agent_progress.py log \
   --next "<Hành động tiếp theo>" \
   --files "<Danh sách file đã sửa>"
 ```
+
+---
+
+## 6. Pipeline Tự Hành 5 Cổng 1 Chạm (`./trigger-flow`)
+
+```bash
+# Kích hoạt toàn bộ luồng tự hành (PM -> Lead -> Peer -> QC):
+./trigger-flow "[FEATURE] Làm tính năng xuất Excel"
+./trigger-flow "[BUGFIX] Vá lỗi null pointer trong CartService"
+./trigger-flow "[DISCUSS] Đánh giá phương án kiến trúc JWT vs Cookie"
+./trigger-flow "[ADVERSARIAL] Test bẫy lỗi timeout mạng và rollback"
+./trigger-flow "[REFACTOR] Tối ưu hóa signal trong component"
+
+# Kiểm tra trạng thái luồng vừa chạy:
+./trigger-flow --status
+```
+
+---
+
+## 7. Quản Trị Worktree Cô Lập & Phê Duyệt Merge (`./orca-review`)
+
+```bash
+# Xem danh sách các Worktree Task đang mở trên Orca Board:
+./orca-review list
+
+# User xem xong Git Diff trực quan và đồng ý Merge vào main:
+./orca-review approve <task_id>
+
+# User từ chối và yêu cầu Peer sửa đổi (bắn phản hồi vào terminal của Peer):
+./orca-review reject <task_id> --reason "Đổi màu nút sang TDS Primary token"
+```
+
+---
+
+## 8. Quản Trị Nén Token RTK (`rtk`)
+
+```bash
+# Xem tổng số token đã tiết kiệm qua RTK:
+rtk gain
+
+# Kiểm tra cơ hội tiết kiệm token bị bỏ lỡ từ lịch sử:
+rtk discover
+
+# Xác thực tính toàn vẹn của các bộ lọc TOML trong .rtk/:
+rtk verify
+```
+
+---
+
+## 9. Vệ Sinh Context & Xóa Sạch Sub-Agent (`./agent-start clear`)
+
+```bash
+# Đóng toàn bộ Sub-Agent (Peer, QC, Design), đưa RAM về 0, giữ lại PM và Lead:
+./agent-start clear
+
+# Đóng sạch toàn bộ tất cả agent:
+./agent-start stop --all
+```
