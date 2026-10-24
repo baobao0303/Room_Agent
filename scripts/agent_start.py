@@ -281,6 +281,8 @@ def cmd_stop(target_roles: list[str], stop_all: bool = False) -> int:
 
     if stop_all:
         roles_to_stop = ALL_ROLES
+        if shutil.which("orca"):
+            run_cmd(["orca", "terminal", "close", "--worktree", "active", "--all", "--json"])
     elif target_roles:
         roles_to_stop = [r.lower() for r in target_roles]
     else:
