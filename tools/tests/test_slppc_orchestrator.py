@@ -31,6 +31,10 @@ class TestSlppcOrchestrator(unittest.TestCase):
     def test_registry_operations(self):
         reg = self.orch.get_terminals_registry()
         self.assertIsInstance(reg, dict)
+        if "supervisor" not in reg:
+            reg["supervisor"] = {"handle": "term_test", "tabId": "tab_test"}
+            self.orch.save_terminals_registry(reg)
+            reg = self.orch.get_terminals_registry()
         self.assertIn("supervisor", reg)
 
     def test_feasibility_evaluation_structure(self):

@@ -18,8 +18,9 @@ class TestOrcaWorktreeManager(unittest.TestCase):
         self.assertNotIn(" ", slug)
         self.assertNotIn("#", slug)
 
+    @patch("shutil.which", return_value="/usr/local/bin/orca")
     @patch("tools.orca_worktree_manager.run_cmd")
-    def test_02_get_orca_worktrees_parsing(self, mock_run):
+    def test_02_get_orca_worktrees_parsing(self, mock_run, mock_which):
         mock_run.return_value = MagicMock(
             returncode=0,
             stdout='{"result": {"worktrees": [{"displayName": "task-4706-filter", "comment": "Harness WI #4706"}]}}',
@@ -39,10 +40,11 @@ class TestOrcaWorktreeManager(unittest.TestCase):
         self.assertIsNotNone(wt)
         self.assertEqual(wt["displayName"], "task-4706-filter")
 
+    @patch("shutil.which", return_value="/usr/local/bin/orca")
     @patch("tools.orca_worktree_manager.find_task_worktree")
     @patch("tools.orca_worktree_manager.run_cmd")
     @patch("tools.orca_worktree_manager.send_desktop_notification")
-    def test_04_mark_ready_for_user_review(self, mock_notif, mock_run, mock_find):
+    def test_04_mark_ready_for_user_review(self, mock_notif, mock_run, mock_find, mock_which):
         mock_find.return_value = {"id": "wt-id", "displayName": "task-4706-filter"}
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
