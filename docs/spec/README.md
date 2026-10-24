@@ -14,5 +14,5 @@ docs/spec/<tên-dự-án>/
 ---
 
 ## Danh sách dự án hiện có:
-- `crm/`: Hệ thống ACME Enterprise Customer Engagement & CDP Frontend Monorepo (`/home/baoltb/Desktop/crm-fe`).
+- `crm/`: Hệ thống ACME Enterprise Customer Engagement & CDP Frontend Monorepo (`projects/crm-fe`).
 - `example-project/`: Dự án mẫu minh họa cấu trúc tài liệu.

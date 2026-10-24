@@ -387,7 +387,7 @@ Khắc phục triệt để tình trạng các công cụ tự động copy/rả
 #### A. Nguyên Tắc Cấu Trúc Duy Nhất (Single Source of Truth)
 - **Vị trí chuẩn duy nhất**: Toàn bộ kỹ năng bắt buộc phải nằm tại thư mục gốc:
   ```text
-  /home/baoltb/Desktop/Room_Agent/skills/<tên-kỹ-năng>/SKILL.md
+  skills/<tên-kỹ-năng>/SKILL.md
   ```
 - **Quy chuẩn Định dạng**:
   - Mỗi kỹ năng BẮT BUỘC là **một thư mục riêng** chứa file `SKILL.md` (kèm các thư mục con `references/`, `scripts/` nếu có).
@@ -455,7 +455,7 @@ Nâng cấp chính thức mô hình điều hành từ **SLPC** lên **SLPPC** (
 #### A. Thư Mục Lưu Trữ Biên Bản Vi Phạm Chính Thức (`bmad/rooms/violations/`)
 - Mọi biên bản xử phạt kỷ luật được lưu trữ tập trung và bất biến tại:
   ```text
-  /home/baoltb/Desktop/Room_Agent/bmad/rooms/violations/
+  bmad/rooms/violations/
   ```
 - Định dạng biên bản: `violation_<task_id>_<from_role>_to_<to_role>_<YYYYMMDD_HHMMSS>.md` ghi rõ: Mã biên bản, đối tượng vi phạm, bằng chứng thực nghiệm (diff, log), nguyên tắc bị phá vỡ và chế tài xử phạt.
 

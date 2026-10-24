@@ -25,7 +25,7 @@
 ## 2. BẢN ĐỒ VAI TRÒ & PHÒNG LÀM VIỆC (ROLE & ROOM DIRECTORY)
 
 ```text
-/home/baoltb/Desktop/Paseo_Project/bmad/rooms/
+bmad/rooms/
 ├── README.md               # Quy chế điều phối & hướng dẫn nạp context
 ├── template-handoff.md     # Biểu mẫu biên bản bàn giao chuẩn
 │

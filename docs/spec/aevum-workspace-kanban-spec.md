@@ -40,7 +40,7 @@ flowchart TD
 
 ### 🤖 Loại 1: Bảng Cho Bot — Quản Lý Các Profile Bằng Harness (`Bot / Harness Board`)
 *(Chỉ hiển thị cho bạn (Admin) và những người dùng được bạn bật Config)*
-- **Quản lý 10 Agent Profiles từ [`tools/harness_manager.py`](file:///Users/bao312/Desktop/Room_Agent/tools/harness_manager.py#L49-L60)**:
+- **Quản lý 10 Agent Profiles từ `tools/harness_manager.py`**:
   - `Supervisor`, `Lead`, `Peer`, `QC`, `Lead BA`, `Peer BA`, `Lead design`, `Peer Design`, `Lead Dev`, `Peer Dev`.
 - **Chuyển đổi tức thì 2 dạng hiển thị (`Table View` ↔ `Kanban View`)**:
   1. **Dạng Kanban**:
@@ -56,7 +56,7 @@ flowchart TD
 *(Hiển thị cho tất cả người dùng trong phạm vi Workspace riêng của từng người)*
 - **Cô lập 100% theo `workspaceId`**: Ai tạo bảng nào thì chỉ lưu và hiển thị trong Workspace của người đó.
 - **2 Dạng hiển thị (`Table View` ↔ `Kanban View`)**:
-  - Sử dụng trực tiếp khối Database (`affine:database`) của Aevum BlockSuite ([`KanbanSingleView`](file:///Users/bao312/Desktop/Room_Agent/projects/aevum/blocksuite/affine/data-view/src/view-presets/kanban/kanban-view-manager.ts#L69-L458)).
+  - Sử dụng trực tiếp khối Database (`affine:database`) của Aevum BlockSuite (`projects/Aevum/blocksuite/affine/data-view/src/view-presets/kanban/kanban-view-manager.ts`).
   - Bấm **`+ New Board`** để tạo bảng mới có sẵn cả 2 tab **Table View** và **Kanban View**, tự do thêm/sửa cột thuộc tính (`Status`, `Priority`, `Due Date`, `Progress`, `Tags`...) và kéo thả thẻ công việc.
 
 ---
@@ -65,9 +65,9 @@ flowchart TD
 
 | Bước | Hạng mục công việc | File tác động |
 | :--- | :--- | :--- |
-| **Bước 1** | **Thêm mục `Kanban` lên thanh Sidebar trái** (ngay dưới `Journals`) và đăng ký route `/kanban` | `packages/frontend/core/src/components/root-app-sidebar/kanban-button.tsx`, [`root-app-sidebar/index.tsx`](file:///Users/bao312/Desktop/Room_Agent/projects/aevum/packages/frontend/core/src/components/root-app-sidebar/index.tsx#L213-L216), [`workbench-router.ts`](file:///Users/bao312/Desktop/Room_Agent/projects/aevum/packages/frontend/core/src/desktop/workbench-router.ts#L40-L44) |
+| **Bước 1** | **Thêm mục `Kanban` lên thanh Sidebar trái** (ngay dưới `Journals`) và đăng ký route `/kanban` | `packages/frontend/core/src/components/root-app-sidebar/kanban-button.tsx`, `root-app-sidebar/index.tsx`, `workbench-router.ts` |
 | **Bước 2** | **Xây dựng cổng phân quyền Admin (`Admin Config Gate`) & API Harness**: Kiểm tra tài khoản Admin / danh sách user được Admin bật config (`botHarnessEnabled`), kèm hộp thoại `⚙️ Admin Config` để bạn bật/tắt quyền cho từng người dùng | `packages/frontend/core/src/desktop/pages/workspace/kanban/admin-config-modal.tsx` |
-| **Bước 3** | **Xây dựng phân khu `🤖 Bot / Harness Board` (Table + Kanban)**: Chỉ hiện khi là Admin hoặc được Admin bật config; quản lý 10 Agent Profiles & Work Items từ [`tools/harness_manager.py`](file:///Users/bao312/Desktop/Room_Agent/tools/harness_manager.py#L49-L60) | `packages/frontend/core/src/desktop/pages/workspace/kanban/harness-board.tsx` |
+| **Bước 3** | **Xây dựng phân khu `🤖 Bot / Harness Board` (Table + Kanban)**: Chỉ hiện khi là Admin hoặc được Admin bật config; quản lý 10 Agent Profiles & Work Items từ `tools/harness_manager.py` | `packages/frontend/core/src/desktop/pages/workspace/kanban/harness-board.tsx` |
 | **Bước 4** | **Xây dựng phân khu `👤 My Boards` (Table + Kanban tự tạo)**: Tạo và quản lý các bảng BlockSuite Database (có sẵn cả `Table View` & `Kanban View`) của riêng từng người dùng/Workspace | `packages/frontend/core/src/desktop/pages/workspace/kanban/index.tsx` |
 
 ---
