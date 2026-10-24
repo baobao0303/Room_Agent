@@ -21,9 +21,10 @@ try:
     import boto3
 except ImportError:
     candidate_venvs = [
-        "/home/baoltb/.hermes/hermes-agent/venv/bin/python",
-        "/home/baoltb/ponytail/venv/bin/python",
-        os.path.expanduser("~/.hermes/hermes-agent/venv/bin/python")
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../.venv/bin/python")),
+        os.path.expanduser("~/.hermes/hermes-agent/venv/bin/python"),
+        os.path.expanduser("~/ponytail/venv/bin/python"),
+        os.path.expanduser("~/.local/bin/python3"),
     ]
     for venv_py in candidate_venvs:
         if os.path.exists(venv_py) and venv_py != sys.executable:
@@ -63,27 +64,60 @@ ALLOWED_PROFILES = [
     "Security"
 ]
 
-def cleanup_task_room(item_id: int) -> int:
-    """Clean up handoff records and memos in bmad/rooms/ when a task is Closed."""
-    bmad_rooms = Path(BASE_DIR) / "bmad" / "rooms"
-    if not bmad_rooms.is_dir():
-        return 0
-    removed_count = 0
-    for memo_file in bmad_rooms.rglob(f"*handoff_{item_id}_*.md"):
+def reap_orphaned_terminals() -> int:
+    """Trigger Zombie Reaper to close ephemeral sub-agent terminals when task is Closed."""
+    try:
+        if BASE_DIR not in sys.path:
+            sys.path.insert(0, BASE_DIR)
         try:
-            memo_file.unlink()
-            removed_count += 1
+            from zombie_reaper import audit_and_reap  # type: ignore
+        except ImportError:
+            from tools.zombie_reaper import audit_and_reap  # type: ignore
+        res = audit_and_reap(dry_run=False)
+        reaped = res.get("zombies_reaped", 0)
+        if reaped > 0:
+            print(f"🧟 [Zombie Reaper]: Đã tự động thu hồi {reaped} ephemeral sub-agent terminal sau khi đóng Task.")
+        return reaped
+    except Exception as e:
+        print(f"⚠️ [Zombie Reaper Error]: {e}", file=sys.stderr)
+        return 0
+
+
+def cleanup_task_room(item_id: int) -> int:
+    """Clean up handoff records, task artifacts, and zombie terminals when a task is Closed."""
+    # 1. Gọi room_cleanup.py để nén task-scoped directory an toàn
+    try:
+        from room_cleanup import cleanup_by_task  # type: ignore
+        cleanup_by_task(str(item_id), dry_run=False)
+    except Exception:
+        try:
+            from tools.room_cleanup import cleanup_by_task  # type: ignore
+            cleanup_by_task(str(item_id), dry_run=False)
         except Exception:
             pass
 
-    for latest_file in bmad_rooms.rglob("latest_handoff.md"):
-        try:
-            content = latest_file.read_text(encoding="utf-8")
-            if f"#{item_id}" in content or f"Work Item: `#{item_id}`" in content:
-                latest_file.unlink()
+    # 2. Xóa các memo files mồ côi
+    bmad_rooms = Path(BASE_DIR) / "bmad" / "rooms"
+    removed_count = 0
+    if bmad_rooms.is_dir():
+        for memo_file in bmad_rooms.rglob(f"*handoff_{item_id}_*.md"):
+            try:
+                memo_file.unlink()
                 removed_count += 1
-        except Exception:
-            pass
+            except Exception:
+                pass
+
+        for latest_file in bmad_rooms.rglob("latest_handoff.md"):
+            try:
+                content = latest_file.read_text(encoding="utf-8")
+                if f"#{item_id}" in content or f"Work Item: `#{item_id}`" in content:
+                    latest_file.unlink()
+                    removed_count += 1
+            except Exception:
+                pass
+
+    # 3. Thu hồi terminal mồ côi (Phase 6: REAPED)
+    reap_orphaned_terminals()
     return removed_count
 
 def send_orca_notification(role: str, message: str) -> bool:

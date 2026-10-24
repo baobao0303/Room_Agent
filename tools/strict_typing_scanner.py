@@ -192,3 +192,32 @@ def scan_file(file_path: Path | str) -> List[TypingViolation]:
                 message=f"Failed to read file: {e}"
             )
         ]
+
+def main() -> int:
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python3 tools/strict_typing_scanner.py <file_or_dir> [more_files...]")
+        return 0
+    total_violations: List[TypingViolation] = []
+    for target in sys.argv[1:]:
+        p = Path(target)
+        if p.is_dir():
+            for f in p.rglob("*"):
+                if f.is_file() and f.suffix in (".ts", ".tsx", ".js", ".jsx", ".py"):
+                    total_violations.extend(scan_file(f))
+        elif p.is_file():
+            total_violations.extend(scan_file(p))
+    if total_violations:
+        print(f"❌ Found {len(total_violations)} strict typing violation(s):")
+        for v in total_violations:
+            print(f"  {v.file_path}:{v.line_number} [{v.rule}]: {v.message}")
+            if v.snippet:
+                print(f"    Snippet: {v.snippet}")
+        return 1
+    print("✅ Strict typing & anti-sloppy fallback check passed: 0 violations.")
+    return 0
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
+

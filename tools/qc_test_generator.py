@@ -346,7 +346,7 @@ def analyze_source_file(file_path: Path) -> Dict[str, Any]:
     content = file_path.read_text(encoding="utf-8", errors="replace")
     suffix = file_path.suffix.lower()
 
-    if suffix == ".py":
+    if suffix == ".py" or (content.startswith("#!/") and "python" in content.splitlines()[0]):
         return _analyze_python_source(file_path, content)
     return _analyze_ts_source(file_path, content)
 

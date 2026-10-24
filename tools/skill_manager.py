@@ -35,6 +35,9 @@ TARGET_DIRS = [
     Path(os.path.expanduser("~/.paseo/skills")),
     Path(os.path.expanduser("~/.hermes/skills")),
 ]
+_local_agent_skills = BASE_DIR / ".agents" / "skills"
+if _local_agent_skills.is_dir():
+    TARGET_DIRS.append(_local_agent_skills)
 _paseo_project_skills = Path(os.environ.get("PASEO_AGENTS_SKILLS", Path.home() / "Desktop" / "Paseo_Project" / ".agents" / "skills"))
 if _paseo_project_skills.is_dir():
     TARGET_DIRS.append(_paseo_project_skills)

@@ -2,6 +2,8 @@
 tools/floci_client.py - Floci DynamoDB & S3 Client for Harness Operating Framework.
 Transparently supports Floci emulation endpoint on local / host network.
 """
+from __future__ import annotations
+
 import os
 import sys
 import re
@@ -19,10 +21,9 @@ try:
 except ImportError:
     for pattern in [
         os.path.abspath(os.path.join(os.path.dirname(__file__), "../.venv/lib/python*/site-packages")),
-        "/Users/bao312/Desktop/Room_Agent/.venv/lib/python*/site-packages",
-        "/home/baoltb/.hermes/hermes-agent/venv/lib/python*/site-packages",
-        "/home/baoltb/ponytail/venv/lib/python*/site-packages",
-        os.path.expanduser("~/.hermes/hermes-agent/venv/lib/python*/site-packages")
+        os.path.expanduser("~/.hermes/hermes-agent/venv/lib/python*/site-packages"),
+        os.path.expanduser("~/ponytail/venv/lib/python*/site-packages"),
+        os.path.expanduser("~/.venv/lib/python*/site-packages"),
     ]:
         matches = glob.glob(pattern)
         if matches:
@@ -905,6 +906,10 @@ class FlociHarnessDB:
             "by_type": type_counts,
             "by_iteration": iteration_counts
         }
+
+    def get_item_count(self) -> int:
+        """Tổng số work items trong database (DynamoDB hoặc local store)."""
+        return self.get_stats().get("total_work_items", 0)
 
     def init_experience_table(self) -> Dict[str, Any]:
         """Khởi tạo bảng harness_experience trên DynamoDB nếu chưa tồn tại."""
