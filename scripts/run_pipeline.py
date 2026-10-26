@@ -21,8 +21,9 @@ import shutil
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -309,13 +310,35 @@ DEFAULT_TEST_CMD = "python3 -m unittest tools/tests/test_slppc_orchestrator.py t
 # ==============================================================================
 # STEP 3: MAKER SUB-AGENT EXECUTION (PEER DISPATCH)
 # ==============================================================================
-def run_peer_maker_gate(task_id: int, test_cmd: str = DEFAULT_TEST_CMD) -> bool:
-    print_banner("MAKER", "Peer Dev Ephemeral Execution", [
-        ("Sub-Agent Role", "Peer Dev 1 (Low/Medium Ceiling)"),
-        ("Model Tier", "gemini-3.8-flash-low / medium (CAPPED)"),
+def run_peer_maker_gate(
+    task_id: int,
+    test_cmd: str = DEFAULT_TEST_CMD,
+    error_context: Optional[str] = None,
+    attempt: int = 1,
+    run_id: Optional[str] = None,
+) -> Tuple[bool, str]:
+    details = [
+        ("Sub-Agent Role", "Peer Dev 1 (Maker Pool)"),
+        ("Model Tier", "ag/gemini-3.8-flash-high"),
         ("Task ID", f"#{task_id}"),
+        ("Attempt", f"{attempt}/4 (Retry {attempt - 1})" if attempt > 1 else "1/4 (Initial)"),
         ("Action", "Executing bounded task and local unit tests")
-    ], status="EXECUTING")
+    ]
+    if error_context:
+        details.append(("Previous Error", error_context[:50]))
+    print_banner("MAKER", "Peer Dev Ephemeral Execution", details, status="EXECUTING")
+
+    if error_context:
+        retry_prompt = (
+            f"📢 [RETRY ATTEMPT {attempt}]: Task #{task_id} kiểm thử thất bại ở vòng trước.\n"
+            f"Lỗi nhận được:\n```\n{error_context[:500]}\n```\n"
+            "Hãy phân tích nguyên nhân gốc, sửa chữa mã nguồn và bảo đảm pass kiểm thử cơ học."
+        )
+        try:
+            from tools.agent_context_manager import safe_send_agent_message
+            safe_send_agent_message("peer", retry_prompt)
+        except Exception:
+            pass
 
     try:
         from harness_manager import HarnessManager
@@ -358,20 +381,29 @@ def run_peer_maker_gate(task_id: int, test_cmd: str = DEFAULT_TEST_CMD) -> bool:
             ("State Transition", "Active ➔ Resolved"),
             ("Handoff To", "QC Verifier (Tail Gate)")
         ], status="RESOLVED")
-        return True
+        return True, ""
     else:
+        err_msg = res.stderr.strip() if res.stderr and res.stderr.strip() else (
+            res.stdout.strip() if res.stdout else f"Test command failed with exit code {res.returncode}"
+        )
         print_banner("ALERT", "Peer Local Tests Failed", [
             ("Task ID", f"#{task_id}"),
             ("Exit Code", str(res.returncode)),
-            ("Stderr", res.stderr[:60])
+            ("Stderr", err_msg[:60])
         ], status="FAILED")
-        return False
+        return False, err_msg
 
 
 # ==============================================================================
 # STEP 4: TAIL-OF-SPEC GATE (QC INDEPENDENT VERIFICATION & CLOSURE)
 # ==============================================================================
-def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CMD) -> bool:
+def run_qc_tail_gate(
+    task_id: int,
+    epic_id: int,
+    test_cmd: str = DEFAULT_TEST_CMD,
+    attempt: int = 1,
+    run_id: Optional[str] = None,
+) -> Tuple[bool, str]:
     print_banner("TAIL", "QC Independent Quality Gate", [
         ("Verifier", "QC Verifier (gemini-3.8-flash-high)"),
         ("Double Anchor", "Mechanical Exit 0 + Kev Verification"),
@@ -388,11 +420,15 @@ def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CM
         text=True
     )
     if test_res.returncode != 0:
+        err_msg = test_res.stderr.strip() if test_res.stderr and test_res.stderr.strip() else (
+            test_res.stdout.strip() if test_res.stdout else f"Unit tests failed with exit code {test_res.returncode}"
+        )
         print_banner("ALERT", "QC Rejected Task (Test Failure)", [
             ("Task ID", f"#{task_id}"),
-            ("Reason", "Unit tests non-zero exit code")
+            ("Reason", "Unit tests non-zero exit code"),
+            ("Stderr", err_msg[:60])
         ], status="REJECTED")
-        return False
+        return False, err_msg
 
     # 2. Anti-Leak Scan
     leak_res = subprocess.run(
@@ -402,11 +438,14 @@ def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CM
         text=True
     )
     if leak_res.returncode != 0:
+        err_msg = leak_res.stderr.strip() if leak_res.stderr and leak_res.stderr.strip() else (
+            leak_res.stdout.strip() if leak_res.stdout else "Sensitive data or proprietary leak detected"
+        )
         print_banner("ALERT", "QC Rejected Task (Leak Detected)", [
             ("Task ID", f"#{task_id}"),
-            ("Reason", "Sensitive data or proprietary leak detected")
+            ("Reason", err_msg)
         ], status="REJECTED")
-        return False
+        return False, err_msg
 
     # 3. Kev End-of-Spec Verification (<50ms)
     import urllib.request
@@ -434,6 +473,14 @@ def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CM
             qc_decision = kev_out.get("answers", {}).get("qc_verdict", {}).get("choice", "approve_close")
     except Exception:
         qc_decision = "approve_close"
+
+    if qc_decision != "approve_close":
+        err_msg = f"Kev rejected task closure: {qc_decision}"
+        print_banner("ALERT", "QC Rejected Task (Kev Rejection)", [
+            ("Task ID", f"#{task_id}"),
+            ("Reason", err_msg)
+        ], status="REJECTED")
+        return False, err_msg
 
     # 4. Đóng Task & Epic trên Harness DB
     try:
@@ -466,7 +513,7 @@ def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CM
         ("Kev Sign-Off", qc_decision)
     ], status="CLOSED")
 
-    return True
+    return True, ""
 
 
 # ==============================================================================
@@ -494,19 +541,27 @@ def flush_realtime_memory(task_id: int, summary: str):
 # ==============================================================================
 # MAIN CLI DRIVER
 # ==============================================================================
-def main():
+def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Run SLPPC Dual-Anchor Pipeline with Live Visual Banners")
     parser.add_argument("prompt", nargs="?", default="Nâng cấp và kiểm tra quy chuẩn pipeline SLPPC", help="Task requirement prompt")
     parser.add_argument("--test-cmd", default=DEFAULT_TEST_CMD, help="Custom test command to run for mechanical verification")
     parser.add_argument("--status", action="store_true", help="Print live pipeline status")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.status:
         if PROGRESS_JSON.exists():
             data = json.loads(PROGRESS_JSON.read_text(encoding="utf-8"))
             inv = data.get("active_invariants", {})
             print(json.dumps(inv, ensure_ascii=False, indent=2))
-        sys.exit(0)
+        return 0
+
+    run_id = f"run_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+
+    try:
+        from harness_manager import HarnessManager
+    except ImportError:
+        from tools.harness_manager import HarnessManager
+    mgr = HarnessManager(engine="auto")
 
     start_time = time.time()
     cleaned_prompt, thinking_mode, thinking_directive = resolve_thinking_directive(args.prompt)
@@ -514,13 +569,37 @@ def main():
     print("\n" + "=" * 78)
     print("  🚀 KHỞI CHẠY SLPPC REAL-TIME PIPELINE (KEV DUAL-ANCHOR + HOOK BANNERS)")
     print(f"  🧠 CHẾ ĐỘ TƯ DUY: {thinking_mode}")
+    print(f"  🔗 RUN ID: {run_id}")
     print("=" * 78)
 
     # 1. Head Gate
+    t_head = time.time()
     pm_res = run_pm_head_gate(cleaned_prompt, thinking_mode=thinking_mode, thinking_directive=thinking_directive)
+    head_dur = max(0, int(time.time() - t_head))
+    mgr.record_trace_span(
+        run_id=run_id,
+        stage="head",
+        agent="supervisor",
+        task_summary=f"Head Gate (PM Evaluation): {cleaned_prompt[:40]}",
+        duration_seconds=head_dur,
+        outcome="completed",
+        notes=f"feasibility={pm_res['score']:.2f}; alignment={pm_res['alignment']}"
+    )
 
     # 2. Architect Gate
+    t_lead = time.time()
     lead_res = run_lead_architect_gate(cleaned_prompt, pm_res["memo_file"], thinking_mode=thinking_mode, thinking_directive=thinking_directive)
+    lead_dur = max(0, int(time.time() - t_lead))
+    mgr.record_trace_span(
+        run_id=run_id,
+        stage="lead",
+        agent="lead",
+        task_summary=f"Architect Gate (Zero-Search Breakdown): Epic #{lead_res['epic_id']}",
+        duration_seconds=lead_dur,
+        outcome="completed",
+        story_id=str(lead_res.get("task_id") or lead_res["epic_id"]),
+        notes=f"task_id={lead_res.get('task_id')}"
+    )
 
     # BRANCH: Nếu là chế độ [THẢO LUẬN], chuyển sang luồng lập biên bản ADR đồng thuận (không code)
     if thinking_mode.startswith("THẢO LUẬN"):
@@ -531,6 +610,7 @@ def main():
             ("Directory", "bmad/rooms/discussions/ & bmad/adrs/")
         ], status="CONSENSUS")
 
+        t_disc = time.time()
         res_disc = subprocess.run([
             "python3", "tools/record_discussion.py",
             "--task-id", str(lead_res["epic_id"]),
@@ -541,12 +621,19 @@ def main():
             "--actions", "Chuyển giao cho User xác nhận trước khi phân rã task code [THUẬN].",
             "--adr"
         ], cwd=PROJECT_ROOT, capture_output=True, text=True)
+        disc_dur = max(0, int(time.time() - t_disc))
 
-        try:
-            from harness_manager import HarnessManager
-        except ImportError:
-            from tools.harness_manager import HarnessManager
-        mgr = HarnessManager(engine="auto")
+        mgr.record_trace_span(
+            run_id=run_id,
+            stage="discussion",
+            agent="lead",
+            task_summary=f"ADR Discussion: Epic #{lead_res['epic_id']}",
+            duration_seconds=disc_dur,
+            outcome="completed" if res_disc.returncode == 0 else "failed",
+            story_id=str(lead_res["epic_id"]),
+            notes=f"topic={cleaned_prompt[:40]}"
+        )
+
         mgr.update_state(lead_res["epic_id"], "Closed")
 
         flush_realtime_memory(lead_res["epic_id"], f"[Thảo luận ADR] {cleaned_prompt}")
@@ -555,19 +642,120 @@ def main():
         print(f"📄 Biên bản thảo luận: bmad/rooms/discussions/latest_discussion.md")
         print(f"🏛️ Kho lưu trữ ADR: bmad/adrs/")
         print("=" * 78 + "\n")
-        sys.exit(0)
+        return 0
 
-    # 3. Maker Gate
-    peer_ok = run_peer_maker_gate(lead_res["task_id"], test_cmd=args.test_cmd)
-    if not peer_ok:
-        print("⛔ Pipeline dừng do Peer thi công kiểm thử thất bại.")
-        sys.exit(1)
+    # 3. Maker Gate & 4. Tail Gate wrapped in retry loop (G-LOP-1, G-OBS-2)
+    MAX_RETRIES = 3
+    retry_count = 0
+    last_error = ""
+    pipeline_success = False
 
-    # 4. Tail Gate
-    qc_ok = run_qc_tail_gate(lead_res["task_id"], lead_res["epic_id"], test_cmd=args.test_cmd)
-    if not qc_ok:
-        print("⛔ Pipeline dừng do QC từ chối nghiệm thu.")
-        sys.exit(1)
+    while retry_count <= MAX_RETRIES:
+        attempt = retry_count + 1
+        t_peer = time.time()
+        peer_ok, peer_err = run_peer_maker_gate(
+            lead_res["task_id"],
+            test_cmd=args.test_cmd,
+            error_context=last_error if retry_count > 0 else None,
+            attempt=attempt,
+            run_id=run_id
+        )
+        peer_dur = max(0, int(time.time() - t_peer))
+        mgr.record_trace_span(
+            run_id=run_id,
+            stage="peer",
+            agent="peer",
+            task_summary=f"Peer Maker Gate (attempt {attempt}): Task #{lead_res['task_id']}",
+            duration_seconds=peer_dur,
+            outcome="completed" if peer_ok else "failed",
+            errors=peer_err if not peer_ok else None,
+            story_id=str(lead_res["task_id"])
+        )
+
+        if not peer_ok:
+            last_error = peer_err
+            if retry_count < MAX_RETRIES:
+                retry_count += 1
+                continue
+            else:
+                break
+
+        t_qc = time.time()
+        qc_ok, qc_err = run_qc_tail_gate(
+            lead_res["task_id"],
+            lead_res["epic_id"],
+            test_cmd=args.test_cmd,
+            attempt=attempt,
+            run_id=run_id
+        )
+        qc_dur = max(0, int(time.time() - t_qc))
+        mgr.record_trace_span(
+            run_id=run_id,
+            stage="qc",
+            agent="qc",
+            task_summary=f"QC Tail Gate (attempt {attempt}): Task #{lead_res['task_id']}",
+            duration_seconds=qc_dur,
+            outcome="completed" if qc_ok else "failed",
+            errors=qc_err if not qc_ok else None,
+            story_id=str(lead_res["task_id"])
+        )
+
+        if not qc_ok:
+            last_error = qc_err
+            if retry_count < MAX_RETRIES:
+                retry_count += 1
+                continue
+            else:
+                break
+
+        pipeline_success = True
+        break
+
+    if not pipeline_success:
+        # Handle Blocked state escalation
+        mgr.update_state(lead_res["task_id"], "Blocked", assigned_to_profile="peer")
+        mgr.update_state(lead_res["epic_id"], "Blocked", assigned_to_profile="lead")
+
+        # Durable memo in bmad/rooms/supervisor/latest_handoff.md
+        supervisor_room = PROJECT_ROOT / "bmad" / "rooms" / "supervisor"
+        supervisor_room.mkdir(parents=True, exist_ok=True)
+        sup_handoff = supervisor_room / "latest_handoff.md"
+        err_snippet = last_error[:400] if last_error else "Unknown test failure"
+        memo_content = (
+            f"# BIÊN BẢN BÀN GIAO: Supervisor (Pipeline Blocked)\n\n"
+            f"- **Thời gian**: {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"- **Run ID**: `{run_id}`\n"
+            f"- **Epic ID**: #{lead_res['epic_id']}\n"
+            f"- **Task ID**: #{lead_res['task_id']}\n"
+            f"- **Trạng thái**: `Blocked`\n"
+            f"- **Tổng số lần thử**: {attempt}/4 (1 ban đầu + {retry_count} retries)\n\n"
+            f"## Nguyên nhân thất bại\n"
+            f"```\n{err_snippet}\n```\n\n"
+            f"## Hành động tiếp theo cho Supervisor\n"
+            f"1. Kiểm tra log chi tiết và trace span với run_id `{run_id}`.\n"
+            f"2. Đánh giá lại yêu cầu bài toán hoặc phân rã lại Zero-Search task.\n"
+            f"3. Can thiệp thủ công hoặc hủy task tắc nghẽn.\n"
+        )
+        sup_handoff.write_text(memo_content, encoding="utf-8")
+
+        # Alert Supervisor via safe_send_agent_message
+        try:
+            from tools.agent_context_manager import safe_send_agent_message
+            safe_send_agent_message(
+                "supervisor",
+                f"🚨 [PIPELINE BLOCKED]: Task #{lead_res['task_id']} đã thử {attempt} lần nhưng thất bại. Cần can thiệp!"
+            )
+        except Exception:
+            pass
+
+        print_banner("ALERT", "Pipeline Blocked - Max Retries Exceeded", [
+            ("Task ID", f"#{lead_res['task_id']}"),
+            ("Epic ID", f"#{lead_res['epic_id']}"),
+            ("Attempts", f"{attempt}/4 (Exhausted {MAX_RETRIES} retries)"),
+            ("State", "Blocked"),
+            ("Supervisor Notice", "bmad/rooms/supervisor/latest_handoff.md")
+        ], status="BLOCKED")
+        return 1
 
     # 5. Real-Time Memory Flush
     flush_realtime_memory(lead_res["task_id"], args.prompt)
@@ -575,7 +763,9 @@ def main():
     duration = time.time() - start_time
     print(f"\n✨ [PIPELINE SUCCESS]: Toàn bộ chu trình hoàn thành trong {duration:.2f}s!")
     print("=" * 78 + "\n")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+

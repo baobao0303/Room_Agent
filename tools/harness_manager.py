@@ -436,35 +436,52 @@ def auto_dispatch_agent(
         for ep_role in ("qc", "peer", "lead", "pm"):
             close_ephemeral_subagent(ep_role)
 
-class HarnessManager:
-    def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH, engine: str = "auto"):
-        self.engine = engine
-        if engine == "floci":
-            self.backend = "floci"
-        elif engine == "rust":
-            self.backend = "rust"
-        elif engine == "sqlite":
-            self.backend = "sqlite"
-        else:
-            self.backend = backend
+    # CASE 4: Task bị tắc nghẽn (target_state == "Blocked")
+    elif state_lower == "blocked":
+        msg_blocked = f"🚨 [TASK BLOCKED]: {wi_type} #{item_id}: '{title}' đã bị BLOCKED sau khi vượt trần retry. Cần Supervisor can thiệp."
+        send_orca_notification("supervisor", msg_blocked)
+        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo Task #{item_id} (Blocked) tới Supervisor.")
+        for ep_role in ("peer", "qc"):
+            close_ephemeral_subagent(ep_role)
 
-        self.db_path = db_path
+
+class HarnessManager:
+    def __init__(self, backend: Optional[str] = None, db_path: Optional[str] = None, engine: str = "auto"):
+        env_backend = os.getenv("HARNESS_BACKEND") or os.getenv("HARNESS_ENGINE")
+        if engine in ("floci", "rust", "sqlite"):
+            self.backend = engine
+        elif env_backend:
+            self.backend = env_backend.lower()
+        else:
+            self.backend = (backend or HARNESS_BACKEND).lower()
+        self.engine = engine
+
+        resolved_db_path = db_path if db_path is not None else os.getenv("HARNESS_DB", DEFAULT_DB_PATH)
+        self.db_path = resolved_db_path
+
+        # Always initialize local SQLite schema for trace, intervention and local fallback
+        try:
+            with open(os.path.join(BASE_DIR, "scripts/schema/full_schema.sql")) as f, self._get_sqlite_db() as conn:
+                conn.executescript(f.read())
+        except Exception:
+            pass
+
         if self.backend == "floci":
             try:
                 self.floci_db = FlociHarnessDB()
                 self.floci_db.init_schema()
             except Exception:
                 self.backend = "sqlite"
-                with open(os.path.join(BASE_DIR, "scripts/schema/full_schema.sql")) as f, self._get_sqlite_db() as conn:
-                    conn.executescript(f.read())
-        else:
-            with open(os.path.join(BASE_DIR, "scripts/schema/full_schema.sql")) as f, self._get_sqlite_db() as conn:
-                conn.executescript(f.read())
+
 
     def _get_sqlite_db(self) -> sqlite3.Connection:
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
+
         # Auto-migrate missing columns in legacy work_item table
         try:
             cur = conn.cursor()
@@ -1008,6 +1025,31 @@ class HarnessManager:
 
         with self._get_sqlite_db() as conn:
             cur = conn.cursor()
+            # If story_id or intake_id are provided, ensure stub records exist in story and intake tables
+            # so that FOREIGN KEY constraints are satisfied when referencing them in trace.
+            if story_id is not None:
+                try:
+                    s_id_val = int(story_id) if str(story_id).isdigit() else str(story_id)
+                    cur.execute("SELECT id FROM story WHERE id = ?;", (s_id_val,))
+                    if not cur.fetchone():
+                        cur.execute(
+                            "INSERT OR IGNORE INTO story (id, title, state) VALUES (?, ?, 'New');",
+                            (s_id_val, f"Story #{story_id}"),
+                        )
+                except Exception:
+                    pass
+
+            if intake_id is not None:
+                try:
+                    cur.execute("SELECT id FROM intake WHERE id = ?;", (intake_id,))
+                    if not cur.fetchone():
+                        cur.execute(
+                            "INSERT OR IGNORE INTO intake (id, title) VALUES (?, ?);",
+                            (intake_id, f"Intake #{intake_id}"),
+                        )
+                except Exception:
+                    pass
+
             trace_cols = {r[1] for r in cur.execute("PRAGMA table_info(trace);").fetchall()}
             if "content" in trace_cols:
                 cur.execute(
