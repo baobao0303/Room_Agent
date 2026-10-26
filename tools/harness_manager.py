@@ -8,6 +8,7 @@ strictly enforcing Company DDD syntax and State Machine validation.
 import os
 import sys
 import json
+import re
 import sqlite3
 import shutil
 import subprocess
@@ -1025,30 +1026,98 @@ class HarnessManager:
 
         with self._get_sqlite_db() as conn:
             cur = conn.cursor()
+            final_story_id: Optional[str] = None
+            final_intake_id: Optional[int] = None
+
             # If story_id or intake_id are provided, ensure stub records exist in story and intake tables
             # so that FOREIGN KEY constraints are satisfied when referencing them in trace.
-            if story_id is not None:
-                try:
-                    s_id_val = int(story_id) if str(story_id).isdigit() else str(story_id)
-                    cur.execute("SELECT id FROM story WHERE id = ?;", (s_id_val,))
-                    if not cur.fetchone():
-                        cur.execute(
-                            "INSERT OR IGNORE INTO story (id, title, state) VALUES (?, ?, 'New');",
-                            (s_id_val, f"Story #{story_id}"),
-                        )
-                except Exception:
-                    pass
-
             if intake_id is not None:
                 try:
-                    cur.execute("SELECT id FROM intake WHERE id = ?;", (intake_id,))
-                    if not cur.fetchone():
-                        cur.execute(
-                            "INSERT OR IGNORE INTO intake (id, title) VALUES (?, ?);",
-                            (intake_id, f"Intake #{intake_id}"),
-                        )
+                    intake_cols = {r[1]: r for r in cur.execute("PRAGMA table_info(intake);").fetchall()}
+                    if intake_cols:
+                        cur.execute("SELECT id FROM intake WHERE id = ?;", (intake_id,))
+                        if not cur.fetchone():
+                            insert_data = {"id": intake_id}
+                            if "title" in intake_cols:
+                                insert_data["title"] = f"Intake #{intake_id}"
+                            if "summary" in intake_cols:
+                                insert_data["summary"] = f"Intake #{intake_id}"
+                            if "input_type" in intake_cols:
+                                insert_data["input_type"] = "maintenance"
+                            if "risk_lane" in intake_cols:
+                                insert_data["risk_lane"] = "normal"
+                            if "state" in intake_cols:
+                                insert_data["state"] = "New"
+                            col_names = ", ".join(insert_data.keys())
+                            placeholders = ", ".join(["?"] * len(insert_data))
+                            cur.execute(
+                                f"INSERT OR IGNORE INTO intake ({col_names}) VALUES ({placeholders});",
+                                tuple(insert_data.values()),
+                            )
+                        cur.execute("SELECT id FROM intake WHERE id = ?;", (intake_id,))
+                        if cur.fetchone():
+                            final_intake_id = intake_id
+                        else:
+                            intake_tag = f"intake_id={intake_id}"
+                            notes = f"{intake_tag}; {notes}" if notes and intake_tag not in notes else (notes or intake_tag)
+                    else:
+                        final_intake_id = intake_id
                 except Exception:
-                    pass
+                    intake_tag = f"intake_id={intake_id}"
+                    notes = f"{intake_tag}; {notes}" if notes and intake_tag not in notes else (notes or intake_tag)
+
+            if story_id is not None:
+                try:
+                    story_cols = {r[1]: r for r in cur.execute("PRAGMA table_info(story);").fetchall()}
+                    if story_cols:
+                        id_info = story_cols.get("id")
+                        id_type = id_info[2].upper() if id_info else "INTEGER"
+                        is_int_story = False
+                        s_id_int = None
+                        try:
+                            s_id_int = int(story_id)
+                            is_int_story = True
+                        except (ValueError, TypeError):
+                            is_int_story = False
+
+                        if id_type.startswith("INT") and not is_int_story:
+                            story_tag = f"story_id={story_id}"
+                            notes = f"{story_tag}; {notes}" if notes and story_tag not in notes else (notes or story_tag)
+                            final_story_id = None
+                        else:
+                            s_id_val = s_id_int if (id_type.startswith("INT") and is_int_story) else str(story_id)
+                            cur.execute("SELECT id FROM story WHERE id = ?;", (s_id_val,))
+                            if not cur.fetchone():
+                                insert_data = {"id": s_id_val}
+                                if "title" in story_cols:
+                                    insert_data["title"] = f"Story #{story_id}"
+                                if "summary" in story_cols and "title" not in story_cols:
+                                    insert_data["summary"] = f"Story #{story_id}"
+                                if "risk_lane" in story_cols:
+                                    insert_data["risk_lane"] = "normal"
+                                if "status" in story_cols:
+                                    insert_data["status"] = "planned"
+                                if "state" in story_cols:
+                                    insert_data["state"] = "New"
+                                if "priority" in story_cols:
+                                    insert_data["priority"] = "P2"
+                                col_names = ", ".join(insert_data.keys())
+                                placeholders = ", ".join(["?"] * len(insert_data))
+                                cur.execute(
+                                    f"INSERT OR IGNORE INTO story ({col_names}) VALUES ({placeholders});",
+                                    tuple(insert_data.values()),
+                                )
+                            cur.execute("SELECT id FROM story WHERE id = ?;", (s_id_val,))
+                            if cur.fetchone():
+                                final_story_id = str(story_id)
+                            else:
+                                story_tag = f"story_id={story_id}"
+                                notes = f"{story_tag}; {notes}" if notes and story_tag not in notes else (notes or story_tag)
+                    else:
+                        final_story_id = str(story_id)
+                except Exception:
+                    story_tag = f"story_id={story_id}"
+                    notes = f"{story_tag}; {notes}" if notes and story_tag not in notes else (notes or story_tag)
 
             trace_cols = {r[1] for r in cur.execute("PRAGMA table_info(trace);").fetchall()}
             if "content" in trace_cols:
@@ -1068,8 +1137,8 @@ class HarnessManager:
                     """,
                     (
                         task_summary,
-                        intake_id,
-                        str(story_id) if story_id is not None else None,
+                        final_intake_id,
+                        final_story_id,
                         agent,
                         _to_json_str(actions_taken),
                         _to_json_str(files_read),
@@ -1102,8 +1171,8 @@ class HarnessManager:
                     """,
                     (
                         task_summary,
-                        intake_id,
-                        str(story_id) if story_id is not None else None,
+                        final_intake_id,
+                        final_story_id,
                         agent,
                         _to_json_str(actions_taken),
                         _to_json_str(files_read),
@@ -1173,6 +1242,10 @@ class HarnessManager:
             d = dict(row)
             if "content" not in d and "task_summary" in d:
                 d["content"] = d["task_summary"]
+            if d.get("story_id") is None and d.get("notes"):
+                m = re.search(r"(?:^|;\s*)story_id=([^;]+)", d["notes"])
+                if m:
+                    d["story_id"] = m.group(1).strip()
             return d
 
     def list_traces(
@@ -1189,8 +1262,14 @@ class HarnessManager:
             query += " AND run_id = ?"
             params.append(run_id)
         if story_id:
-            query += " AND story_id = ?"
-            params.append(str(story_id))
+            query += " AND (story_id = ? OR notes = ? OR notes LIKE ? OR notes LIKE ? OR notes LIKE ?)"
+            params.extend([
+                str(story_id),
+                f"story_id={story_id}",
+                f"story_id={story_id};%",
+                f"%; story_id={story_id};%",
+                f"%; story_id={story_id}",
+            ])
         if agent:
             query += " AND agent = ?"
             params.append(agent)
@@ -1205,6 +1284,10 @@ class HarnessManager:
                 d = dict(r)
                 if "content" not in d and "task_summary" in d:
                     d["content"] = d["task_summary"]
+                if d.get("story_id") is None and d.get("notes"):
+                    m = re.search(r"(?:^|;\s*)story_id=([^;]+)", d["notes"])
+                    if m:
+                        d["story_id"] = m.group(1).strip()
                 res.append(d)
             return res
 
