@@ -192,16 +192,17 @@ class TestEvosEngineAndFourPillars(unittest.TestCase):
     def test_gevl2_gevl3_release_gate_cli_healthy(self):
         project_root = Path(evos.__file__).resolve().parent.parent
         ledger_path = project_root / "bmad" / "rooms" / "room_ledger.json"
-        created_temp_ledger = False
-        if not ledger_path.is_file():
-            ledger_path.parent.mkdir(parents=True, exist_ok=True)
-            ledger_path.write_text(json.dumps({
-                "version": "1.0.0",
-                "updated_at": "2026-10-27 00:00:00",
-                "roles": {r: {"status": "IDLE", "last_action": "test", "active_task_id": None, "updated_at": "2026-10-27"} for r in ("supervisor", "pm", "lead", "peer", "qc")},
-                "history": []
-            }))
-            created_temp_ledger = True
+        orig_ledger_content: str | None = None
+        if ledger_path.is_file():
+            orig_ledger_content = ledger_path.read_text(encoding="utf-8")
+
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_text(json.dumps({
+            "version": "1.0.0",
+            "updated_at": "2026-10-27 00:00:00",
+            "roles": {r: {"status": "IDLE", "last_action": "test", "active_task_id": None, "updated_at": "2026-10-27"} for r in ("supervisor", "pm", "lead", "peer", "qc")},
+            "history": []
+        }))
         try:
             res = subprocess.run(
                 [sys.executable, "tools/evos_engine.py", "--json"],
@@ -216,8 +217,31 @@ class TestEvosEngineAndFourPillars(unittest.TestCase):
             self.assertTrue(data.get("judge", {}).get("passed"))
             self.assertNotEqual(data.get("judge", {}).get("verdict"), "INCONCLUSIVE")
         finally:
-            if created_temp_ledger:
+            if orig_ledger_content is not None:
+                ledger_path.write_text(orig_ledger_content, encoding="utf-8")
+            else:
                 ledger_path.unlink(missing_ok=True)
+
+    def test_audit_settlement_gate_ignores_log_action_and_closed_summary(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            lp = Path(td) / "room_ledger.json"
+            tasks_dir = Path(td) / "tasks"
+            tasks_dir.mkdir()
+            lp.write_text(json.dumps({
+                "version": "1.0.0",
+                "roles": {},
+                "history": [
+                    {
+                        "agent": "Supervisor",
+                        "action": "log",
+                        "task_id": "483",
+                        "summary": "Xac nhan Task #483 Closed; Chan Task #480 vi state Resolved chua Closed"
+                    }
+                ]
+            }))
+            violations = sfg.audit_settlement_verification_gate(ledger_path=lp, tasks_dir=tasks_dir)
+            self.assertEqual(len(violations), 0)
 
 
 if __name__ == "__main__":

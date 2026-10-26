@@ -140,6 +140,55 @@ class TestAgentHandoffEnvelopeLiveValidation(unittest.TestCase):
         with self.assertRaises(ValueError):
             acm.send_handoff_envelope("tester", "coder", bad_env, strict=True, persist_to_room=False)
 
+    def test_safe_send_rejects_whitespace_zero_search_fields(self):
+        # Whitespace test_command
+        bad_cmd = dict(self.valid_envelope)
+        bad_cmd["spec"] = dict(bad_cmd["spec"], test_command="   ")
+        self.assertFalse(acm.safe_send_agent_message("peer", bad_cmd, raise_on_invalid=False))
+        with self.assertRaises(ValueError):
+            acm.safe_send_agent_message("peer", bad_cmd, raise_on_invalid=True)
+
+        # Whitespace concrete_changes
+        bad_chg = dict(self.valid_envelope)
+        bad_chg["spec"] = dict(bad_chg["spec"], concrete_changes=" \t\n ")
+        self.assertFalse(acm.safe_send_agent_message("peer", bad_chg, raise_on_invalid=False))
+
+        # Whitespace elements in list fields
+        bad_files = dict(self.valid_envelope)
+        bad_files["spec"] = dict(bad_files["spec"], target_files=["  ", ""])
+        self.assertFalse(acm.safe_send_agent_message("peer", bad_files, raise_on_invalid=False))
+
+        bad_anchors = dict(self.valid_envelope)
+        bad_anchors["spec"] = dict(bad_anchors["spec"], anchors=["   "])
+        self.assertFalse(acm.safe_send_agent_message("peer", bad_anchors, raise_on_invalid=False))
+
+        bad_ac = dict(self.valid_envelope)
+        bad_ac["spec"] = dict(bad_ac["spec"], acceptance_criteria=["  "])
+        self.assertFalse(acm.safe_send_agent_message("peer", bad_ac, raise_on_invalid=False))
+
+    def test_safe_send_rejects_failed_retry_none_or_dummy_stack_trace(self):
+        for dummy in (None, "None", "none", "null", "NULL", "   "):
+            bad_env = dict(self.valid_envelope)
+            bad_env["status"] = "FAILED_RETRY"
+            bad_env["verification"] = {"exit_code": 1, "error_stack_trace": dummy, "retry_count": 1}
+            self.assertFalse(
+                acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=False),
+                f"Failed for dummy stack: {repr(dummy)}"
+            )
+            with self.assertRaises(ValueError):
+                acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=True)
+
+    def test_safe_send_rejects_retry_count_evasion(self):
+        for bad_rc in ("4", 4.0, "4.0", 3.5, "invalid", None, True, -1):
+            bad_env = dict(self.valid_envelope)
+            bad_env["verification"] = {"exit_code": 1, "error_stack_trace": "Error", "retry_count": bad_rc}
+            self.assertFalse(
+                acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=False),
+                f"Failed for retry_count: {repr(bad_rc)}"
+            )
+            with self.assertRaises(ValueError):
+                acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=True)
+
 
 if __name__ == "__main__":
     unittest.main()

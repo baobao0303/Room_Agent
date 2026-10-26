@@ -126,9 +126,9 @@ def build_agent_handoff_envelope(
             "test_command": str(test_command),
         },
         "verification": {
-            "exit_code": int(exit_code),
-            "error_stack_trace": str(error_stack_trace),
-            "retry_count": int(retry_count),
+            "exit_code": int(exit_code) if exit_code is not None else 0,
+            "error_stack_trace": "" if error_stack_trace is None else str(error_stack_trace),
+            "retry_count": int(retry_count) if retry_count is not None else 0,
         },
     }
 
@@ -145,7 +145,7 @@ def validate_agent_handoff_envelope(envelope: Dict[str, Any]) -> Tuple[bool, Lis
         return False, ["Envelope phải là một JSON object (dict)."]
 
     for req_field in ("task_id", "from_role", "to_role", "status", "spec", "verification"):
-        if req_field not in envelope:
+        if req_field not in envelope or envelope[req_field] is None:
             errors.append(f"Thiếu trường bắt buộc: '{req_field}'")
 
     spec = envelope.get("spec")
@@ -154,20 +154,43 @@ def validate_agent_handoff_envelope(envelope: Dict[str, Any]) -> Tuple[bool, Lis
     else:
         for s_key in ("target_files", "anchors", "concrete_changes", "acceptance_criteria", "test_command"):
             val = spec.get(s_key)
-            if val is None or (isinstance(val, (str, list)) and len(val) == 0):
+            if val is None:
+                errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+            elif isinstance(val, str):
+                if not val.strip():
+                    errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+            elif isinstance(val, (list, tuple)):
+                if len(val) == 0 or not [x for x in val if x is not None and str(x).strip()]:
+                    errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+            else:
                 errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
 
     ver = envelope.get("verification")
     if not isinstance(ver, dict):
         errors.append("Trường 'verification' phải là JSON object.")
     else:
-        retry_count = ver.get("retry_count", 0)
-        if isinstance(retry_count, int) and retry_count > 3:
-            errors.append(f"Vượt quá trần vòng lặp Turn Ceiling: retry_count={retry_count} > 3")
-        status_str = str(envelope.get("status", "")).upper()
+        raw_retry = ver.get("retry_count", 0)
+        if isinstance(raw_retry, bool) or raw_retry is None:
+            errors.append("Trường 'retry_count' phải là số nguyên.")
+        else:
+            try:
+                val_float = float(raw_retry)
+                rc = int(val_float)
+                if rc > 3 or val_float > 3:
+                    errors.append(f"Vượt quá trần vòng lặp Turn Ceiling: retry_count={rc} > 3")
+                elif rc < 0 or val_float < 0:
+                    errors.append(f"Trường 'retry_count' không hợp lệ: {rc} < 0")
+            except (ValueError, TypeError, OverflowError):
+                errors.append("Trường 'retry_count' phải là số nguyên.")
+
+        status_str = str(envelope.get("status", "")).upper().strip()
         if status_str == "FAILED_RETRY":
-            stack = str(ver.get("error_stack_trace", "")).strip()
-            if not stack:
+            raw_stack = ver.get("error_stack_trace")
+            if (
+                raw_stack is None
+                or not str(raw_stack).strip()
+                or str(raw_stack).strip().lower() in ("none", "null")
+            ):
                 errors.append("Luồng Feedback/Retry Loop (FAILED_RETRY) bắt buộc phải đính kèm 'error_stack_trace'.")
 
     return len(errors) == 0, errors
@@ -535,6 +558,23 @@ def audit_settlement_verification_gate(
                     state = str(ev.get("state", "")).lower()
                     to_state = str(ev.get("to_state", "")).lower()
                     status = str(ev.get("status", "")).lower()
+
+                    # Bỏ qua event nếu action là 'log' (nhật ký ghi chép tiến độ, không phải chuyển trạng thái)
+                    if action == "log":
+                        continue
+
+                    # Bỏ qua event nếu action hoặc trạng thái đích là closed hoặc blocked
+                    if (
+                        action in ("close", "closed", "block", "blocked")
+                        or state in ("closed", "blocked")
+                        or to_state in ("closed", "blocked")
+                        or status in ("closed", "blocked")
+                    ):
+                        continue
+
+                    # Bỏ qua nếu summary thể hiện task được đóng (Closed) hoặc bị chặn (Blocked)
+                    if bool(re.search(r"\b(?:closed|blocked|đóng|chặn|khoá|block)\b", summary_lower)):
+                        continue
 
                     is_resolved = (
                         state == "resolved"
