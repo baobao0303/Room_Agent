@@ -49,12 +49,31 @@ CREATE TABLE IF NOT EXISTS backlog (
 );
 
 CREATE TABLE IF NOT EXISTS trace (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    story_id INTEGER REFERENCES story(id) ON DELETE CASCADE,
-    tier INTEGER NOT NULL DEFAULT 1,
-    content TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+    task_summary     TEXT    NOT NULL,
+    intake_id        INTEGER REFERENCES intake(id),
+    story_id         TEXT    REFERENCES story(id) ON DELETE CASCADE,
+    agent            TEXT,
+    actions_taken    TEXT,       -- JSON array
+    files_read       TEXT,       -- JSON array
+    files_changed    TEXT,       -- JSON array
+    decisions_made   TEXT,       -- JSON array
+    errors           TEXT,       -- JSON array
+    outcome          TEXT
+                     CHECK(outcome IN (
+                       'completed','blocked','partial','failed'
+                     )),
+    duration_seconds INTEGER,
+    token_estimate   INTEGER,
+    harness_friction TEXT,
+    notes            TEXT,
+    run_id           TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_trace_run_id ON trace(run_id);
+CREATE INDEX IF NOT EXISTS idx_trace_story_id ON trace(story_id);
+CREATE INDEX IF NOT EXISTS idx_trace_created_at ON trace(created_at);
 
 CREATE TABLE IF NOT EXISTS tool (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,12 +86,13 @@ CREATE TABLE IF NOT EXISTS tool (
 );
 
 CREATE TABLE IF NOT EXISTS intervention (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
     target_type TEXT NOT NULL,
-    target_id INTEGER NOT NULL,
-    actor TEXT NOT NULL,
-    reason TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    target_id   INTEGER NOT NULL,
+    actor       TEXT NOT NULL,
+    action      TEXT DEFAULT 'approved',
+    reason      TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS work_item (
