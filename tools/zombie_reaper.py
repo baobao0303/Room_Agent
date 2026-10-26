@@ -66,10 +66,34 @@ def run_cmd(cmd: List[str], check: bool = False) -> subprocess.CompletedProcess[
     return subprocess.run(cmd, capture_output=True, text=True, check=check)
 
 
+def _get_orca_ide_bin() -> Optional[str]:
+    shim_dir = Path.home() / ".config" / "orca" / "linux-orca-cli-shim"
+    if shim_dir.is_dir():
+        cur_path = os.environ.get("PATH", "")
+        if str(shim_dir) not in cur_path.split(os.pathsep):
+            os.environ["PATH"] = f"{shim_dir}{os.pathsep}{cur_path}"
+    cand = shutil.which("orca")
+    if not cand:
+        return None
+    real_cand = os.path.realpath(cand)
+    if cand in ("/usr/bin/orca", "/bin/orca", "/usr/games/orca") or real_cand in ("/usr/bin/orca", "/bin/orca"):
+        return None
+    try:
+        p = Path(real_cand)
+        if p.is_file() and p.stat().st_size < 65536:
+            head = p.read_bytes()[:512].decode("utf-8", errors="ignore").lower()
+            if "screen reader" in head or "gnome" in head or "speech" in head or "import orca" in head:
+                return None
+    except Exception:
+        pass
+    return cand
+
+
 def get_orca_terminals() -> List[Dict[str, Any]]:
-    if not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
         return []
-    res = run_cmd(["orca", "terminal", "list", "--json"])
+    res = run_cmd([orca_bin, "terminal", "list", "--json"])
     if res.returncode != 0 or not res.stdout.strip():
         return []
     try:
@@ -125,14 +149,15 @@ def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S, ex
     zombies = []
     stalled = []
 
-    # 0. Xác định terminal chính duy nhất cho mỗi Persistent Room (main, room-pm, room-lead)
-    persistent_primary: Dict[str, str] = {}
-    for p_room in ("pm", "lead", "supervisor"):
+    # 0. Xác định các terminal được bảo vệ theo ROOM_CAPACITIES (supervisor: 3, pm: 1, lead: 3, peer: 5, qc: 3)
+    room_capacities = {"supervisor": 3, "pm": 1, "lead": 3, "peer": 5, "qc": 3}
+    protected_room_handles: set[str] = set()
+    for p_room, cap in room_capacities.items():
         candidates = []
         for h, t in active_handles.items():
             wt_path = (t.get("worktreePath") or "").lower().rstrip("/")
             branch = (t.get("branch") or "").lower().rstrip("/")
-            if p_room in ("pm", "lead"):
+            if p_room in ("pm", "lead", "peer", "qc"):
                 if wt_path.endswith(f"/room-{p_room}") or branch.endswith(f"room-{p_room}"):
                     candidates.append(t)
             else:
@@ -143,13 +168,12 @@ def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S, ex
                 key=lambda x: (1 if x.get("handle") in registered else 0, x.get("lastOutputAt") or 0),
                 reverse=True,
             )
-            primary_h = candidates[0].get("handle")
-            if primary_h:
-                persistent_primary[p_room] = primary_h
+            for c_term in candidates[:cap]:
+                ch = c_term.get("handle")
+                if ch:
+                    protected_room_handles.add(ch)
 
-    protected_persistent_handles = set(persistent_primary.values())
-
-    # 1. Phát hiện Zombie / Orphaned / Duplicate Terminals
+    # 1. Phát hiện Zombie / Orphaned / Excess Terminals
     for handle, term in active_handles.items():
         title = (term.get("title") or "").lower()
         preview = (term.get("preview") or "").lower()
@@ -161,23 +185,22 @@ def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S, ex
         if any(kw in preview for kw in ("zombie_reaper", "audit_and_reap", "harness_manager", "room_cleanup")):
             continue
 
-        # Nếu thuộc persistent room (pm, lead, supervisor): chỉ giữ 1 primary duy nhất, reap mọi bản sao trùng lặp
-        is_persistent_wt = (
-            wt_path.endswith(("/room-pm", "/room-lead"))
-            or branch.endswith(("room-pm", "room-lead"))
+        is_known_room_wt = (
+            wt_path.endswith(("/room-pm", "/room-lead", "/room-peer", "/room-qc"))
+            or branch.endswith(("room-pm", "room-lead", "room-peer", "room-qc"))
             or (branch in ("main", "refs/heads/main") and "/room-" not in wt_path)
         )
-        if is_persistent_wt:
-            if handle in protected_persistent_handles:
+        if is_known_room_wt:
+            if handle in protected_room_handles or handle in registered:
                 continue
             zombies.append({
                 "handle": handle,
                 "title": term.get("title", ""),
-                "reason": "Duplicate agent terminal in persistent room (strictly max 1 agent per room)"
+                "reason": "Exceeded room slot capacity ceiling in canonical room worktree"
             })
             continue
 
-        # Không reap supervisor hoặc terminal chính đã đăng ký
+        # Không reap supervisor hoặc terminal đã đăng ký hợp lệ trong multi-slot registry
         if "supervisor" in title or "scope" in title or handle in registered:
             continue
 

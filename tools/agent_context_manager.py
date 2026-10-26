@@ -105,9 +105,41 @@ def _infer_terminal_room(term: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+ROOM_CAPACITIES: Dict[str, int] = {
+    "supervisor": 3,
+    "pm": 1,
+    "lead": 3,
+    "peer": 5,
+    "qc": 3,
+}
+
+
+def _get_orca_ide_bin() -> Optional[str]:
+    shim_dir = Path.home() / ".config" / "orca" / "linux-orca-cli-shim"
+    if shim_dir.is_dir():
+        cur_path = os.environ.get("PATH", "")
+        if str(shim_dir) not in cur_path.split(os.pathsep):
+            os.environ["PATH"] = f"{shim_dir}{os.pathsep}{cur_path}"
+    cand = shutil.which("orca")
+    if not cand:
+        return None
+    real_cand = os.path.realpath(cand)
+    if cand in ("/usr/bin/orca", "/bin/orca", "/usr/games/orca") or real_cand in ("/usr/bin/orca", "/bin/orca"):
+        return None
+    try:
+        p = Path(real_cand)
+        if p.is_file() and p.stat().st_size < 65536:
+            head = p.read_bytes()[:512].decode("utf-8", errors="ignore").lower()
+            if "screen reader" in head or "gnome" in head or "speech" in head or "import orca" in head:
+                return None
+    except Exception:
+        pass
+    return cand
+
+
 def get_live_terminals() -> Dict[str, str]:
-    """Trả về mapping {role: handle} cho các terminal đang active trong Orca (tự động đóng tab trùng trong cùng room)."""
-    if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
+    """Trả về mapping {role: handle} cho các terminal đang active trong Orca (chỉ đóng tab khi vượt quá ROOM_CAPACITIES)."""
+    if os.environ.get("SLPPC_DRY_RUN") == "1" or not _get_orca_ide_bin():
         return {}
     try:
         reg_data: Dict[str, Any] = {}
@@ -134,10 +166,20 @@ def get_live_terminals() -> Dict[str, str]:
         valid_map: Dict[str, str] = {}
         updated_reg = False
 
+        registered_handles = {
+            v.get("handle"): k
+            for k, v in reg_data.items()
+            if isinstance(v, dict) and v.get("handle")
+        }
+
         for room, room_terms in by_room.items():
+            capacity = ROOM_CAPACITIES.get(room, 1)
             reg_h = (reg_data.get(room) or {}).get("handle") if isinstance(reg_data.get(room), dict) else None
             room_terms.sort(
-                key=lambda x: (1 if x.get("handle") == reg_h else 0, x.get("lastOutputAt") or 0),
+                key=lambda x: (
+                    2 if x.get("handle") == reg_h else (1 if x.get("handle") in registered_handles else 0),
+                    x.get("lastOutputAt") or 0,
+                ),
                 reverse=True,
             )
             primary = room_terms[0]
@@ -145,12 +187,16 @@ def get_live_terminals() -> Dict[str, str]:
             if primary_h:
                 valid_map[room] = primary_h
                 if reg_h != primary_h:
-                    reg_data[room] = {"handle": primary_h, "tabId": primary.get("tabId") or ""}
+                    reg_data[room] = {"handle": primary_h, "tabId": primary.get("tabId") or "", "room": room}
                     updated_reg = True
-                # Đóng mọi terminal dư thừa trong cùng room (đảm bảo đúng 1 agent/room)
-                for extra in room_terms[1:]:
+                for t in room_terms[:capacity]:
+                    th = t.get("handle")
+                    if th and th in registered_handles:
+                        valid_map[registered_handles[th]] = th
+                # Chỉ đóng các terminal vượt quá trần ROOM_CAPACITIES của phòng đó
+                for extra in room_terms[capacity:]:
                     extra_h = extra.get("handle")
-                    if extra_h and extra_h != primary_h:
+                    if extra_h and extra_h != primary_h and extra_h not in registered_handles:
                         subprocess.run(["orca", "terminal", "close", "--terminal", extra_h, "--tab", "--json"], capture_output=True, timeout=5)
 
         if updated_reg:
@@ -183,12 +229,13 @@ def inspect_terminal(handle: str) -> Dict[str, Any]:
         "needs_compact": False,
         "status_line": ""
     }
-    if not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
         return info
 
     try:
         res = subprocess.run(
-            ["orca", "terminal", "read", "--terminal", handle, "--screen"],
+            [orca_bin, "terminal", "read", "--terminal", handle, "--screen"],
             capture_output=True, text=True, timeout=5
         )
         if res.returncode != 0:
@@ -203,21 +250,38 @@ def inspect_terminal(handle: str) -> Dict[str, Any]:
             info["token_count_k"] = tokens_k
             info["needs_compact"] = tokens_k >= COMPACT_THRESHOLD_K
 
+        # Nhận diện xem terminal có đang chạy AI Agent thật hay ngồi ở raw shell (bash/zsh)
+        screen_lower = screen.lower()
+        is_agent = (
+            "❯" in screen
+            or "hermes" in screen_lower
+            or "gemini" in screen_lower
+            or "claude" in screen_lower
+            or "codex" in screen_lower
+            or "nous research" in screen_lower
+        )
+        info["is_agent"] = is_agent
+
         # Kiểm tra trạng thái prompt
         lines = [line.strip() for line in screen.split("\n") if line.strip()]
         tail = " \n ".join(lines[-5:]) if lines else ""
         info["status_line"] = tail
 
         # Ready khi có dấu nhắc ❯ và KHÔNG có cảnh báo 'Ctrl+C to interrupt' hoặc đang chạy command
-        if "Ctrl+C to interrupt" in tail or "brainstorming" in tail or "cogitating" in tail or "computing" in tail:
+        busy_keywords = ("ctrl+c to interrupt", "brainstorming", "cogitating", "computing", "reflecting", "pondering", "mulling", "synthesizing", "ruminating")
+        if any(k in tail.lower() for k in busy_keywords):
             info["is_busy"] = True
             info["is_ready"] = False
-        elif "ready" in tail or (lines and lines[-1].endswith("❯")):
+        elif is_agent and ("ready" in tail.lower() or (lines and lines[-1].endswith("❯"))):
             info["is_busy"] = False
             info["is_ready"] = True
+        elif not is_agent:
+            # Ngồi ở raw bash shell: Chưa bật agent, không thể nhận prompt trực tiếp!
+            info["is_busy"] = False
+            info["is_ready"] = False
         else:
             info["is_busy"] = False
-            info["is_ready"] = True
+            info["is_ready"] = is_agent
 
     except Exception:
         pass
@@ -237,12 +301,13 @@ def wait_for_terminal_ready(handle: str, max_wait_sec: int = 10) -> bool:
 
 def compact_agent_terminal(handle: str, max_wait_sec: int = 25) -> bool:
     """Gửi lệnh /compact tới terminal và chờ quá trình nén hoàn tất."""
-    if not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
         return False
     print(f"🗜️ [Auto-Compact]: Kích hoạt /compact trên terminal {handle}...")
     try:
         subprocess.run(
-            ["orca", "terminal", "send", "--terminal", handle, "--text", "/compact", "--enter"],
+            [orca_bin, "terminal", "send", "--terminal", handle, "--text", "/compact", "--enter"],
             capture_output=True, timeout=5
         )
         # Chờ quá trình nén hoàn tất
@@ -326,13 +391,14 @@ def build_rehydration_prompt(role: str) -> str:
 
 def rehydrate_agent(role: str, handle: str) -> bool:
     """Thực thi lệnh /new và nạp lại context tức thời cho agent."""
-    if not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
         return False
     print(f"🔄 [Auto-Rehydration]: Khởi tạo phiên mới (/new) và nạp lại context cho {role.upper()}...")
     try:
         # 1. Gửi lệnh /new
         subprocess.run(
-            ["orca", "terminal", "send", "--terminal", handle, "--text", "/new", "--enter"],
+            [orca_bin, "terminal", "send", "--terminal", handle, "--text", "/new", "--enter"],
             capture_output=True, timeout=5
         )
         time.sleep(2)
@@ -341,7 +407,7 @@ def rehydrate_agent(role: str, handle: str) -> bool:
         # 2. Bắn prompt rehydration
         boot_prompt = build_rehydration_prompt(role)
         subprocess.run(
-            ["orca", "terminal", "send", "--terminal", handle, "--text", boot_prompt, "--enter"],
+            [orca_bin, "terminal", "send", "--terminal", handle, "--text", boot_prompt, "--enter"],
             capture_output=True, timeout=5
         )
         print(f"✅ [Auto-Rehydration]: Đã nạp lại context thành công cho {role.upper()} ({handle}).")
@@ -353,6 +419,9 @@ def rehydrate_agent(role: str, handle: str) -> bool:
 
 def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) -> bool:
     """Gửi thông điệp an toàn cho agent: Có ping check, có kiểm tra context để compact, chống đè lệnh."""
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
+        return False
     live_map = get_live_terminals()
     canonical_role = _normalize_room_role(role)
     handle = live_map.get(canonical_role)
@@ -367,6 +436,19 @@ def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) 
     if not state["is_live"]:
         print(f"⚠️ [Ping Check]: Terminal của {role.upper()} ({handle}) không phản hồi.")
         return False
+
+    # 1.1 Khởi động Agent nếu terminal đang ở raw bash/zsh shell
+    if not state.get("is_agent", False):
+        print(f"🚀 [Auto-Agent-Start]: Terminal {handle} đang ở raw shell (chưa bật Agent). Đang tự động khởi động Hermes cho {role.upper()}...")
+        profile_flag = f"--profile {canonical_role}" if canonical_role in ("pm", "lead", "peer", "qc") else ""
+        subprocess.run(
+            [orca_bin, "terminal", "send", "--terminal", handle, "--text", f"source ~/.bashrc && hermes {profile_flag}".strip(), "--enter"],
+            capture_output=True, timeout=5
+        )
+        if not wait_for_terminal_ready(handle, max_wait_sec=12):
+            print(f"⚠️ [Auto-Agent-Start]: Không thể khởi động agent trên {handle} sau 12s. Chuyển sang fallback spawn.")
+            return False
+        state = inspect_terminal(handle)
 
     # 2. Nếu agent đang bận, chờ tối đa 8s
     if state["is_busy"]:
@@ -384,7 +466,7 @@ def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) 
     # 4. Gửi lệnh
     try:
         subprocess.run(
-            ["orca", "terminal", "send", "--terminal", handle, "--text", message, "--enter"],
+            [orca_bin, "terminal", "send", "--terminal", handle, "--text", message, "--enter"],
             capture_output=True, timeout=10
         )
         return True
