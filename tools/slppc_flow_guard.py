@@ -145,8 +145,9 @@ def validate_agent_handoff_envelope(envelope: Dict[str, Any]) -> Tuple[bool, Lis
         return False, ["Envelope phải là một JSON object (dict)."]
 
     for req_field in ("task_id", "from_role", "to_role", "status", "spec", "verification"):
-        if req_field not in envelope or envelope[req_field] is None:
-            errors.append(f"Thiếu trường bắt buộc: '{req_field}'")
+        val = envelope.get(req_field)
+        if val is None or (isinstance(val, str) and not val.strip()):
+            errors.append(f"Thiếu trường bắt buộc hoặc rỗng: '{req_field}'")
 
     spec = envelope.get("spec")
     if not isinstance(spec, dict):
@@ -175,11 +176,14 @@ def validate_agent_handoff_envelope(envelope: Dict[str, Any]) -> Tuple[bool, Lis
         else:
             try:
                 val_float = float(raw_retry)
-                rc = int(val_float)
-                if rc > 3 or val_float > 3:
-                    errors.append(f"Vượt quá trần vòng lặp Turn Ceiling: retry_count={rc} > 3")
-                elif rc < 0 or val_float < 0:
-                    errors.append(f"Trường 'retry_count' không hợp lệ: {rc} < 0")
+                if not val_float.is_integer():
+                    errors.append("Trường 'retry_count' phải là số nguyên.")
+                else:
+                    rc = int(val_float)
+                    if rc > 3 or val_float > 3:
+                        errors.append(f"Vượt quá trần vòng lặp Turn Ceiling: retry_count={rc} > 3")
+                    elif rc < 0 or val_float < 0:
+                        errors.append(f"Trường 'retry_count' không hợp lệ: {rc} < 0")
             except (ValueError, TypeError, OverflowError):
                 errors.append("Trường 'retry_count' phải là số nguyên.")
 

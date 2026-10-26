@@ -179,7 +179,7 @@ class TestAgentHandoffEnvelopeLiveValidation(unittest.TestCase):
                 acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=True)
 
     def test_safe_send_rejects_retry_count_evasion(self):
-        for bad_rc in ("4", 4.0, "4.0", 3.5, "invalid", None, True, -1):
+        for bad_rc in ("4", 4.0, "4.0", 3.5, 2.5, "2.5", 0.5, 1.5, "1.5", 2.99, "invalid", None, True, -1):
             bad_env = dict(self.valid_envelope)
             bad_env["verification"] = {"exit_code": 1, "error_stack_trace": "Error", "retry_count": bad_rc}
             self.assertFalse(
@@ -188,6 +188,37 @@ class TestAgentHandoffEnvelopeLiveValidation(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=True)
+
+    def test_validate_envelope_rejects_non_integer_float_retry_count(self):
+        """Verifies that non-integer float retry counts (e.g. 2.5, '2.5', 0.5, 1.5) are rejected."""
+        for bad_rc in (2.5, "2.5", 0.5, 1.5, "1.5", 2.99, -0.5):
+            bad_env = dict(self.valid_envelope)
+            bad_env["verification"] = dict(bad_env["verification"], retry_count=bad_rc)
+            is_valid, errors = sfg.validate_agent_handoff_envelope(bad_env)
+            self.assertFalse(is_valid, f"Expected invalid for retry_count={bad_rc!r}")
+            self.assertTrue(
+                any("phải là số nguyên" in err for err in errors),
+                f"Expected integer error for retry_count={bad_rc!r}, got: {errors}"
+            )
+
+    def test_validate_envelope_rejects_empty_or_whitespace_top_level_fields(self):
+        """Verifies that top-level required fields (task_id, from_role, to_role, status) reject empty and whitespace strings."""
+        for field in ("task_id", "from_role", "to_role", "status"):
+            for bad_val in ("", "   ", " \t\n ", "   \n"):
+                bad_env = dict(self.valid_envelope)
+                bad_env[field] = bad_val
+                is_valid, errors = sfg.validate_agent_handoff_envelope(bad_env)
+                self.assertFalse(is_valid, f"Expected invalid for {field}={bad_val!r}")
+                self.assertTrue(
+                    any(field in err and ("Thiếu trường" in err or "rỗng" in err) for err in errors),
+                    f"Expected missing/empty error for {field}={bad_val!r}, got: {errors}"
+                )
+                self.assertFalse(
+                    acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=False),
+                    f"safe_send should return False for {field}={bad_val!r}"
+                )
+                with self.assertRaises(ValueError):
+                    acm.safe_send_agent_message("peer", bad_env, raise_on_invalid=True)
 
 
 if __name__ == "__main__":
