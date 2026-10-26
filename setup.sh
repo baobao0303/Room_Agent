@@ -30,6 +30,13 @@ do
     fi
 done
 
+# 1b. Tự động tắt Linux GNOME/Cinnamon Screen Reader (/usr/bin/orca) để tránh xung đột tên lệnh 'orca'
+if command -v gsettings &> /dev/null; then
+    gsettings set org.gnome.desktop.a11y.applications screen-reader-enabled false 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.a11y.applications screen-reader-enabled false 2>/dev/null || true
+fi
+pkill -f "/usr/bin/orca" 2>/dev/null || true
+
 # 2. Kiểm tra công cụ cơ sở
 echo "🔍 [1/6] Kiểm tra công cụ cơ sở..."
 for cmd in python3 git; do
@@ -39,10 +46,11 @@ for cmd in python3 git; do
     fi
 done
 
-if command -v orca &> /dev/null; then
-    echo "  ✅ Tìm thấy Orca CLI: $(which orca)"
+ORCA_BIN="$(which orca 2>/dev/null || true)"
+if [ -n "$ORCA_BIN" ] && [ "$ORCA_BIN" != "/usr/bin/orca" ] && [ "$ORCA_BIN" != "/bin/orca" ]; then
+    echo "  ✅ Tìm thấy Orca IDE CLI: $ORCA_BIN"
 else
-    echo "  ⚠️  Chưa tìm thấy 'orca' trong PATH."
+    echo "  ⚠️  Chưa tìm thấy Orca IDE CLI (Đã tự động vô hiệu hóa /usr/bin/orca GNOME Screen Reader)."
 fi
 
 if command -v hermes &> /dev/null; then

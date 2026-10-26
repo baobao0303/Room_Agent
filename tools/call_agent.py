@@ -256,8 +256,19 @@ def main():
             print(pre_gen_block)
         sys.exit(0)
 
-    # Nếu đang chạy trong Orca:
-    if shutil.which("orca"):
+    # Nếu đang chạy trong Orca IDE (chặn tuyệt đối /usr/bin/orca GNOME Screen Reader trên Linux):
+    shim_dir = Path.home() / ".config" / "orca" / "linux-orca-cli-shim"
+    if shim_dir.is_dir():
+        cur_p = os.environ.get("PATH", "")
+        if str(shim_dir) not in cur_p.split(os.pathsep):
+            os.environ["PATH"] = f"{shim_dir}{os.pathsep}{cur_p}"
+    orca_cand = shutil.which("orca")
+    is_valid_orca_ide = bool(
+        orca_cand
+        and orca_cand not in ("/usr/bin/orca", "/bin/orca", "/usr/games/orca")
+        and os.path.realpath(orca_cand) not in ("/usr/bin/orca", "/bin/orca")
+    )
+    if is_valid_orca_ide:
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parent))
             from orca_slpc_bridge import find_live_terminal_for_role  # type: ignore
@@ -297,16 +308,29 @@ def main():
                         except Exception:
                             pass
 
-                    clean_name = profile_name.lower().strip()
+                    clean_name = profile_name.lower().strip().replace("-", "_").replace(" ", "_")
                     titles_map = {
                         "peer": "[Peer Dev 1] Code Executor",
-                        "qc": "[QC] 5-Stage ISTQB Verifier",
+                        "peer2": "[Peer Dev 2] Code Executor",
+                        "peer3": "[Peer Dev 3] Code Executor",
+                        "peer4": "[Peer Dev 4] Code Executor",
+                        "peer_design": "[Peer Design] UI/UX & Tokens",
                         "design": "[Peer Design] UI/UX & Tokens",
+                        "qc": "[QC] 5-Stage ISTQB Verifier",
+                        "qc2": "[QC 2] 5-Stage ISTQB Verifier",
+                        "qc3": "[QC 3] 5-Stage ISTQB Verifier",
                         "pm": "[PM] Feasibility & Alignment",
                         "lead": "[Lead Dev] Technical Architect",
+                        "lead2": "[Lead Dev 2] Technical Architect",
+                        "lead3": "[Lead Dev 3] Technical Architect",
                         "supervisor": "[Supervisor] Scope & Intent Guard",
+                        "supervisor2": "[Supervisor 2] Nested Scope Guard",
+                        "supervisor3": "[Supervisor 3] Nested Scope Guard",
                     }
-                    role_key = "peer" if any(k in clean_name for k in ("peer", "dev", "design")) else ("qc" if "qc" in clean_name else clean_name)
+                    if clean_name in titles_map:
+                        role_key = "peer_design" if clean_name == "design" else clean_name
+                    else:
+                        role_key = "peer" if any(k in clean_name for k in ("peer", "dev", "design")) else ("qc" if "qc" in clean_name else clean_name)
                     term_title = titles_map.get(role_key, f"[{profile_name}] Sub-Agent")
 
                     if handle:
@@ -320,20 +344,29 @@ def main():
                                 reg = json.loads(reg_file.read_text(encoding="utf-8"))
                             except Exception:
                                 reg = {}
-                        reg[role_key] = {"handle": handle, "tabId": tab_id}
+                        reg[role_key] = {"handle": handle, "tabId": tab_id, "room": target_room}
                         reg_file.parent.mkdir(parents=True, exist_ok=True)
                         reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
 
-                        # Dọn dẹp terminal shell mặc định hoặc dư thừa trong room này (--tab)
+                        # Chỉ dọn dẹp terminal vượt quá trần capacity của room (không đóng các Peer/Lead/QC đang chạy song song)
+                        room_caps = {"supervisor": 3, "pm": 1, "lead": 3, "peer": 5, "qc": 3}
+                        cap = room_caps.get(target_room, 1)
+                        registered_handles = {
+                            v.get("handle") for v in reg.values() if isinstance(v, dict) and v.get("handle")
+                        }
                         try:
                             t_out = subprocess.run(["orca", "terminal", "list", "--json"], capture_output=True, text=True, check=False)
                             if t_out.returncode == 0 and t_out.stdout:
                                 t_data = json.loads(t_out.stdout).get("result", {}).get("terminals", [])
-                                for t_item in t_data:
-                                    t_h = t_item.get("handle")
-                                    is_room_term = t_item.get("worktreePath", "").rstrip("/").endswith(f"/room-{target_room}")
-                                    if t_h and t_h != handle and is_room_term:
-                                        subprocess.run(["orca", "terminal", "close", "--terminal", t_h, "--tab", "--json"], capture_output=True, check=False)
+                                room_terms = [
+                                    t_item for t_item in t_data
+                                    if t_item.get("worktreePath", "").rstrip("/").endswith(f"/room-{target_room}")
+                                ]
+                                if len(room_terms) > cap:
+                                    for t_item in room_terms[cap:]:
+                                        t_h = t_item.get("handle")
+                                        if t_h and t_h != handle and t_h not in registered_handles:
+                                            subprocess.run(["orca", "terminal", "close", "--terminal", t_h, "--tab", "--json"], capture_output=True, check=False)
                         except Exception:
                             pass
 

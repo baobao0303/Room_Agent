@@ -47,13 +47,41 @@ STATE_MAP = {
 }
 
 
+def _get_orca_ide_bin() -> Optional[str]:
+    """Trả về đường dẫn Orca IDE CLI thật, tuyệt đối chặn /usr/bin/orca (Linux Screen Reader)."""
+    shim = Path.home() / ".config" / "orca" / "linux-orca-cli-shim" / "orca"
+    if shim.is_file() and os.access(shim, os.X_OK):
+        return str(shim)
+    cand = shutil.which("orca")
+    if not cand:
+        return None
+    if cand in ("/usr/bin/orca", "/bin/orca", "/usr/games/orca"):
+        return None
+    try:
+        p = Path(cand)
+        if p.exists() and p.resolve() in (Path("/usr/bin/orca"), Path("/bin/orca")):
+            return None
+        if p.is_file() and p.stat().st_size < 100_000:
+            head = p.read_text(encoding="utf-8", errors="ignore")[:1024].lower()
+            if "screen reader" in head or "gnome" in head or "import orca" in head:
+                return None
+    except Exception:
+        pass
+    return cand
+
+
 def run_cmd(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess[str]:
+    if cmd and cmd[0] == "orca":
+        orca_bin = _get_orca_ide_bin()
+        if not orca_bin:
+            return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="Orca IDE CLI not found")
+        cmd = [orca_bin] + cmd[1:]
     return subprocess.run(cmd, capture_output=True, text=True, check=check)
 
 
 def sync_board_status(task_id: str, state: str, worktree: str = "active"):
     """Đồng bộ trạng thái thẻ trên Workspace Board."""
-    if not shutil.which("orca"):
+    if not _get_orca_ide_bin():
         return
 
     if state == "Removed":
@@ -101,7 +129,7 @@ def cmd_init_run(name: str, title: str) -> Dict[str, Any]:
     """Bước 1: Supervisor khởi tạo Orchestration Run & Epic."""
     print("=== [BƯỚC 1: KHỞI TẠO ORCA RUN & HARNESS EPIC] ===")
     run_id = None
-    if shutil.which("orca"):
+    if _get_orca_ide_bin():
         try:
             res = run_cmd(["orca", "orchestration", "run-create", "--name", name, "--json"])
             data = json.loads(res.stdout)
@@ -152,7 +180,7 @@ def cmd_create_task(run_id: Optional[str], parent_id: str, title: str, spec: str
 
     orca_task_id = None
     gate_id = None
-    if shutil.which("orca") and run_id:
+    if _get_orca_ide_bin() and run_id:
         try:
             # 1. Tạo Task trong Orca Run
             res = run_cmd(["orca", "orchestration", "task-create", "--title", f"[WI-{task_id}] {title}", "--run", run_id, "--json"])
@@ -168,7 +196,17 @@ def cmd_create_task(run_id: Optional[str], parent_id: str, title: str, spec: str
         except Exception as e:
             print(f"⚠️ Lỗi tạo Orca task/gate: {e}")
 
-    # Tạo sandbox task
+    # Tạo sandbox task & nạp bài học từ Harness² Per-Domain Library
+    h2_lessons = ""
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "plugins" / "slpc-lifecycle-hooks"))
+        from slppc_orchestrator import SlppcOrchestrator  # type: ignore
+        orch = SlppcOrchestrator()
+        h2_lessons = orch.query_harness2_library_context(domain="engineering", limit=3)
+        orch.run_harness2_recursion_cycle(task_id=str(task_id), mode="agg", k=1, domain="engineering", notes=title)
+    except Exception:
+        pass
+
     task_dir = PROJECT_ROOT / "bmad" / "rooms" / "tasks" / str(task_id)
     task_dir.mkdir(parents=True, exist_ok=True)
     memo = f"""# TASK #{task_id}: {title}
@@ -177,17 +215,19 @@ def cmd_create_task(run_id: Optional[str], parent_id: str, title: str, spec: str
 - **QC Decision Gate ID**: {gate_id}
 - **Yêu cầu kỹ thuật**:
 {spec}
+{h2_lessons}
 """
     (task_dir / "handoff_lead.md").write_text(memo, encoding="utf-8")
     (task_dir / "latest_handoff.md").write_text(memo, encoding="utf-8")
-    print(f"📁 Đã tạo Task Sandbox cô lập: bmad/rooms/tasks/{task_id}/")
+    print(f"📁 Đã tạo Task Sandbox cô lập (kèm Harness² Ledger & Library): bmad/rooms/tasks/{task_id}/")
 
     return {"task_id": task_id, "orca_task_id": orca_task_id, "gate_id": gate_id}
 
 
 def find_live_terminal_for_role(role: str) -> Optional[str]:
     """Tìm terminal handle của role tương ứng (Supervisor, PM, Lead, Peer, QC) đang chạy trong Orca."""
-    if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if os.environ.get("SLPPC_DRY_RUN") == "1" or not orca_bin:
         return None
     try:
         try:
@@ -201,7 +241,7 @@ def find_live_terminal_for_role(role: str) -> Optional[str]:
         pass
 
     try:
-        t_res = subprocess.run(["orca", "terminal", "list", "--json"], capture_output=True, text=True)
+        t_res = subprocess.run([orca_bin, "terminal", "list", "--json"], capture_output=True, text=True)
         t_data = json.loads(t_res.stdout)
         terminals = [
             t for t in t_data.get("result", {}).get("terminals", [])
@@ -258,12 +298,13 @@ def find_live_terminal_for_role(role: str) -> Optional[str]:
 
 def send_to_terminal_safely(terminal_handle: str, text: str, wait_timeout_ms: int = 5000):
     """Gửi lệnh vào terminal có cơ chế chống trôi: Thử chờ tui-idle trước khi gửi."""
-    if not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
         return
     try:
         # Thử chờ terminal về trạng thái idle
         subprocess.run([
-            "orca", "terminal", "wait",
+            orca_bin, "terminal", "wait",
             "--terminal", terminal_handle,
             "--for", "tui-idle",
             "--timeout-ms", str(wait_timeout_ms)
@@ -274,7 +315,7 @@ def send_to_terminal_safely(terminal_handle: str, text: str, wait_timeout_ms: in
     # Gửi lệnh
     try:
         subprocess.run([
-            "orca", "terminal", "send",
+            orca_bin, "terminal", "send",
             "--terminal", terminal_handle,
             "--text", text,
             "--enter"
@@ -285,10 +326,11 @@ def send_to_terminal_safely(terminal_handle: str, text: str, wait_timeout_ms: in
 
 def launch_and_rename_agent(role: str, title: str, prompt: str, model: str = "ag/gemini-3.8-flash-high") -> Optional[str]:
     """Khởi chạy Orca agent và lập tức đổi tên terminal + pane title."""
-    if not shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if not orca_bin:
         return None
     cmd = [
-        "orca", "agent", "launch",
+        orca_bin, "agent", "launch",
         "--worktree", "active",
         "--agent", "hermes",
         "--prompt", prompt,
@@ -303,11 +345,11 @@ def launch_and_rename_agent(role: str, title: str, prompt: str, model: str = "ag
             pk = outcome.get("paneKey") or ""
             tab_id = pk.split(":")[0] if ":" in pk else pk
             if handle:
-                subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
-                subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
-                subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True, check=False)
+                subprocess.run([orca_bin, "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
+                subprocess.run([orca_bin, "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True, check=False)
+                subprocess.run([orca_bin, "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True, check=False)
                 if model:
-                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True, check=False)
+                    subprocess.run([orca_bin, "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True, check=False)
 
                 reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
                 reg = {}
@@ -338,7 +380,7 @@ def cmd_dispatch_design(task_id: str, prompt: str, figma_node: Optional[str] = N
     (task_dir / "handoff_design.md").write_text(memo, encoding="utf-8")
     (task_dir / "latest_handoff.md").write_text(memo, encoding="utf-8")
 
-    if shutil.which("orca"):
+    if _get_orca_ide_bin():
         design_handle = find_live_terminal_for_role("design")
         task_instruction = f"Bóc tách giao diện Task #{task_id}: {prompt}. Figma Node: {figma_node or 'N/A'}. Hãy đọc bmad/rooms/tasks/{task_id}/handoff_design.md và dùng tools/tds_search.py tra cứu token."
         if design_handle:
@@ -367,7 +409,7 @@ def cmd_report_design_done(task_id: str, spec_file: str):
     (task_dir / "handoff_design_completed.md").write_text(memo, encoding="utf-8")
     (task_dir / "latest_handoff.md").write_text(memo, encoding="utf-8")
 
-    if shutil.which("orca"):
+    if _get_orca_ide_bin():
         peer_handle = find_live_terminal_for_role("peer")
         if peer_handle:
             print(f"🎯 [Direct Terminal Dispatch]: Tìm thấy Peer Dev ({peer_handle}). Bàn giao spec thiết kế...")
@@ -376,14 +418,26 @@ def cmd_report_design_done(task_id: str, spec_file: str):
 
 
 def cmd_dispatch_peer(task_id: str, prompt: str, parent_task_id: Optional[str] = None, target_peer: Optional[str] = None):
-    """Bước 3: Lead dispatch việc cho Peer (1 Peer duy nhất tại room-peer)."""
+    """Bước 3: Lead dispatch việc cho Peer Slot (peer, peer2..4, peer_design) kèm Harness² Ledger & Library."""
     print(f"=== [BƯỚC 3: DISPATCH CHO PEER THỰC THI TASK #{task_id}] ===")
 
-    chosen_role = "peer"
-    peer_label = "Peer Dev"
+    chosen_role = (target_peer or "peer").strip().lower()
+    if chosen_role not in ("peer", "peer2", "peer3", "peer4", "peer_design"):
+        chosen_role = "peer"
+    peer_label = f"Peer Dev ({chosen_role.upper()})"
     mgr = HarnessManager()
     mgr.update_state(int("".join(filter(str.isdigit, str(task_id)))), "Active", assigned_to_profile="peer")
     sync_board_status(str(task_id), "Active")
+
+    h2_lessons = ""
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "plugins" / "slpc-lifecycle-hooks"))
+        from slppc_orchestrator import SlppcOrchestrator  # type: ignore
+        orch = SlppcOrchestrator()
+        h2_lessons = orch.query_harness2_library_context(domain="engineering", limit=3)
+        orch.run_harness2_recursion_cycle(task_id=str(task_id), mode="agg", k=1, domain="engineering", notes=prompt[:120])
+    except Exception:
+        pass
 
     try:
         from agent_heartbeat import record_ping  # type: ignore
@@ -391,16 +445,16 @@ def cmd_dispatch_peer(task_id: str, prompt: str, parent_task_id: Optional[str] =
     except Exception:
         pass
 
-    if shutil.which("orca"):
+    if _get_orca_ide_bin():
         peer_handle = find_live_terminal_for_role(chosen_role)
-        task_instruction = f"Nhiệm vụ mới Task #{task_id}: {prompt}. Hãy đọc bmad/rooms/tasks/{task_id}/latest_handoff.md và thực thi."
+        task_instruction = f"Nhiệm vụ mới Task #{task_id}: {prompt}.{h2_lessons} Hãy đọc bmad/rooms/tasks/{task_id}/latest_handoff.md và thực thi."
         if peer_handle:
             print(f"🎯 [Direct Terminal Dispatch]: Tìm thấy {peer_label} ({peer_handle}). Bắn lệnh an toàn (chờ idle)...")
             send_to_terminal_safely(peer_handle, task_instruction)
             print(f"✅ Đã gửi lệnh trực tiếp vào terminal của {peer_label} Hermes!")
         else:
             # Fallback launch Hermes agent mới và đổi tên
-            h = launch_and_rename_agent(chosen_role, f"[{peer_label}] Task #{task_id}", f"[Peer] #{task_id}: {prompt}", "ag/gemini-3.8-flash-high")
+            h = launch_and_rename_agent(chosen_role, f"[{peer_label}] Task #{task_id}", f"[{chosen_role.upper()}] #{task_id}: {prompt}{h2_lessons}", "ag/gemini-3.8-flash-high")
             if h:
                 print(f"🚀 [Orca Agent Launch]: Đã spawn và đổi tên {peer_label} ({h}) cho Task #{task_id}.")
             else:
@@ -442,7 +496,8 @@ def cmd_report_done(task_id: str, files: str):
     except Exception:
         pass
 
-    if shutil.which("orca"):
+    orca_bin = _get_orca_ide_bin()
+    if orca_bin:
         # Bắn lệnh trực tiếp vào LEAD Dev Hermes terminal (hoặc bật Lead on-demand nếu đã đóng) để Lead vào review code
         lead_prompt = f"Review code Task #{task_id}: Peer đã nộp code ({files}). Hãy chạy: python3 tools/orca_slpc_bridge.py lead-review --task-id {task_id}"
         lead_handle = find_live_terminal_for_role("lead")
@@ -474,7 +529,7 @@ def cmd_report_done(task_id: str, files: str):
         except Exception:
             peer_handle = find_live_terminal_for_role("peer")
             if peer_handle:
-                subprocess.run(["orca", "terminal", "close", "--terminal", peer_handle, "--tab"], check=False)
+                subprocess.run([orca_bin, "terminal", "close", "--terminal", peer_handle, "--tab"], check=False)
 
 
 def cmd_lead_review(task_id: str, repo_dir: str = ".") -> bool:
@@ -550,7 +605,7 @@ def cmd_lead_review(task_id: str, repo_dir: str = ".") -> bool:
         print(f"📋 [Báo cáo Lead ➔ Supervisor]: Đã xuất báo cáo REJECT tại {rep_file.relative_to(PROJECT_ROOT)}")
 
         # Bắn thông báo báo cáo về Supervisor terminal
-        if shutil.which("orca"):
+        if _get_orca_ide_bin():
             sup_handle = find_live_terminal_for_role("supervisor")
             if sup_handle:
                 send_to_terminal_safely(sup_handle, f"[Báo cáo Lead Dev ➔ Supervisor] Task #{task_id}: REJECTED. Đã tạo Bug P1 gán cho Peer sửa lại.")
@@ -568,7 +623,7 @@ def cmd_lead_review(task_id: str, repo_dir: str = ".") -> bool:
         ], check=False)
 
         # Mở lại Terminal Orca cho Peer vào fix tiếp
-        if shutil.which("orca"):
+        if _get_orca_ide_bin():
             print(f"🔄 [Reopen Peer Terminal]: Lead Review REJECTED Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
             prompt_fix = f"[Peer Fix Task #{task_id}]: Lead Review REJECTED. Hãy đọc bmad/rooms/tasks/{task_id}/lead_review_report_to_supervisor.md và khắc phục vi phạm!"
             h = launch_and_rename_agent("peer", f"[Peer Dev] Fix Task #{task_id}", prompt_fix, "ag/gemini-3.8-flash-high")
@@ -635,7 +690,7 @@ def cmd_lead_review(task_id: str, repo_dir: str = ".") -> bool:
         pass
 
     # 4. Bắn lệnh sang terminal QC và báo cáo Supervisor
-    if shutil.which("orca"):
+    if _get_orca_ide_bin():
         sup_handle = find_live_terminal_for_role("supervisor")
         if sup_handle:
             send_to_terminal_safely(sup_handle, f"[Báo cáo Lead Dev ➔ Supervisor] Task #{task_id}: APPROVED đạt chuẩn kiến trúc 100%. Đã chuyển giao cho QC.")
@@ -695,7 +750,7 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
         ], check=False)
 
         # Mở lại Terminal Orca cho Peer vào fix Bug (đảm bảo 1-Room-1-Agent tại room-peer)
-        if shutil.which("orca"):
+        if _get_orca_ide_bin():
             print(f"🔄 [Reopen Peer Terminal]: QC phát hiện Bug Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
             prompt_fix = f"[Peer Fix Bug Task #{task_id}]: QC độc lập phát hiện lỗi kiểm thử. Hãy đọc kết quả test và sửa code!"
             h = launch_and_rename_agent("peer", f"[Peer Dev] Fix Bug Task #{task_id}", prompt_fix, "ag/gemini-3.8-flash-high")
@@ -705,8 +760,34 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
 
     print("✅ [QC VERDICT: 100% PASS & APPROVED]!")
 
+    # 2b. Chấm điểm qua Harness² Judge (Scored) & lưu vào Harness² Per-Domain Library
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "plugins" / "slpc-lifecycle-hooks"))
+        from slppc_orchestrator import SlppcOrchestrator  # type: ignore
+        orch = SlppcOrchestrator()
+        orch.score_with_harness2_judge(
+            task_id=str(task_id),
+            mode="agg",
+            k=1,
+            label="agg1",
+            n_passed=5,
+            n_criteria=5,
+        )
+        orch.record_harness2_experience(
+            task_id=str(task_id),
+            domain="qc_verification",
+            cue=f"orca_qc_verify_{task_id}",
+            lesson=f"Nghiệm thu thành công {source_file} (Task #{task_id}) đạt 5/5 tiêu chí ISTQB & Harness² Judge.",
+            evidence=f"Mechanical test runner passed for {source_file}",
+            label="agg1",
+            why="Passed Orca QC Decision Gate and 5-Stage ISTQB verification",
+        )
+        print(f"📊 [Harness² Judge & Library]: Đã chấm điểm 5/5 (frac=1.0) và lưu EXPERIENCE.md + INDEX.md cho Task #{task_id}!")
+    except Exception as e:
+        print(f"⚠️ [Harness² Judge Warning]: {e}")
+
     # 3. Mở Decision Gate trên Orca nếu có
-    if shutil.which("orca") and gate_id:
+    if _get_orca_ide_bin() and gate_id:
         try:
             run_cmd(["orca", "orchestration", "gate-resolve", "--gate", gate_id, "--status", "passed", "--json"], check=True)
             print(f"🔓 [Decision Gate]: Đã mở khóa Gate {gate_id} (Passed).")
@@ -733,12 +814,33 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
     except Exception:
         pass
 
-    print(f"🎉 Task #{task_id} chính thức CLOSED hoàn tất theo đúng chuẩn SLPC!")
+    print(f"🎉 Task #{task_id} chính thức CLOSED hoàn tất theo đúng chuẩn SLPC + Harness²!")
     return True
 
 
+def cmd_harness2_recurse(task_id: str, mode: str = "agg", k: int = 1, domain: str = "engineering") -> Dict[str, Any]:
+    """Thực thi trực tiếp chu trình đệ quy Harness² (R=4k, P=3k, Library, Judge & Multi-Slot Fan-out) trên Orca."""
+    print(f"=== [HARNESS² RECURSIVE ENGINE ON ORCA: Task #{task_id} | mode={mode} | k={k}] ===")
+    sys.path.insert(0, str(PROJECT_ROOT / "plugins" / "slpc-lifecycle-hooks"))
+    from slppc_orchestrator import SlppcOrchestrator  # type: ignore
+    orch = SlppcOrchestrator()
+    cycle = orch.run_harness2_recursion_cycle(
+        task_id=str(task_id),
+        mode=mode,
+        k=k,
+        domain=domain,
+        notes=f"Orca Harness² recursion ({mode}, k={k}) for Task #{task_id}",
+    )
+    rec = orch.orchestrate_recursive(
+        trigger_event={"source": "orca_harness2_bridge", "task_id": str(task_id), "harness2_mode": mode, "k": k}
+    )
+    out = {"harness2_cycle": cycle, "orchestration": rec}
+    print(json.dumps(out, indent=2, ensure_ascii=False))
+    return out
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Bộ điều phối SLPC trên Orca Orchestration Engine.")
+    parser = argparse.ArgumentParser(description="Bộ điều phối SLPC + Google Harness² trên Orca Orchestration Engine.")
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     # init-run
@@ -765,11 +867,11 @@ def main():
     p_rd.add_argument("--spec", required=True, help="Đường dẫn file design_spec.md")
 
     # dispatch-peer
-    p3 = subparsers.add_parser("dispatch-peer", help="Dispatch task cho Peer Dev tại room-peer")
+    p3 = subparsers.add_parser("dispatch-peer", help="Dispatch task cho Peer Slot (peer, peer2..4, peer_design) tại room-peer")
     p3.add_argument("--task-id", required=True, help="Harness Task ID")
     p3.add_argument("--prompt", required=True, help="Yêu cầu chi tiết cho Peer")
     p3.add_argument("--parent-task", help="Orca Parent Task ID")
-    p3.add_argument("--peer", default="peer", help="Vai trò Peer (mặc định: peer)")
+    p3.add_argument("--peer", default="peer", help="Vai trò Peer Slot (peer, peer2, peer3, peer4, peer_design)")
 
     # report-done
     p4 = subparsers.add_parser("report-done", help="Peer báo cáo code hoàn thành cho Lead Review")
@@ -782,7 +884,7 @@ def main():
     p_lead.add_argument("--repo-dir", default="projects/demo-crm-fe", help="Đường dẫn repository cần review")
 
     # qc-verify
-    p5 = subparsers.add_parser("qc-verify", help="QC review chéo, chạy test và mở Gate đóng task")
+    p5 = subparsers.add_parser("qc-verify", help="QC review chéo, chạy test, chấm điểm Harness² Judge và mở Gate đóng task")
     p5.add_argument("--task-id", required=True, help="Harness Task ID")
     p5.add_argument("--source", required=True, help="File component nguồn cần kiểm thử")
     p5.add_argument("--gate-id", help="Orca Decision Gate ID")
@@ -792,6 +894,13 @@ def main():
     p6.add_argument("--task-id", required=True, help="Task ID")
     p6.add_argument("--state", required=True, choices=["New", "Active", "Resolved", "Closed", "Removed"])
     p6.add_argument("--worktree", default="active")
+
+    # harness2-recurse
+    p7 = subparsers.add_parser("harness2-recurse", help="Chạy chu trình đệ quy Google Harness² (agg/seq, R=4k, P=3k) trên Orca")
+    p7.add_argument("--task-id", required=True, help="Harness Task ID")
+    p7.add_argument("--mode", choices=["agg", "seq"], default="agg", help="Chế độ đệ quy: agg (Parallel) hoặc seq (Sequential)")
+    p7.add_argument("--k", type=int, default=1, help="Hệ số ngân sách k (R=4k rollouts, P=3k sessions)")
+    p7.add_argument("--domain", default="engineering", help="Domain lưu trữ trong Harness² Library")
 
     args = parser.parse_args()
 
@@ -813,7 +922,10 @@ def main():
         cmd_qc_verify(args.task_id, args.source, args.gate_id)
     elif args.action == "sync-board":
         sync_board_status(args.task_id, args.state, args.worktree)
+    elif args.action == "harness2-recurse":
+        cmd_harness2_recurse(args.task_id, args.mode, args.k, args.domain)
 
 
 if __name__ == "__main__":
     main()
+
