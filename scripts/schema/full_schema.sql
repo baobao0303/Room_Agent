@@ -134,4 +134,27 @@ CREATE INDEX IF NOT EXISTS idx_work_item_state ON work_item(state);
 CREATE INDEX IF NOT EXISTS idx_work_item_parent ON work_item(parent_id);
 CREATE INDEX IF NOT EXISTS idx_work_item_assigned ON work_item(assigned_to);
 
+CREATE TABLE IF NOT EXISTS harness_experience (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain               TEXT    NOT NULL,
+    work_item_id         INTEGER REFERENCES work_item(id) ON DELETE SET NULL,
+    cue                  TEXT    NOT NULL,
+    lesson               TEXT    NOT NULL,
+    evidence             TEXT    NOT NULL,
+    confidence           TEXT    NOT NULL DEFAULT 'medium'
+                         CHECK(confidence IN ('low', 'medium', 'high')),
+    harness_patch        TEXT,
+    created_at           TEXT    NOT NULL DEFAULT (datetime('now')),
+    pattern_hash         TEXT,
+    successful_harness   TEXT,
+    failure_trajectories TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_harness_experience_domain ON harness_experience(domain);
+CREATE INDEX IF NOT EXISTS idx_harness_experience_work_item ON harness_experience(work_item_id);
+CREATE INDEX IF NOT EXISTS idx_exp_domain_pattern ON harness_experience(domain, pattern_hash);
+
 INSERT OR IGNORE INTO schema_version (version) VALUES (6);
+INSERT OR IGNORE INTO schema_version (version) VALUES (7);
+INSERT OR IGNORE INTO schema_version (version) VALUES (8);
+

@@ -39,7 +39,12 @@ FORBIDDEN_GARBAGE_PATTERNS = [
 
 def get_sqlite_conn() -> Optional[sqlite3.Connection]:
     """Find and connect to an active harness.db containing harness_experience table."""
-    for db_path in DB_CANDIDATES:
+    candidates = []
+    if os.environ.get("HARNESS_DB"):
+        candidates.append(Path(os.environ["HARNESS_DB"]))
+    candidates.extend(DB_CANDIDATES)
+
+    for db_path in candidates:
         if db_path.exists():
             try:
                 conn = sqlite3.connect(str(db_path))
@@ -52,6 +57,7 @@ def get_sqlite_conn() -> Optional[sqlite3.Connection]:
             except Exception:
                 pass
     return None
+
 
 def calculate_lesson_quality_score(cue: str, lesson: str, evidence: str) -> Tuple[float, List[str]]:
     """
@@ -140,6 +146,20 @@ def search_experiences(
             raw_items = [dict(r) for r in rows]
             conn.close()
 
+    # 3. Nếu SQLite không có hoặc rỗng, fallback sang .harness/local_db.json (G-MEM-2)
+    if not raw_items:
+        try:
+            local_json = BASE_DIR / ".harness" / "local_db.json"
+            if local_json.exists():
+                with open(local_json, "r", encoding="utf-8") as f:
+                    store = json.load(f)
+                    exps = store.get("experiences", [])
+                    if domain and domain.lower() != "all":
+                        exps = [e for e in exps if (e.get("domain") == domain or e.get("category") == domain)]
+                    raw_items = exps
+        except Exception:
+            pass
+
     results = []
     for item in raw_items:
         if min_confidence and item.get("confidence", "").lower() != min_confidence.lower():
@@ -153,12 +173,22 @@ def search_experiences(
             str(item.get("cue", "")), str(item.get("lesson", "")), str(item.get("evidence", ""))
         )
         it = dict(item)
+        dom = it.get("domain") or it.get("category") or "general"
+        cu = it.get("cue") or it.get("trigger_pattern") or "unspecified_cue"
+        cf = str(it.get("confidence") or it.get("severity") or "medium").lower()
+        it["domain"] = dom
+        it["category"] = dom
+        it["cue"] = cu
+        it["trigger_pattern"] = cu
+        it["confidence"] = cf
+        it["severity"] = cf
         it["quality_score"] = round(q_score, 2)
         it["quality_issues"] = issues
         it["is_high_signal"] = q_score >= 0.70
         results.append(it)
 
     return results[:limit]
+
 
 def run_audit(prune_garbage: bool = False, min_score: float = 0.60) -> Dict[str, Any]:
     """Audit toàn bộ kho tri thức để Supervisor / PM kiểm tra."""

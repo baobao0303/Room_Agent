@@ -474,6 +474,42 @@ class HarnessManager:
             except Exception:
                 self.backend = "sqlite"
 
+    def record_experience(
+        self,
+        domain: str,
+        cue: str,
+        lesson: str,
+        evidence: str = "",
+        confidence: str = "high",
+        work_item_id: Optional[str | int] = None,
+        pattern_hash: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Unified experience recording delegating to dual-store FlociHarnessDB (G-MEM-2)."""
+        from tools.floci_client import FlociHarnessDB
+        db = FlociHarnessDB()
+        item = {
+            "domain": domain,
+            "cue": cue,
+            "lesson": lesson,
+            "evidence": evidence,
+            "confidence": str(confidence).lower() if isinstance(confidence, str) else ("high" if confidence >= 0.8 else "medium"),
+            "work_item_id": work_item_id,
+        }
+        if pattern_hash:
+            item["pattern_hash"] = pattern_hash
+        return db.put_experience(item)
+
+    def query_experiences(
+        self,
+        domain: Optional[str] = None,
+        limit: int = 10,
+        work_item_id: Optional[str | int] = None
+    ) -> List[Dict[str, Any]]:
+        """Query unified experiences delegating to FlociHarnessDB (G-MEM-2)."""
+        from tools.floci_client import FlociHarnessDB
+        return FlociHarnessDB().query_experiences(domain=domain, limit=limit, work_item_id=work_item_id)
+
+
 
     def _get_sqlite_db(self) -> sqlite3.Connection:
         db_dir = os.path.dirname(self.db_path)

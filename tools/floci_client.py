@@ -12,6 +12,8 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 import glob
+import sqlite3
+
 
 # Transparent auto-discovery of boto3 site-packages if missing from system python
 try:
@@ -108,7 +110,43 @@ def _resolve_shared_root(default_root: Path) -> Path:
 _SHARED_ROOT = _resolve_shared_root(Path(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))))
 (_SHARED_ROOT / ".harness").mkdir(parents=True, exist_ok=True)
 LOCAL_DB_PATH = str(_SHARED_ROOT / ".harness" / "local_db.json")
+
+
+def _get_sqlite_harness_db_path() -> Path:
+    if os.environ.get("HARNESS_DB"):
+        p = Path(os.environ["HARNESS_DB"])
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+    p = Path(_SHARED_ROOT) / ".harness" / "harness.db"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _ensure_sqlite_experience_table(conn: sqlite3.Connection) -> None:
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS harness_experience (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain               TEXT    NOT NULL,
+            work_item_id         INTEGER,
+            cue                  TEXT    NOT NULL,
+            lesson               TEXT    NOT NULL,
+            evidence             TEXT    NOT NULL,
+            confidence           TEXT    NOT NULL DEFAULT 'medium'
+                                 CHECK(confidence IN ('low', 'medium', 'high')),
+            harness_patch        TEXT,
+            created_at           TEXT    NOT NULL DEFAULT (datetime('now')),
+            pattern_hash         TEXT,
+            successful_harness   TEXT,
+            failure_trajectories TEXT
+        );
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_harness_experience_domain ON harness_experience(domain);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_harness_experience_work_item ON harness_experience(work_item_id);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_exp_domain_pattern ON harness_experience(domain, pattern_hash);")
+
+
 _REACHABLE_CACHE = {"ok": None, "checked_at": 0.0}
+
 
 
 def _check_endpoint_reachable(endpoint_url: str) -> bool:
@@ -1009,39 +1047,100 @@ class FlociHarnessDB:
         return {"status": "exists", "table": "harness_experience"}
 
     def put_experience(self, exp_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """Lưu một bản ghi kinh nghiệm vào DynamoDB và local store fallback."""
+        """Lưu một bản ghi kinh nghiệm vào DynamoDB, SQLite harness_experience và local_db.json (G-MEM-2)."""
         import uuid
         import hashlib
         from datetime import datetime
 
+        domain = str(exp_dict.get("domain") or exp_dict.get("category") or "general").strip()
+        cue = str(exp_dict.get("cue") or exp_dict.get("trigger_pattern") or exp_dict.get("pattern") or "unspecified_cue").strip()
+        lesson = str(exp_dict.get("lesson") or exp_dict.get("content") or "").strip()
+        evidence = str(exp_dict.get("evidence") or exp_dict.get("proof") or "")
+        if not evidence and "tags" in exp_dict:
+            tags_val = exp_dict["tags"]
+            evidence = ", ".join(tags_val) if isinstance(tags_val, list) else str(tags_val)
+
+        raw_conf = exp_dict.get("confidence") if exp_dict.get("confidence") is not None else exp_dict.get("severity")
+        if isinstance(raw_conf, (int, float)):
+            conf_str = "high" if raw_conf >= 0.8 else ("low" if raw_conf < 0.5 else "medium")
+        else:
+            conf_val = str(raw_conf or "medium").strip().lower()
+            conf_str = "high" if conf_val in ("high", "critical") else ("low" if conf_val in ("low", "minor") else "medium")
+
         item = dict(exp_dict)
+        item["domain"] = domain
+        item["category"] = domain
+        item["cue"] = cue
+        item["trigger_pattern"] = cue
+        item["lesson"] = lesson
+        item["evidence"] = evidence
+        item["confidence"] = conf_str
+        item["severity"] = conf_str
+
         if not item.get("id"):
             item["id"] = str(uuid.uuid4())
         if not item.get("created_at"):
             item["created_at"] = datetime.now().isoformat()
         if not item.get("pattern_hash"):
-            pattern_raw = f"{item.get('domain', '')}:{item.get('cue', '')}:{item.get('lesson', '')}"
+            pattern_raw = f"{domain}:{cue}:{lesson}"
             item["pattern_hash"] = hashlib.sha256(pattern_raw.encode("utf-8")).hexdigest()[:16]
 
-        if "work_item_id" in item and item["work_item_id"] is not None:
-            item["work_item_id"] = str(item["work_item_id"])
+        work_item_id_val = item.get("work_item_id")
+        work_item_id_int = None
+        if work_item_id_val is not None:
+            try:
+                work_item_id_int = int(work_item_id_val)
+            except Exception:
+                pass
+            item["work_item_id"] = str(work_item_id_val)
 
+        # 1. Ghi vào SQLite .harness/harness.db (bảng harness_experience) với deduplication trên (domain, cue)
+        try:
+            sqlite_db_path = _get_sqlite_harness_db_path()
+            conn = sqlite3.connect(str(sqlite_db_path))
+            conn.row_factory = sqlite3.Row
+            _ensure_sqlite_experience_table(conn)
+            cur = conn.cursor()
+            cur.execute("SELECT id FROM harness_experience WHERE domain = ? AND cue = ?", (domain, cue))
+            existing_row = cur.fetchone()
+            if existing_row:
+                cur.execute(
+                    "UPDATE harness_experience SET lesson = ?, evidence = ?, confidence = ?, pattern_hash = ?, work_item_id = ? WHERE id = ?",
+                    (lesson, evidence, conf_str, item["pattern_hash"], work_item_id_int, existing_row[0])
+                )
+            else:
+                cur.execute(
+                    "INSERT INTO harness_experience (domain, cue, lesson, evidence, confidence, pattern_hash, work_item_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (domain, cue, lesson, evidence, conf_str, item["pattern_hash"], work_item_id_int)
+                )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+        # 2. Ghi vào .harness/local_db.json với deduplication trên (domain, cue)
+        try:
+            store = _load_local_store()
+            store.setdefault("experiences", [])
+            store["experiences"] = [
+                e for e in store["experiences"]
+                if not (
+                    (str(e.get("domain") or e.get("category") or "").strip() == domain and str(e.get("cue") or e.get("trigger_pattern") or "").strip() == cue)
+                    or (item.get("id") and e.get("id") == item["id"])
+                )
+            ]
+            store["experiences"].append(item)
+            _save_local_store(store)
+        except Exception:
+            pass
+
+        # 3. Ghi vào DynamoDB nếu online
         if self._is_online():
             try:
                 table = self.ddb_resource.Table("harness_experience")
                 table.put_item(Item=item)
             except Exception:
                 pass
-
-        try:
-            store = _load_local_store()
-            store.setdefault("experiences", [])
-            # replace or append
-            store["experiences"] = [e for e in store["experiences"] if e.get("id") != item["id"]]
-            store["experiences"].append(item)
-            _save_local_store(store)
-        except Exception:
-            pass
 
         return item
 
@@ -1060,7 +1159,7 @@ class FlociHarnessDB:
             "cue": cue,
             "lesson": lesson,
             "evidence": evidence,
-            "confidence": confidence.lower(),
+            "confidence": confidence,
         }
         if work_item_id is not None:
             item["work_item_id"] = str(work_item_id)
@@ -1072,12 +1171,11 @@ class FlociHarnessDB:
         limit: int = 20,
         work_item_id: Optional[str | int] = None
     ) -> List[Dict[str, Any]]:
-        """Query experiences by domain or work_item_id using GSI (O(1) query, ZERO table scan)."""
+        """Query experiences with dual-store reconciliation (G-MEM-2, MEM-04)."""
         online = self._is_online()
         if online and domain:
             try:
                 table = self.ddb_resource.Table("harness_experience")
-                # Try domain-index first, fallback to domain-created_at-index
                 index_to_use = "domain-index"
                 try:
                     resp = table.query(
@@ -1123,12 +1221,117 @@ class FlociHarnessDB:
             except Exception:
                 pass
 
-        # Fallback local store
+        # Fallback local store & SQLite reconciliation
+        sqlite_items: List[Dict[str, Any]] = []
+        try:
+            sqlite_db_path = _get_sqlite_harness_db_path()
+            if sqlite_db_path.exists():
+                conn = sqlite3.connect(str(sqlite_db_path))
+                conn.row_factory = sqlite3.Row
+                _ensure_sqlite_experience_table(conn)
+                sql = "SELECT * FROM harness_experience WHERE 1=1"
+                params: List[Any] = []
+                if domain and domain.lower() != "all":
+                    sql += " AND domain = ?"
+                    params.append(domain)
+                if work_item_id is not None:
+                    sql += " AND work_item_id = ?"
+                    params.append(work_item_id)
+                sql += " ORDER BY id DESC"
+                cur = conn.cursor()
+                cur.execute(sql, params)
+                sqlite_items = [dict(r) for r in cur.fetchall()]
+                conn.close()
+        except Exception:
+            sqlite_items = []
+
         store = _load_local_store()
-        exps = store.get("experiences", [])
-        if domain:
-            exps = [e for e in exps if e.get("domain") == domain]
+        json_items = store.get("experiences", [])
+        if domain and domain.lower() != "all":
+            json_items = [e for e in json_items if (e.get("domain") == domain or e.get("category") == domain)]
         if work_item_id is not None:
-            exps = [e for e in exps if str(e.get("work_item_id")) == str(work_item_id)]
-        return exps[-limit:]
+            json_items = [e for e in json_items if str(e.get("work_item_id")) == str(work_item_id)]
+
+        # Reconcile / Merge records by (domain, cue)
+        merged_by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        for it in sqlite_items:
+            d = str(it.get("domain", "")).strip()
+            c = str(it.get("cue", "")).strip()
+            if d and c:
+                merged_by_key[(d, c)] = dict(it)
+
+        missing_in_sqlite: List[Dict[str, Any]] = []
+        for it in json_items:
+            d = str(it.get("domain") or it.get("category") or "").strip()
+            c = str(it.get("cue") or it.get("trigger_pattern") or "").strip()
+            if not d or not c:
+                continue
+            key = (d, c)
+            if key not in merged_by_key:
+                merged_by_key[key] = dict(it)
+                missing_in_sqlite.append(it)
+            else:
+                merged_by_key[key].update({k: v for k, v in it.items() if k not in merged_by_key[key] or merged_by_key[key][k] is None})
+
+        # Sync missing items from JSON into SQLite
+        if missing_in_sqlite:
+            try:
+                sqlite_db_path = _get_sqlite_harness_db_path()
+                conn = sqlite3.connect(str(sqlite_db_path))
+                _ensure_sqlite_experience_table(conn)
+                cur = conn.cursor()
+                for it in missing_in_sqlite:
+                    d = str(it.get("domain") or it.get("category") or "").strip()
+                    c = str(it.get("cue") or it.get("trigger_pattern") or "").strip()
+                    l = str(it.get("lesson") or "").strip()
+                    ev = str(it.get("evidence") or "")
+                    conf = str(it.get("confidence") or "medium").lower()
+                    if conf not in ("low", "medium", "high"):
+                        conf = "medium"
+                    ph = it.get("pattern_hash")
+                    wid = None
+                    if it.get("work_item_id") is not None:
+                        try:
+                            wid = int(it["work_item_id"])
+                        except Exception:
+                            pass
+                    cur.execute(
+                        "INSERT OR IGNORE INTO harness_experience (domain, cue, lesson, evidence, confidence, pattern_hash, work_item_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (d, c, l, ev, conf, ph, wid)
+                    )
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+
+        # Sync missing items from SQLite into JSON store
+        existing_json_keys = {
+            (str(e.get("domain") or e.get("category") or "").strip(), str(e.get("cue") or e.get("trigger_pattern") or "").strip())
+            for e in store.get("experiences", [])
+        }
+        needs_json_save = False
+        for key, it in merged_by_key.items():
+            if key not in existing_json_keys:
+                store.setdefault("experiences", []).append(it)
+                needs_json_save = True
+        if needs_json_save:
+            _save_local_store(store)
+
+        # Output with schema aliases
+        results = []
+        for it in merged_by_key.values():
+            rec = dict(it)
+            dom = rec.get("domain") or rec.get("category") or "general"
+            cu = rec.get("cue") or rec.get("trigger_pattern") or "unspecified_cue"
+            cf = str(rec.get("confidence") or rec.get("severity") or "medium").lower()
+            rec["domain"] = dom
+            rec["category"] = dom
+            rec["cue"] = cu
+            rec["trigger_pattern"] = cu
+            rec["confidence"] = cf
+            rec["severity"] = cf
+            results.append(rec)
+
+        return results[:limit]
+
 
