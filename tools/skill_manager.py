@@ -185,56 +185,24 @@ def find_skill_in_master(skill_name: str) -> Optional[Path]:
 
 def sync_skills() -> Dict[str, Any]:
     """
-    Consolidate all skills into Master Registry and symlink to all target directories.
-    Also syncs to sub-rooms under `bmad/rooms/*/`.
+    Consolidate all skills from Master Registry (`skills/`) and symlink to all target directories.
+    Also cleans up broken symlinks in target directories.
     """
     ensure_dirs()
     synced_skills = []
     errors = []
 
-    # Step 1: Collect from external directories into Master Registry if not present
-    source_candidates = [
-        _paseo_project_skills,
-        Path(os.path.expanduser("~/.claude/skills")),
-        Path(os.path.expanduser("~/.paseo/skills")),
-        Path(os.path.expanduser("~/.codex/skills")),
-        Path(os.path.expanduser("~/.gemini/config/skills")),
-        Path(os.path.expanduser("~/.gemini/antigravity/builtin/skills")),
-        BASE_DIR / ".claude/skills"
-    ]
-
-    # Include plugin skills
-    gemini_plugins = Path(os.path.expanduser("~/.gemini/config/plugins"))
-    if gemini_plugins.is_dir():
-        for sk_dir in gemini_plugins.glob("**/skills/*"):
-            if sk_dir.is_dir() and (sk_dir / "SKILL.md").exists():
-                existing = find_skill_in_master(sk_dir.name)
-                if not existing:
-                    master_dest = MASTER_REGISTRY / "shared" / sk_dir.name
-                    try:
-                        shutil.copytree(sk_dir, master_dest, symlinks=True)
-                    except Exception as e:
-                        errors.append(f"Không thể sao chép plugin {sk_dir.name} vào Master: {str(e)}")
-
-    for src_dir in source_candidates:
-        if not src_dir.is_dir():
-            continue
-        for item in src_dir.iterdir():
-            if item.name.startswith("."):
-                continue
-            real_path = item.resolve() if item.is_symlink() else item
-            if real_path.is_dir() and (real_path / "SKILL.md").exists():
-                existing = find_skill_in_master(item.name)
-                if not existing:
-                    master_dest = MASTER_REGISTRY / "shared" / item.name
-                    try:
-                        # Copy or symlink into master shared
-                        shutil.copytree(real_path, master_dest, symlinks=True)
-                    except Exception as e:
-                        errors.append(f"Không thể sao chép {item.name} vào Master: {str(e)}")
-
-    # Step 2: Build target directories list (only existing target directories)
+    # Step 1: Build target directories list (only existing target directories)
     active_targets = [t for t in TARGET_DIRS if t.is_dir()]
+
+    # Step 2: Clean up broken symlinks in active targets
+    for target_dir in active_targets:
+        try:
+            for item in list(target_dir.iterdir()):
+                if item.is_symlink() and not item.exists():
+                    item.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     # Step 3: Scan all master skills across profile directories (skills/<profile>/<skill>)
     all_master_skills = [s for s in MASTER_REGISTRY.rglob("*") if s.is_dir() and (s / "SKILL.md").exists()]
@@ -246,17 +214,17 @@ def sync_skills() -> Dict[str, Any]:
         for target_dir in active_targets:
             target_link = target_dir / skill_name
             # If target is inside master registry itself, skip
-            if target_link.resolve() == skill_dir.resolve():
-                continue
+            try:
+                if target_link.exists() and target_link.resolve() == skill_dir.resolve():
+                    continue
+            except Exception:
+                pass
 
             try:
                 if target_link.is_symlink() or target_link.exists():
-                    # If it already points correctly, keep it
-                    if target_link.is_symlink() and target_link.resolve() == skill_dir.resolve():
-                        continue
                     # Remove outdated or broken link
                     if target_link.is_symlink() or target_link.is_file():
-                        target_link.unlink()
+                        target_link.unlink(missing_ok=True)
                     elif target_link.is_dir():
                         shutil.rmtree(target_link)
 

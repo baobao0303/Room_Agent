@@ -122,14 +122,22 @@ def find_paseo_bin() -> str:
 
 def infer_slpc_role(text_or_title: str | None, provider: str | None = None) -> str | None:
     combined = f"{text_or_title or ''} {provider or ''}".lower()
+    if "room-lead" in combined:
+        return "Lead"
+    if "room-pm" in combined:
+        return "PM"
+    if "room-peer" in combined:
+        return "Peer"
+    if "room-qc" in combined:
+        return "QC"
     if "supervisor" in combined:
         return "Supervisor"
-    if "pm" in combined or "product manager" in combined:
+    if "lead" in combined:
+        return "Lead"
+    if re.search(r"\bpm\b", combined) or "product manager" in combined:
         return "PM"
     if "qc" in combined or "verifier" in combined or "istqb" in combined:
         return "QC"
-    if "lead" in combined:
-        return "Lead"
     if "peer" in combined:
         return "Peer"
     if "sentinel" in combined or "security" in combined:
@@ -375,7 +383,8 @@ def cmd_plugin_event(args: argparse.Namespace) -> int:
     agent_id = agent_info.get("id") or data.get("request", {}).get("agentId")
     agent_title = agent_info.get("title") or data.get("request", {}).get("config", {}).get("title")
     provider = agent_info.get("provider") or data.get("request", {}).get("config", {}).get("provider")
-    role = infer_slpc_role(agent_title, provider)
+    wt_hint = workspace_info.get("path") or workspace_info.get("name") or agent_info.get("worktreePath") or ""
+    role = infer_slpc_role(f"{agent_title or ''} {wt_hint}", provider)
 
     research_result = None
     orchestration_result = None

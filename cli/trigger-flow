@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# =========================================================================
+# cli/trigger-flow - CLI 1 chạm kích hoạt toàn bộ vòng đời SLPPC
+# =========================================================================
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+if [ "$(basename "$SCRIPT_DIR")" = "cli" ] || [ "$(basename "$SCRIPT_DIR")" = "scripts" ]; then
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+else
+    PROJECT_ROOT="$SCRIPT_DIR"
+fi
+
+PROMPT="${*:-"Nhiệm vụ kiểm tra và đồng bộ pipeline SLPPC"}"
+cd "$PROJECT_ROOT"
+exec python3 "$PROJECT_ROOT/scripts/run_pipeline.py" "$PROMPT"

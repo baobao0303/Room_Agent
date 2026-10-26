@@ -40,26 +40,18 @@ case "$ROLE" in
         alias tsc="rtk tsc"
         alias log="rtk git log -n 10"
         ;;
-    peer|peer2|peer3|peer4)
+    peer)
         alias git="rtk git"
+        alias diff="rtk diff"
         alias jest="rtk jest"
         alias tsc="rtk tsc"
         alias cat="rtk read -l aggressive"
-        ;;
-    design)
-        alias diff="rtk diff"
-        alias cat="rtk read"
         alias find="rtk find"
         ;;
     qc)
         alias jest="rtk jest"
         alias playwright="rtk test"
         alias err="rtk err"
-        ;;
-    security|security_sentinel)
-        alias grep="rtk grep"
-        alias diff="rtk diff"
-        alias stat="rtk git status"
         ;;
     *)
         alias git="rtk git"

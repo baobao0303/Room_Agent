@@ -1,15 +1,17 @@
 # =============================================================================
-# Paseo Project Workspace - Root .gitignore
+# Room_Agent - Root .gitignore (Strict Security & Runtime Isolation)
 # =============================================================================
 
-# 1. Environment & Secrets
+# 1. Environment, Secrets & Credentials (NEVER COMMIT)
 .env
 .env.*
 !.env.example
 *.pem
 *.key
 *.token
+*.secret
 *.credentials.json
+*credentials*.json
 .credentials.json
 .mcp.json
 tools/update_outline_*.py
@@ -43,7 +45,8 @@ env/
 .ruff_cache/
 .mypy_cache/
 
-# 3. Local SQLite & Databases
+# 3. Local SQLite, Harness Runtime State & Databases (NEVER COMMIT)
+/.harness/
 *.db
 *.sqlite
 *.sqlite3
@@ -51,6 +54,8 @@ env/
 *.db-wal
 *.db-shm
 .harness_local_db.json
+.harness_progress.json
+.harness_hooks.jsonl
 
 # 4. Node.js, Frontend & Build Artifacts
 node_modules/
@@ -66,7 +71,8 @@ coverage/
 target/
 **/target/
 
-# 5. OS & IDE Configuration
+# 5. OS, IDE & Agent Runtime Symlinks
+.agents/
 .claude/
 */.claude/
 .DS_Store
@@ -81,53 +87,50 @@ Thumbs.db
 *.bak.*
 *.tmp
 *.temp
+*.log
 scratch/
 
-# 7. Sub-projects (own repos)
+# 7. Sub-projects & External Workspaces (NEVER COMMIT)
 /projects/
-
-# 8. Company-identifying
 /private/
-/.agents/
-/tools/crm_doc_reader.py
-/tools/distill_ba_beats.py
-/spec_slider.md
 /game/
 /codex-room-setup/
-/.harness_progress.json
-/.harness_hooks.jsonl
+.worktrees/
+.rooms
 
-# 9. Auto-generated research & test briefs
+# 8. Auto-generated Research & Test Briefs (NEVER COMMIT)
 tools/research/gen_brief_*.md
 tools/research/research_*.md
+tools/research/reports/
 !tools/research/README.md
 !tools/research/*.py
-!tools/research/reports/**
 
-# 10. Ephemeral Room Coordination, Meeting Memos & Working Artifacts
+# 9. Ephemeral Room Coordination, Meeting Memos, Architecture Graph & Working Artifacts
+bmad/architecture.json
+bmad/adrs/
+bmad/rooms/supervisor/
+bmad/rooms/pm/
 bmad/rooms/lead/
 bmad/rooms/peer/
 bmad/rooms/qc/
-bmad/rooms/supervisor/
-bmad/rooms/pm/
 bmad/rooms/tasks/
 bmad/rooms/violations/
 bmad/rooms/archive/
 bmad/rooms/discussions/
-bmad/adrs/
-.worktrees/
+bmad/rooms/approvals/
 bmad/rooms/*.json
 !bmad/rooms/README.md
 !bmad/rooms/template-handoff.md
 docs/AGENT_PROGRESS.md
 
-# 11. Subproject-specific feature specs (kept locally, not in open-source framework)
-docs/spec/wicx-crm-fe/
-docs/spec/wion-pos-header-refactor-spec.md
+# 10. Subproject-specific Feature Specs & Matrices (Local only)
+docs/spec/test_matrices/
+docs/spec/demo-crm-fe/
+docs/spec/demo-pos-header-refactor-spec.md
 docs/spec/shop-user-list-context-spec.md
 docs/spec/session-expired-hub-handling-spec.md
 docs/spec/rsbuild-proxy-and-strict-typing-spec.md
-docs/spec/wionpos-integration-test-matrix.md
+docs/spec/demo-pos-integration-test-matrix.md
 docs/spec/cdp-field-mapping-architecture-spec.md
 docs/spec/cdp-field-mapping-ui-spec.md
 docs/spec/raw-data-mapping-spec.md

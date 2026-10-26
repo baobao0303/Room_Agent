@@ -28,7 +28,7 @@ sys.path.insert(0, str(BASE_DIR))
 
 
 def _load_env_files():
-    for env_path in (BASE_DIR / ".env", BASE_DIR / "harness-ui" / ".env", BASE_DIR / ".env.example"):
+    for env_path in (BASE_DIR / ".env", BASE_DIR / ".env.example"):
         if not env_path.is_file():
             continue
         try:
@@ -53,7 +53,7 @@ from tools import qc_test_generator as qc_gen
 from tools import agent_progress
 from tools import harness_doctor
 
-DIST_DIR = BASE_DIR / "harness-ui" / "dist"
+DIST_DIR = BASE_DIR / "dist" / "dashboard"
 INDEX_FILE = DIST_DIR / "index.html"
 
 MIME_OVERRIDES = {
@@ -94,7 +94,7 @@ FIELDS = [
 ]
 
 LOCAL_CACHE_FILE = Path("/tmp/harness_work_items_cache.json")
-LOCAL_DB_FILE = BASE_DIR / ".harness_local_db.json"
+LOCAL_DB_FILE = BASE_DIR / ".harness" / "local_db.json"
 
 try:
     import signal
@@ -125,7 +125,7 @@ def _synthesize_testcase_spec(row: dict) -> dict:
     item_id = row.get("id") or "--"
 
     # Extract [Module] prefix if present
-    module_name = "Hệ thống WiCX CRM"
+    module_name = "Hệ thống Demo CRM"
     rest_title = title
     if title.startswith("[") and "]" in title:
         close_idx = title.find("]")
@@ -483,8 +483,8 @@ def scan_workspace_Targets():
     specs = []
 
     search_roots = [
-        BASE_DIR / "projects/wicx-crm-fe/libs",
-        BASE_DIR / "projects/wicx-crm-fe/apps",
+        BASE_DIR / "projects/demo-crm-fe/libs",
+        BASE_DIR / "projects/demo-crm-fe/apps",
         BASE_DIR / "game/src",
         BASE_DIR / "tools",
     ]
@@ -505,8 +505,8 @@ def scan_workspace_Targets():
 
     spec_roots = [
         BASE_DIR / "docs/spec",
-        BASE_DIR / "projects/wicx-crm-fe/docs",
-        BASE_DIR / "projects/wicx-crm-fe/libs",
+        BASE_DIR / "projects/demo-crm-fe/docs",
+        BASE_DIR / "projects/demo-crm-fe/libs",
         BASE_DIR / "private/docs/spec",
     ]
     for sroot in spec_roots:
@@ -531,22 +531,22 @@ def scan_workspace_Targets():
             "id": "qc-gen-validator",
             "category": "QC Unit Gen",
             "title": "Gen 5-Stage Unit Tests: validator.helper.ts",
-            "command": "python3 tools/qc_test_generator.py --source projects/wicx-crm-fe/libs/wicx-core/src/utils/helps/validator.helper.ts --spec projects/wicx-crm-fe/libs/wicx-core/spec.md --out-spec /tmp/validator.helper.spec.ts",
+            "command": "python3 tools/qc_test_generator.py --source projects/demo-crm-fe/libs/demo-core/src/utils/helps/validator.helper.ts --spec projects/demo-crm-fe/libs/demo-core/spec.md --out-spec /tmp/validator.helper.spec.ts",
             "cwd": str(BASE_DIR)
         },
         {
-            "id": "wicx-core-test",
+            "id": "demo-core-test",
             "category": "Unit Test",
-            "title": "Run Nx Unit Tests: wicx-core",
-            "command": "npx nx test wicx-core",
-            "cwd": str(BASE_DIR / "projects/wicx-crm-fe")
+            "title": "Run Nx Unit Tests: demo-core",
+            "command": "npx nx test demo-core",
+            "cwd": str(BASE_DIR / "projects/demo-crm-fe")
         },
         {
-            "id": "wicx-build-shell",
+            "id": "demo-build-shell",
             "category": "Build",
             "title": "Build Angular Host: app-shell (Rsbuild)",
             "command": "npx nx build app-shell",
-            "cwd": str(BASE_DIR / "projects/wicx-crm-fe")
+            "cwd": str(BASE_DIR / "projects/demo-crm-fe")
         },
         {
             "id": "game-vitest",
@@ -593,8 +593,8 @@ _CONNECTED_NODES = [
     },
     {
         "id": "tailscale-master",
-        "name": "Tailscale Host (100.92.98.99:8765)",
-        "url": os.environ.get("PUBLIC_API_BASE_URL", "http://100.92.98.99:8765"),
+        "name": "Tailscale Host (127.0.0.1:8765)",
+        "url": os.environ.get("PUBLIC_API_BASE_URL", "http://127.0.0.1:8765"),
         "kind": "harness-node",
         "workspace": str(BASE_DIR),
         "online": True,
@@ -602,8 +602,8 @@ _CONNECTED_NODES = [
     },
     {
         "id": "remote-deploy",
-        "name": "Deploy Node (100.124.36.46:4321)",
-        "url": os.environ.get("PUBLIC_DEPLOY_URL", "http://100.124.36.46:4321"),
+        "name": "Deploy Node (127.0.0.1:4321)",
+        "url": os.environ.get("PUBLIC_DEPLOY_URL", "http://127.0.0.1:4321"),
         "kind": "deploy-ui",
         "workspace": "/app",
         "online": True,
@@ -750,10 +750,10 @@ def resolve_link_and_generate_tests(body: dict) -> dict:
     if not raw_link:
         raise ValueError("Vui lòng dán link (PR / Commit / Work Item / File URL / Mã #ID)!")
 
-    # If target_node is a remote machine (not local 127.0.0.1 / 100.92.98.99), try forwarding to that node first
+    # If target_node is a remote machine (not local 127.0.0.1 / 127.0.0.1), try forwarding to that node first
     if target_node:
         norm_node = _normalize_node_url(target_node)
-        local_Self = {"http://127.0.0.1:8765", "http://localhost:8765", "http://100.92.98.99:8765"}
+        local_Self = {"http://127.0.0.1:8765", "http://localhost:8765", "http://127.0.0.1:8765"}
         if norm_node not in local_Self and not body.get("_forwarded"):
             try:
                 fwd_payload = dict(body)
@@ -1511,7 +1511,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             </div>
             <div id="preset-container" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
             <div style="display:flex;gap:8px">
-              <input id="custom-cmd-input" placeholder="Nhập lệnh CLI (VD: npx nx test wicx-core)..." style="flex:1">
+              <input id="custom-cmd-input" placeholder="Nhập lệnh CLI (VD: npx nx test demo-core)..." style="flex:1">
               <input id="custom-cwd-input" placeholder="Thư mục (mặc định: root)" size="18">
               <button type="button" class="btn btn-primary" id="btn-run-custom">Chạy</button>
             </div>
@@ -1524,12 +1524,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <div class="form-grid">
               <div class="field-row">
                 <label for="qc-source">File Source Code (<code>--source</code>)</label>
-                <input id="qc-source" list="dl-sources" value="projects/wicx-crm-fe/libs/wicx-core/src/utils/helps/validator.helper.ts">
+                <input id="qc-source" list="dl-sources" value="projects/demo-crm-fe/libs/demo-core/src/utils/helps/validator.helper.ts">
                 <datalist id="dl-sources"></datalist>
               </div>
               <div class="field-row">
                 <label for="qc-spec">File Spec / Acceptance Criteria (<code>--spec</code>)</label>
-                <input id="qc-spec" list="dl-specs" value="projects/wicx-crm-fe/libs/wicx-core/spec.md">
+                <input id="qc-spec" list="dl-specs" value="projects/demo-crm-fe/libs/demo-core/spec.md">
                 <datalist id="dl-specs"></datalist>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -2330,10 +2330,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         if url_path == "/api/env":
             self._send_json({
                 "ok": True,
-                "env_loaded": (BASE_DIR / ".env").is_file() or (BASE_DIR / "harness-ui" / ".env").is_file(),
+                "env_loaded": (BASE_DIR / ".env").is_file(),
                 "WORKSPACE_ROOT": str(BASE_DIR),
                 "HARNESS_BACKEND": os.environ.get("HARNESS_BACKEND", "floci"),
-                "FLOCI_ENDPOINT": os.environ.get("FLOCI_ENDPOINT", "http://100.124.36.46:14566"),
+                "FLOCI_ENDPOINT": os.environ.get("FLOCI_ENDPOINT", "http://127.0.0.1:14566"),
                 "FLOCI_S3_BUCKET": os.environ.get("FLOCI_S3_BUCKET", "harness-data"),
                 "HARNESS_MODEL": os.environ.get("HARNESS_MODEL", "gemini-3.7-medium"),
                 "AWS_REGION": os.environ.get("AWS_REGION", "us-east-1"),
@@ -2507,7 +2507,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._serve_inline_template()
             return
 
-        # Serve static assets from harness-ui/dist/
+        # Serve static assets from DIST_DIR if built
         if DIST_DIR.is_dir():
             clean_path = unquote(url_path.lstrip("/"))
             if "\x00" in clean_path:

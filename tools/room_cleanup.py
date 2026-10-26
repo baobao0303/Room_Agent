@@ -34,6 +34,7 @@ PRESERVE_FILENAMES = {
     "latest_handoff.md",
     "latest_discussion.md",
     "latest_review.md",
+    "decision_memo.md",
     "README.md",
     "template-handoff.md",
     "template-discussion.md",
@@ -239,6 +240,54 @@ def migrate_legacy(dry_run: bool = False) -> int:
     return removed_count
 
 
+def clean_timestamped_files(dry_run: bool = False) -> int:
+    """
+    Dọn dẹp các file tạm có timestamp (review_*, intake_memo_*, minutes_*) vào archive/
+    theo WORKSPACE_PROTOCOL.md Section 5 (Room Hygiene Standard).
+    """
+    print("=== DỌN DẸP FILE TIMESTAMP KHÔNG CẦN THIẾT (WORKSPACE_PROTOCOL SECTION 5) ===")
+    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+    reviews_archive = ARCHIVE_DIR / "legacy_reviews"
+    memos_archive = ARCHIVE_DIR / "legacy_memos"
+    discussions_archive = ARCHIVE_DIR / "legacy_discussions"
+
+    if not dry_run:
+        reviews_archive.mkdir(parents=True, exist_ok=True)
+        memos_archive.mkdir(parents=True, exist_ok=True)
+        discussions_archive.mkdir(parents=True, exist_ok=True)
+
+    moved_count = 0
+    for room in ROOMS_DIR.iterdir():
+        if not room.is_dir() or room.name in {"archive", ".claude", "tasks"}:
+            continue
+        for file in sorted(room.glob("*.md")):
+            if file.name in PRESERVE_FILENAMES:
+                continue
+
+            target_archive = None
+            if file.name.startswith("review_"):
+                target_archive = reviews_archive
+            elif file.name.startswith("intake_memo_"):
+                target_archive = memos_archive
+            elif file.name.startswith("minutes_"):
+                target_archive = discussions_archive
+
+            if target_archive:
+                moved_count += 1
+                dest = target_archive / file.name
+                if dest.exists():
+                    dest = target_archive / f"{file.parent.name}_{file.name}"
+                if dry_run:
+                    print(f"  [DRY-RUN SẼ ARCHIVE] {_rel(file)} ➔ {_rel(dest)}")
+                else:
+                    shutil.move(str(file), str(dest))
+                    print(f"  [ĐÃ ARCHIVE] {_rel(file)} ➔ {_rel(dest)}")
+
+    action_label = "Sẽ lưu trữ" if dry_run else "Đã lưu trữ an toàn"
+    print(f"✅ Hoàn tất: {action_label} {moved_count} file timestamp vào {ARCHIVE_DIR.name}/.\n")
+    return moved_count
+
+
 def main():
     parser = argparse.ArgumentParser(description="Thu gom rác an toàn cho BMAD rooms.")
     parser.add_argument("--task-id", type=str, help="Work Item / Task ID cần dọn dẹp (VD: 889, WI-65)")
@@ -247,15 +296,19 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Chỉ kiểm tra, không di chuyển file")
     parser.add_argument("--force", action="store_true", help="Bỏ qua kiểm tra Harness state (nguy hiểm, chỉ dùng khi khẩn cấp)")
     parser.add_argument("--migrate-legacy", action="store_true", help="Xóa sạch mọi file handoff_*.md cũ có timestamp trong bmad/rooms/, chỉ giữ latest_handoff.md và khởi tạo room_ledger.json")
+    parser.add_argument("--clean-timestamped", action="store_true", help="Dọn dẹp các file timestamp tạm thời (review_*, intake_memo_*, minutes_*) vào bmad/rooms/archive/")
     args = parser.parse_args()
 
-    if not args.task_id and not args.sweep and not args.migrate_legacy:
+    if not args.task_id and not args.sweep and not args.migrate_legacy and not args.clean_timestamped:
         parser.print_help()
-        print("\nLỗi: Cần truyền --task-id <id>, --sweep, hoặc --migrate-legacy.")
+        print("\nLỗi: Cần truyền --task-id <id>, --sweep, --migrate-legacy, hoặc --clean-timestamped.")
         sys.exit(1)
 
     if args.migrate_legacy:
         migrate_legacy(dry_run=args.dry_run)
+
+    if args.clean_timestamped:
+        clean_timestamped_files(dry_run=args.dry_run)
 
     if args.task_id:
         cleanup_by_task(args.task_id, dry_run=args.dry_run, force=args.force)

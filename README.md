@@ -15,8 +15,8 @@ Khi clone repository về máy nhà hoặc máy trạm mới, chỉ cần chạy
 Hoặc sau khi setup, khởi chạy và quản trị các Agent tabs trực tiếp trên Orca Desktop:
 
 ```bash
-./agent-start         # Khởi chạy các Agent tabs thường trực (PM, Lead)
-./agent-start status  # Xem bảng trạng thái chi tiết của tất cả Agent & nhịp tim
+./cli/agent-start         # Khởi chạy các Agent tabs thường trực (PM, Lead)
+./cli/agent-start status  # Xem bảng trạng thái chi tiết của tất cả Agent & nhịp tim
 ```
 
 ### Script tự động thực hiện trọn gói:
@@ -26,7 +26,7 @@ Hoặc sau khi setup, khởi chạy và quản trị các Agent tabs trực ti�
 4. **Đồng bộ 10 Profiles SLPPC**: Tự động đăng ký `Supervisor`, `PM Agent`, `Lead Dev`, `Peer Dev 1..4`, `Peer Design`, `QC`, `Security Sentinel` vào `~/.paseo/config.json`.
 5. **Cài đặt Git Pre-Commit Guard**: Tự động kích hoạt hook kiểm soát thẩm quyền vai trò và chống mã màu hex cứng.
 6. **Đồng bộ Harness DB & Aevum Kanban**: Khởi tạo kết nối Floci DynamoDB Cloud (`:14566`) và tự động kích hoạt cơ chế Local Fallback nếu Floci offline.
-7. **Khởi chạy Multi-Agent Room**: (Khi dùng cờ `--launch` hoặc chạy `./agent-start`).
+7. **Khởi chạy Multi-Agent Room**: (Khi dùng cờ `--launch` hoặc chạy `./cli/agent-start`).
 
 ---
 
@@ -299,7 +299,7 @@ npx tsx tools/research/research_agent.ts "Đánh giá Redis Cache Pattern"
    - Cấm 100% `any`, `unknown`, toán tử chắp vá `||`, `new Optional()` vô căn cứ.
    - Bắt buộc map tường minh theo chuẩn DTO và Dataclass.
 4. **Kỷ Luật Git & Chống Rò Rỉ Tuyệt Đối (Open-Source Ready)**:
-   - Thư mục `projects/` (`wicx-crm-fe`, `Aevum`, `harness`, `harness2`) nằm trọn trong `.gitignore`.
+   - Thư mục `projects/` (`demo-crm-fe`, `demo-pos-fe`, `Aevum`, `harness`, `harness2`) nằm trọn trong `.gitignore`.
    - Cấm tuyệt đối đưa API contracts riêng tư, luồng nghiệp vụ FE, tên công ty hay địa chỉ thực tế vào git tracking.
    - Nghiêm cấm tự ý commit Git khi chưa có chỉ thị rõ ràng từ User.
 5. **Cổng Chất Lượng Tri Thức Tự Học (Anti-Trivial Quality Gate)**:

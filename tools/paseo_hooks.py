@@ -5,7 +5,12 @@ import sys
 from pathlib import Path
 
 TARGET = Path(__file__).resolve().parent.parent / "plugins" / "slpc-lifecycle-hooks" / "paseo_hooks.py"
-if not TARGET.exists():
-    sys.exit(f"Error: Target {TARGET} not found.")
 
-sys.exit(subprocess.call([sys.executable, str(TARGET)] + sys.argv[1:]))
+def main():
+    if not TARGET.exists():
+        sys.exit(f"Error: Target {TARGET} not found.")
+    sys.exit(subprocess.call([sys.executable, str(TARGET)] + sys.argv[1:]))
+
+if __name__ == "__main__":
+    main()
+

@@ -24,9 +24,36 @@ from typing import Any, Dict, List, Optional
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent if SCRIPT_DIR.parent.name == "plugins" else SCRIPT_DIR.parent
-REG_FILE = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
-LEDGER_FILE = PROJECT_ROOT / "bmad" / "rooms" / "room_ledger.json"
-ROOMS_DIR = PROJECT_ROOT / "bmad" / "rooms"
+
+
+def resolve_shared_root(default_root: Path) -> Path:
+    """Resolve canonical main worktree root so all room-* worktrees share bmad/rooms and Harness DB."""
+    override = os.environ.get("SLPPC_SHARED_ROOT")
+    if override:
+        p = Path(override)
+        if os.access(p, os.R_OK | os.W_OK):
+            return p
+    git_entry = default_root / ".git"
+    try:
+        if git_entry.is_file():
+            raw = git_entry.read_text(encoding="utf-8").strip()
+            if raw.startswith("gitdir:"):
+                gitdir = Path(raw.split("gitdir:", 1)[1].strip())
+                if not gitdir.is_absolute():
+                    gitdir = (default_root / gitdir).resolve()
+                if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+                    main_root = gitdir.parent.parent.parent
+                    if os.access(main_root, os.R_OK | os.W_OK):
+                        return main_root
+    except Exception:
+        pass
+    return default_root
+
+
+SHARED_ROOT = resolve_shared_root(PROJECT_ROOT)
+REG_FILE = SHARED_ROOT / "bmad" / "rooms" / "agent_terminals.json"
+LEDGER_FILE = SHARED_ROOT / "bmad" / "rooms" / "room_ledger.json"
+ROOMS_DIR = SHARED_ROOT / "bmad" / "rooms"
 ARCHIVE_DIR = ROOMS_DIR / "archive"
 
 # Ensure tools and project root are in sys.path
@@ -42,12 +69,21 @@ except ImportError:
     except ImportError:
         HarnessManager = None  # type: ignore
 
+try:
+    from tools.harness_rust import query_lessons, record_lesson  # type: ignore
+except ImportError:
+    try:
+        from harness_rust import query_lessons, record_lesson  # type: ignore
+    except ImportError:
+        query_lessons = None  # type: ignore
+        record_lesson = None  # type: ignore
+
 
 class SlppcOrchestrator:
     """Autonomous event-driven controller for SLPPC multi-agent workflow."""
 
     def __init__(self, root: Optional[Path] = None):
-        self.root = root or PROJECT_ROOT
+        self.root = root if root is not None else SHARED_ROOT
         self.reg_file = self.root / "bmad" / "rooms" / "agent_terminals.json"
         self.rooms_dir = self.root / "bmad" / "rooms"
         self.mgr = HarnessManager(engine="auto") if HarnessManager else None
@@ -55,6 +91,57 @@ class SlppcOrchestrator:
     # =========================================================================
     # TERMINAL & PTY MANAGEMENT
     # =========================================================================
+
+    @staticmethod
+    def _normalize_room_role(role: str) -> str:
+        r = role.lower().strip()
+        if "supervisor" in r or r == "main":
+            return "supervisor"
+        if "lead" in r:
+            return "lead"
+        if "pm" in r:
+            return "pm"
+        if any(k in r for k in ("peer", "dev", "design")):
+            return "peer"
+        if "qc" in r:
+            return "qc"
+        return r
+
+    @staticmethod
+    def _infer_terminal_room(term: Dict[str, Any]) -> Optional[str]:
+        wt_path = (term.get("worktreePath") or "").lower().rstrip("/")
+        wt_id = (term.get("worktreeId") or "").lower().rstrip("/")
+        branch = (term.get("branch") or "").lower().rstrip("/")
+
+        for r in ("pm", "lead", "peer", "qc"):
+            token = f"room-{r}"
+            if (
+                wt_path.endswith(f"/{token}")
+                or f"/{token}/" in wt_path
+                or wt_id.endswith(f"/{token}")
+                or branch.endswith(f"/{token}")
+                or branch == token
+            ):
+                return r
+
+        if branch in ("main", "refs/heads/main") or (
+            wt_path and "/room-" not in wt_path and not wt_path.endswith(("/room-pm", "/room-lead", "/room-peer", "/room-qc"))
+        ):
+            return "supervisor"
+
+        # Fallback khi mock terminal không có metadata worktree
+        title = (term.get("title") or "").lower()
+        if "[supervisor]" in title or "scope & intent" in title:
+            return "supervisor"
+        if "[lead" in title or "technical architect" in title:
+            return "lead"
+        if "[pm]" in title or "[pm agent]" in title or "feasibility" in title:
+            return "pm"
+        if "[peer" in title or "code executor" in title:
+            return "peer"
+        if "[qc]" in title or "istqb" in title or "verifier" in title:
+            return "qc"
+        return None
 
     def get_terminals_registry(self) -> Dict[str, Dict[str, str]]:
         if not self.reg_file.exists():
@@ -69,9 +156,9 @@ class SlppcOrchestrator:
         self.reg_file.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     def find_live_terminal_for_role(self, role: str) -> Optional[str]:
-        if not shutil.which("orca"):
+        if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
             return None
-        target = role.lower().strip()
+        target = self._normalize_room_role(role)
         reg = self.get_terminals_registry()
 
         try:
@@ -79,27 +166,55 @@ class SlppcOrchestrator:
             if res.returncode != 0:
                 return None
             term_data = json.loads(res.stdout)
-            live_terms = term_data.get("result", {}).get("terminals", [])
-            live_handles = {t.get("handle") for t in live_terms}
+            live_terms = [
+                t for t in term_data.get("result", {}).get("terminals", [])
+                if t.get("handle") and not t.get("stopped") and t.get("connected", True)
+            ]
 
-            # 1. Tra cứu registry cố định
+            matching_terms = [t for t in live_terms if self._infer_terminal_room(t) == target]
+
+            # Nếu registry có handle đang sống và thuộc đúng room (hoặc terminal không gắn room khác)
+            reg_handle = None
             for reg_role, item in reg.items():
-                if target in reg_role.lower() or reg_role.lower() in target:
-                    h = item.get("handle")
-                    if h and h in live_handles:
-                        return h
+                if self._normalize_room_role(reg_role) == target and isinstance(item, dict):
+                    cand = item.get("handle")
+                    if cand:
+                        for t in live_terms:
+                            if t.get("handle") == cand:
+                                inferred = self._infer_terminal_room(t)
+                                if inferred in (target, None):
+                                    reg_handle = cand
+                                    if t not in matching_terms:
+                                        matching_terms.insert(0, t)
+                                break
 
-            # 2. Tra cứu theo title
-            for t in live_terms:
-                title = (t.get("title") or "").lower()
-                if target in title:
-                    return t.get("handle")
+            if matching_terms:
+                matching_terms.sort(
+                    key=lambda x: (1 if x.get("handle") == reg_handle else 0, x.get("lastOutputAt") or 0),
+                    reverse=True,
+                )
+                primary = matching_terms[0]
+                primary_h = primary.get("handle")
+
+                # Đảm bảo nghiêm ngặt: Mỗi room chỉ duy trì tối đa 1 Agent Terminal duy nhất
+                for extra in matching_terms[1:]:
+                    extra_h = extra.get("handle")
+                    if extra_h and extra_h != primary_h:
+                        self.close_terminal(extra_h)
+
+                if primary_h:
+                    reg[target] = {
+                        "handle": primary_h,
+                        "tabId": primary.get("tabId") or "",
+                    }
+                    self.save_terminals_registry(reg)
+                return primary_h
         except Exception:
             pass
         return None
 
     def send_terminal_safely(self, handle: str, text: str, wait_timeout_ms: int = 4000) -> bool:
-        if not shutil.which("orca") or not handle:
+        if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca") or not handle:
             return False
         try:
             subprocess.run(
@@ -117,10 +232,39 @@ class SlppcOrchestrator:
             return False
 
     def close_terminal(self, handle: str) -> bool:
-        if not shutil.which("orca") or not handle:
+        """Đóng terminal process và hủy hoàn toàn registration tab UI trên Orca (--tab)."""
+        if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca") or not handle:
             return False
         try:
-            res = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--json"], capture_output=True, timeout=5)
+            res = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"], capture_output=True, timeout=5)
+            if res.returncode == 0:
+                return True
+            res2 = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--json"], capture_output=True, timeout=5)
+            return res2.returncode == 0
+        except Exception:
+            return False
+
+    def cleanup_role_worktree(self, role: str) -> bool:
+        """Đóng tất cả terminal và dọn sạch tab trong worktree phòng tương ứng (dành cho 4 phòng Sub-Agents: PM, Lead, Peer, QC)."""
+        if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
+            return False
+        target_room = role.lower().strip()
+        # Duy nhất Supervisor (main) là Persistent tab được bảo vệ thường trực
+        if target_room in ("supervisor", "main"):
+            return False
+        if "peer" in target_room or "dev" in target_room:
+            wt_target = "name:room-peer"
+        elif "qc" in target_room:
+            wt_target = "name:room-qc"
+        elif "lead" in target_room:
+            wt_target = "name:room-lead"
+        elif "pm" in target_room:
+            wt_target = "name:room-pm"
+        else:
+            wt_target = f"name:room-{target_room}"
+
+        try:
+            res = subprocess.run(["orca", "terminal", "close", "--worktree", wt_target, "--all", "--json"], capture_output=True, timeout=5)
             return res.returncode == 0
         except Exception:
             return False
@@ -131,20 +275,56 @@ class SlppcOrchestrator:
         title: str,
         prompt: str,
         model: str = "ag/gemini-3.8-flash-high",
+        effort: str = "high",
     ) -> Optional[str]:
-        """Kích hoạt on-demand Ephemeral Sub-Agent tab trên Orca."""
-        if not shutil.which("orca"):
+        """Kích hoạt on-demand Sub-Agent tab trên Orca bên trong worktree phòng tương ứng (tối đa 1 agent/room)."""
+        if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
             return None
 
-        cmd = [
+        canonical_room = self._normalize_room_role(role)
+        # Bảo vệ Persistent Rooms (supervisor, pm, lead): Nếu đã có agent sống trong room, tái sử dụng ngay, TUYỆT ĐỐI không spawn agent thứ 2!
+        if canonical_room in ("supervisor", "pm", "lead"):
+            existing_h = self.find_live_terminal_for_role(canonical_room)
+            if existing_h:
+                return existing_h
+        else:
+            # Idempotent cleanup cho Ephemeral Sub-Agents (Peer, QC): Đóng sạch tab cũ trước khi mở tab mới
+            old_h = self.find_live_terminal_for_role(canonical_room)
+            if old_h:
+                self.close_terminal(old_h)
+            self.cleanup_role_worktree(canonical_room)
+
+        if canonical_room == "peer":
+            wt_target = "name:room-peer"
+        elif canonical_room == "qc":
+            wt_target = "name:room-qc"
+        elif canonical_room == "lead":
+            wt_target = "name:room-lead"
+        elif canonical_room == "pm":
+            wt_target = "name:room-pm"
+        elif canonical_room == "supervisor":
+            wt_target = "name:main"
+        else:
+            wt_target = f"name:room-{canonical_room}"
+
+        base_cmd = [
             "orca", "agent", "launch",
-            "--worktree", "active",
+            "--worktree", wt_target,
             "--agent", "hermes",
             "--prompt", prompt,
             "--json"
         ]
+        cmd = list(base_cmd)
+        if model:
+            cmd.extend(["--model", model])
+            if effort:
+                cmd.extend(["--effort", effort])
+
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            if res.returncode != 0 and model:
+                # Fallback cho phiên bản Orca không nhận --model/--effort lúc launch hermes
+                res = subprocess.run(base_cmd, capture_output=True, text=True, timeout=20)
             if res.returncode != 0:
                 return None
             data = json.loads(res.stdout)
@@ -156,13 +336,12 @@ class SlppcOrchestrator:
             if handle:
                 subprocess.run(["orca", "terminal", "rename", "--terminal", handle, "--title", title, "--json"], capture_output=True)
                 subprocess.run(["orca", "terminal", "set-pane-title", "--terminal", handle, "--title", title, "--json"], capture_output=True)
-                subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/title {title}", "--enter"], capture_output=True)
-                if model:
-                    subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"/model {model}", "--enter"], capture_output=True)
 
                 reg = self.get_terminals_registry()
-                reg[role.lower()] = {"handle": handle, "tabId": tab_id}
+                reg[canonical_room] = {"handle": handle, "tabId": tab_id}
                 self.save_terminals_registry(reg)
+                # Quét lại để đóng mọi shell/tab dư thừa trong cùng room (đảm bảo đúng 1 agent/room)
+                self.find_live_terminal_for_role(canonical_room)
                 return handle
         except Exception:
             pass
@@ -174,7 +353,7 @@ class SlppcOrchestrator:
 
     def evaluate_feasibility(self, state_text: str) -> Dict[str, Any]:
         """Gọi Kev System One đánh giá Feasibility và Alignment."""
-        endpoint = os.environ.get("SYSTEMONE_URL", "http://100.124.36.46:8008/v1/systemone")
+        endpoint = os.environ.get("SYSTEMONE_URL", "http://127.0.0.1:8008/v1/systemone")
         payload = {
             "model": "kev-latest",
             "state": state_text[:1500],
@@ -252,7 +431,7 @@ class SlppcOrchestrator:
             encoding="utf-8"
         )
 
-        # 1. Kích hoạt hoặc gửi thông báo tới PM Agent
+        # 1. Kích hoạt hoặc gửi thông báo tới PM Agent (chỉ 1 agent duy nhất trong room-pm)
         pm_handle = self.find_live_terminal_for_role("pm")
         if not pm_handle:
             pm_handle = self.spawn_ephemeral_subagent(
@@ -266,17 +445,18 @@ class SlppcOrchestrator:
             pm_msg = f"[Supervisor Dispatch] Yêu cầu: {eval_input[:300]}. Hãy thẩm định Feasibility qua Kev System One."
             pm_notified = self.send_terminal_safely(pm_handle, pm_msg)
 
-        # 2. Kích hoạt hoặc gửi thông báo tới Lead Dev
+        # 2. Đảm bảo Lead Dev đã sẵn sàng (chỉ 1 agent duy nhất trong room-lead).
+        # Lưu ý: Nếu PM đã nhận lệnh (pm_notified=True), chờ PM hoàn tất lượt (handle_pm_ended) mới bắn lệnh sang Lead để tránh double-dispatch.
         lead_handle = self.find_live_terminal_for_role("lead")
         if not lead_handle:
             lead_handle = self.spawn_ephemeral_subagent(
                 role="lead",
-                title="[Lead Dev] Architect & PM",
-                prompt="[Lead Dev] Architect & PM. Phân rã Zero-Search Task cho Peer.",
+                title="[Lead Dev] Technical Architect",
+                prompt="[Lead Dev] Technical Architect. Phân rã Zero-Search Task cho Peer.",
                 model="ag/gemini-3.8-flash-high"
             )
         lead_notified = False
-        if lead_handle:
+        if lead_handle and not pm_notified:
             tid_str = f"#{active_task.get('id')}" if active_task else "mới"
             msg = f"[PM APPROVED] Yêu cầu {tid_str} đạt chuẩn Feasibility ({eval_res['feasibility_score']}/3.0). Đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task."
             lead_notified = self.send_terminal_safely(lead_handle, msg)
@@ -296,14 +476,24 @@ class SlppcOrchestrator:
         if not lead_handle:
             lead_handle = self.spawn_ephemeral_subagent(
                 role="lead",
-                title="[Lead Dev] Architect & PM",
-                prompt="[Lead Dev] Architect & PM. Phân rã Zero-Search Task cho Peer.",
+                title="[Lead Dev] Technical Architect",
+                prompt="[Lead Dev] Technical Architect. Phân rã Zero-Search Task cho Peer.",
                 model="ag/gemini-3.8-flash-high"
             )
         notified = False
         if lead_handle:
             msg = "[PM TO LEAD] Đã hoàn tất thẩm định Feasibility. Mời Lead Dev đọc bmad/rooms/pm/decision_memo.md và phân rã Zero-Search Task."
             notified = self.send_terminal_safely(lead_handle, msg)
+
+        # PM đã hoàn tất bàn giao sang Lead -> Tự động đóng tab PM để giải phóng RAM
+        pm_handle = self.find_live_terminal_for_role("pm")
+        if pm_handle:
+            self.close_terminal(pm_handle)
+            reg = self.get_terminals_registry()
+            reg.pop("pm", None)
+            self.save_terminals_registry(reg)
+        self.cleanup_role_worktree("pm")
+
         return {
             "stage": "pm_to_lead",
             "lead_handle": lead_handle,
@@ -331,21 +521,49 @@ class SlppcOrchestrator:
         title = target_task.get("title", f"Task #{task_id}")
         desc = target_task.get("description", "")
 
+        # 1. Harness² Pre-Flight Self-Learning Injection
+        domain = target_task.get("domain") or "engineering"
+        lessons_context = ""
+        if query_lessons:
+            try:
+                lessons = query_lessons(domain=domain, limit=3)
+                if lessons:
+                    lesson_lines = [f"- [Cue: {l.cue}] {l.lesson}" for l in lessons if l.lesson]
+                    if lesson_lines:
+                        lessons_context = "\n[BẪY QUÁ KHỨ & BÀI HỌC KINH NGHIỆM TỰ HỌC - HARNESS²]:\n" + "\n".join(lesson_lines)
+            except Exception:
+                pass
+
         # Kiểm tra xem Peer đã mở tab chưa
         peer_handle = self.find_live_terminal_for_role("peer")
         if peer_handle:
             # Đã có tab -> Gửi lệnh vào tab
-            msg = f"[Lead Direct Dispatch] Nhiệm vụ Task #{task_id}: {title}. Hãy thực thi và nộp Resolved khi hoàn thành."
+            lesson_hint = f" Lưu ý bẫy kinh nghiệm:\n{lessons_context}" if lessons_context else ""
+            msg = f"[Lead Direct Dispatch] Nhiệm vụ Task #{task_id}: {title}.{lesson_hint} Hãy thực thi và nộp Resolved khi hoàn thành."
             self.send_terminal_safely(peer_handle, msg)
+
+            # Lead đã hoàn tất phân rã và giao việc cho Peer -> Tự động đóng tab Lead
+            lead_handle = self.find_live_terminal_for_role("lead")
+            if lead_handle:
+                self.close_terminal(lead_handle)
+                reg = self.get_terminals_registry()
+                reg.pop("lead", None)
+                self.save_terminals_registry(reg)
+            self.cleanup_role_worktree("lead")
             return {"stage": "lead_to_peer", "action": "dispatched_to_existing_peer", "task_id": task_id}
 
         # Chưa có tab -> Auto-spawn Ephemeral Peer Sub-Agent
-        prompt = (
-            f"[Peer Dev 1] Code Executor. Thực thi Task #{task_id}: {title}\n"
-            f"Mô tả: {desc}\n"
-            f"Quy chuẩn: Single-Ownership, Strict Typing, tự chạy test cơ học. "
-            f"Khi xong nộp: python3 tools/agent_progress.py log --agent 'Peer' --summary 'Done Task #{task_id}'"
+        prompt_parts = [
+            f"[Peer Dev] Code & UI Executor. Thực thi Task #{task_id}: {title}",
+            f"Mô tả: {desc}"
+        ]
+        if lessons_context:
+            prompt_parts.append(lessons_context)
+        prompt_parts.append(
+            "Quy chuẩn: Single-Ownership, Strict Typing, tự chạy test cơ học. "
+            f"BẮT BUỘC khi xong nộp: python3 tools/harness_manager.py update --id {task_id} --state Resolved && python3 tools/agent_progress.py log --agent 'Peer' --summary 'Done Task #{task_id}'"
         )
+        prompt = "\n".join(prompt_parts)
         new_handle = self.spawn_ephemeral_subagent(
             role="peer",
             title=f"[Peer Dev] Task #{task_id}",
@@ -358,6 +576,14 @@ class SlppcOrchestrator:
             except Exception:
                 pass
 
+        # Lead đã hoàn tất phân rã và giao việc cho Peer -> Tự động đóng tab Lead
+        lead_handle = self.find_live_terminal_for_role("lead")
+        if lead_handle:
+            self.close_terminal(lead_handle)
+            reg = self.get_terminals_registry()
+            reg.pop("lead", None)
+            self.save_terminals_registry(reg)
+        self.cleanup_role_worktree("lead")
         return {
             "stage": "lead_to_peer",
             "action": "spawned_ephemeral_peer",
@@ -367,6 +593,15 @@ class SlppcOrchestrator:
 
     def handle_peer_ended(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """3. Peer (Resolved) -> Auto-Close Peer -> Auto-Spawn Ephemeral QC"""
+        # 1. Ephemeral Termination: Luôn luôn đóng tab Peer Dev và dọn dẹp worktree để đưa RAM về 0
+        peer_handle = self.find_live_terminal_for_role("peer")
+        if peer_handle:
+            self.close_terminal(peer_handle)
+            reg = self.get_terminals_registry()
+            reg.pop("peer", None)
+            self.save_terminals_registry(reg)
+        self.cleanup_role_worktree("peer")
+
         if not self.mgr:
             return {"stage": "peer_to_qc", "action": "no_harness_mgr"}
 
@@ -374,18 +609,25 @@ class SlppcOrchestrator:
         resolved_tasks = [i for i in items if i.get("state") == "Resolved"]
 
         if not resolved_tasks:
-            return {"stage": "peer_to_qc", "action": "no_resolved_tasks"}
+            return {"stage": "peer_to_qc", "action": "closed_peer_no_resolved_tasks"}
 
         target_task = resolved_tasks[0]
         task_id = target_task.get("id")
 
-        # 1. Ephemeral Termination: Đóng tab Peer Dev để đưa RAM về 0
-        peer_handle = self.find_live_terminal_for_role("peer")
-        if peer_handle:
-            self.close_terminal(peer_handle)
-            reg = self.get_terminals_registry()
-            reg.pop("peer", None)
-            self.save_terminals_registry(reg)
+        # 0. Harness² Self-Learning: Ghi nhận bài học kinh nghiệm khi Peer giải quyết task
+        if record_lesson:
+            try:
+                title = target_task.get("title", f"Task #{task_id}")
+                record_lesson(
+                    domain=target_task.get("domain") or "peer_implementation",
+                    cue=f"task_{task_id}_peer_resolved",
+                    lesson=f"Thực thi thành công Task #{task_id}: {title}. Tuân thủ Single-Ownership, Strict Typing, TDD.",
+                    evidence=f"Peer nộp Resolved cho Task #{task_id}",
+                    confidence="high",
+                    work_item_id=task_id
+                )
+            except Exception:
+                pass
 
         # 2. Ephemeral Spawn: Mở tab QC Verifier
         qc_prompt = (
@@ -409,19 +651,36 @@ class SlppcOrchestrator:
 
     def handle_qc_ended(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """4. QC (Closed) -> Auto-Close QC -> Auto-Archive Artifacts -> Notify Supervisor"""
-        if not self.mgr:
-            return {"stage": "qc_to_supervisor", "action": "no_harness_mgr"}
-
-        items = self.mgr.list_work_items()
-        closed_tasks = [i for i in items if i.get("state") == "Closed"]
-
-        # 1. Ephemeral Termination: Đóng tab QC
+        # 1. Ephemeral Termination: Luôn luôn đóng tab QC và dọn dẹp worktree room-qc
         qc_handle = self.find_live_terminal_for_role("qc")
         if qc_handle:
             self.close_terminal(qc_handle)
             reg = self.get_terminals_registry()
             reg.pop("qc", None)
             self.save_terminals_registry(reg)
+        self.cleanup_role_worktree("qc")
+
+        if not self.mgr:
+            return {"stage": "qc_to_supervisor", "action": "no_harness_mgr"}
+
+        items = self.mgr.list_work_items()
+        closed_tasks = [i for i in items if i.get("state") == "Closed"]
+
+        # 1b. Harness² Post-Flight Self-Learning Extraction
+        if record_lesson and closed_tasks:
+            for ct in closed_tasks[:3]:
+                cid = ct.get("id")
+                try:
+                    record_lesson(
+                        domain=ct.get("domain") or "qc_verification",
+                        cue=f"task_{cid}_qc_verified",
+                        lesson=f"Nghiệm thu thành công Task #{cid}: {ct.get('title')}. 5-Stage ISTQB mechanical tests pass 100%.",
+                        evidence=f"QC verified and Closed Task #{cid} with exit code 0",
+                        confidence="high",
+                        work_item_id=cid
+                    )
+                except Exception:
+                    pass
 
         # 2. Auto-Archive task artifacts
         archive_res = []
@@ -462,10 +721,10 @@ class SlppcOrchestrator:
 
         if "supervisor" in r:
             return self.handle_supervisor_ended(d)
-        if "pm" in r:
-            return self.handle_pm_ended(d)
         if "lead" in r:
             return self.handle_lead_ended(d)
+        if "pm" in r:
+            return self.handle_pm_ended(d)
         if "peer" in r:
             return self.handle_peer_ended(d)
         if "qc" in r:

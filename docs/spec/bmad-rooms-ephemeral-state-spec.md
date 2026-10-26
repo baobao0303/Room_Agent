@@ -6,7 +6,7 @@
 
 ## 1. BẢNG THẨM ĐỊNH KEV SYSTEM ONE & QUYẾT NGHỊ PM AGENT
 
-- **Cơ quan thẩm định**: PM Agent phối hợp Kev System One (`http://100.124.36.46:8008/v1/systemone`, Model `kev-latest`).
+- **Cơ quan thẩm định**: PM Agent phối hợp Kev System One (`http://127.0.0.1:8008/v1/systemone`, Model `kev-latest`).
 - **Thời gian thẩm định**: 2026-10-23.
 - **Trạng thái**: **APPROVED / READY FOR ZERO-SEARCH DISPATCH**.
 

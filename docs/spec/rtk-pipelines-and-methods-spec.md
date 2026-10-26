@@ -200,7 +200,7 @@ Classifiers query fast upstream endpoints (e.g., Kev System One / Flash models) 
 [upstream.kev]
 provider     = "typesafe"
 model        = "systemone-fast"
-base_url     = "http://100.124.36.46:8008/v1/systemone"
+base_url     = "http://127.0.0.1:8008/v1/systemone"
 timeout_secs = 2
 
 [classifier.code_intent]

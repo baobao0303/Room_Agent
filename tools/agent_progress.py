@@ -18,7 +18,8 @@ from pathlib import Path
 from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-STATE_FILE = BASE_DIR / ".harness_progress.json"
+(BASE_DIR / ".harness").mkdir(parents=True, exist_ok=True)
+STATE_FILE = BASE_DIR / ".harness" / "progress.json"
 MARKDOWN_FILE = BASE_DIR / "docs" / "AGENT_PROGRESS.md"
 VN_TZ = timezone(timedelta(hours=7))
 

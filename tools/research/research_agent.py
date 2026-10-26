@@ -20,10 +20,10 @@ def _load_env() -> None:
 _load_env()
 
 GATEWAY_URL = os.getenv("HERMES_GATEWAY_URL", "http://localhost:8642/v1/chat/completions")
-API_KEY = os.getenv("HERMES_API_KEY", "hermes_secret_key_8642")
+API_KEY = os.getenv("HERMES_API_KEY", "")
 DEFAULT_MODEL = os.getenv("HERMES_MODEL", "gemini-3.7-medium")
 
-ROUTER9_URL = os.getenv("ROUTER9_BASE_URL", "http://100.92.98.99:20128/v1/chat/completions")
+ROUTER9_URL = os.getenv("ROUTER9_BASE_URL", "http://127.0.0.1:20128/v1/chat/completions")
 ROUTER9_KEY = os.getenv("ROUTER9_API_KEY", "")
 ROUTER9_MODEL = os.getenv("ROUTER9_MODEL", "ag/gemini-3.8-flash-high")
 

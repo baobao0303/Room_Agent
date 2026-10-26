@@ -34,9 +34,36 @@ except ImportError:
 BASE_DIR = os.path.abspath(os.path.dirname(__file__) + "/..")
 sys.path.insert(0, BASE_DIR)
 
+
+def _resolve_shared_root(default_root: Path) -> Path:
+    override = os.environ.get("SLPPC_SHARED_ROOT")
+    if override:
+        p = Path(override)
+        if os.access(p, os.R_OK | os.W_OK):
+            return p
+    git_entry = default_root / ".git"
+    try:
+        if git_entry.is_file():
+            raw = git_entry.read_text(encoding="utf-8").strip()
+            if raw.startswith("gitdir:"):
+                gitdir = Path(raw.split("gitdir:", 1)[1].strip())
+                if not gitdir.is_absolute():
+                    gitdir = (default_root / gitdir).resolve()
+                if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+                    main_root = gitdir.parent.parent.parent
+                    if os.access(main_root, os.R_OK | os.W_OK):
+                        return main_root
+    except Exception:
+        pass
+    return default_root
+
+
+SHARED_DIR = str(_resolve_shared_root(Path(BASE_DIR)))
+
 from tools.floci_client import FlociHarnessDB
 
-DEFAULT_DB_PATH = os.getenv("HARNESS_DB", os.path.join(BASE_DIR, "harness.db"))
+os.makedirs(os.path.join(SHARED_DIR, ".harness"), exist_ok=True)
+DEFAULT_DB_PATH = os.getenv("HARNESS_DB", os.path.join(SHARED_DIR, ".harness", "harness.db"))
 HARNESS_BACKEND = os.getenv("HARNESS_BACKEND", "floci").lower()
 
 _ALL_STATES = ["New", "Accepted", "Active", "Blocked", "Resolved", "Closed", "Removed"]
@@ -65,25 +92,47 @@ ALLOWED_PROFILES = [
 ]
 
 def close_ephemeral_subagent(role: str) -> bool:
-    """Close an ephemeral sub-agent terminal (Peer or QC) to return RAM to 0."""
-    clean_role = role.lower().strip()
-    reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
-    if not reg_file.is_file() or not shutil.which("orca"):
+    """Close an ephemeral sub-agent terminal (PM, Lead, Peer, or QC) to return RAM to 0."""
+    if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
         return False
+    clean_role = role.lower().strip()
+    # Bảo vệ duy nhất Persistent Supervisor (main)
+    if any(k in clean_role for k in ("supervisor", "main")):
+        return False
+
+    reg_file = Path(SHARED_DIR) / "bmad" / "rooms" / "agent_terminals.json"
+    closed_any = False
     try:
-        data = json.loads(reg_file.read_text(encoding="utf-8"))
-        handle = None
-        for r, info in list(data.items()):
-            if clean_role in r.lower():
-                handle = info.get("handle") if isinstance(info, dict) else info
-                del data[r]
-                break
-        if handle:
-            reg_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-            res = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"], capture_output=True, text=True, timeout=5)
-            if res.returncode == 0:
-                print(f"🛑 [Ephemeral Auto-Close]: Đã tự động đóng tab {role.upper()} ({handle}) để giải phóng tài nguyên.")
-                return True
+        if reg_file.is_file():
+            data = json.loads(reg_file.read_text(encoding="utf-8"))
+            handle = None
+            for r, info in list(data.items()):
+                if clean_role in r.lower():
+                    handle = info.get("handle") if isinstance(info, dict) else info
+                    del data[r]
+                    break
+            if handle:
+                reg_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+                res = subprocess.run(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"], capture_output=True, text=True, timeout=5)
+                if res.returncode == 0:
+                    closed_any = True
+        if any(k in clean_role for k in ("peer", "dev", "design")):
+            wt_target = "name:room-peer"
+        elif "qc" in clean_role:
+            wt_target = "name:room-qc"
+        elif "lead" in clean_role:
+            wt_target = "name:room-lead"
+        elif "pm" in clean_role:
+            wt_target = "name:room-pm"
+        else:
+            wt_target = ""
+        if wt_target:
+            res_wt = subprocess.run(["orca", "terminal", "close", "--worktree", wt_target, "--all", "--json"], capture_output=True, text=True, timeout=5)
+            if res_wt.returncode == 0:
+                closed_any = True
+        if closed_any:
+            print(f"🛑 [Ephemeral Auto-Close]: Đã tự động đóng tab {role.upper()} để giải phóng tài nguyên.")
+        return closed_any
     except Exception as e:
         print(f"⚠️ [close_ephemeral_subagent error]: {e}", file=sys.stderr)
     return False
@@ -122,7 +171,7 @@ def cleanup_task_room(item_id: int) -> int:
             pass
 
     # 2. Xóa các memo files mồ côi
-    bmad_rooms = Path(BASE_DIR) / "bmad" / "rooms"
+    bmad_rooms = Path(SHARED_DIR) / "bmad" / "rooms"
     removed_count = 0
     if bmad_rooms.is_dir():
         for memo_file in bmad_rooms.rglob(f"*handoff_{item_id}_*.md"):
@@ -140,26 +189,37 @@ def cleanup_task_room(item_id: int) -> int:
     return removed_count
 
 def send_orca_notification(role: str, message: str) -> bool:
-    """Send real-time prompt to the live Orca terminal for a role (with ping check & auto-compact)."""
+    """Send real-time prompt to the live Orca terminal for a role (strictly max 1 agent per room)."""
+    if os.environ.get("SLPPC_DRY_RUN") == "1":
+        return False
     try:
         if BASE_DIR not in sys.path:
             sys.path.insert(0, BASE_DIR)
         try:
-            from agent_context_manager import safe_send_agent_message  # type: ignore
+            from agent_context_manager import has_live_terminal, safe_send_agent_message  # type: ignore
         except ImportError:
-            from tools.agent_context_manager import safe_send_agent_message  # type: ignore
+            from tools.agent_context_manager import has_live_terminal, safe_send_agent_message  # type: ignore
+
+        existing_handle = has_live_terminal(role)
         sent = safe_send_agent_message(role, message)
         if sent:
             return True
+        if existing_handle:
+            # Nếu trong room đã có Agent đang sống (dù đang bận thinking >8s), TUYỆT ĐỐI không spawn Agent thứ 2!
+            return True
 
-        # FALLBACK CHO EPHEMERAL SUB-AGENTS (Peer, QC, Design):
-        # Nếu tab chưa mở sẵn, tự động spawn tab mới trên Orca để User nhìn thấy AI làm việc
+        # FALLBACK CHO EPHEMERAL SUB-AGENTS (Peer, QC) HOẶC ROOM CHƯA MỞ TAB:
         clean_role = role.lower().strip()
-        if shutil.which("orca") and any(k in clean_role for k in ("peer", "dev", "design", "qc")):
+        if shutil.which("orca") and any(k in clean_role for k in ("peer", "dev", "design", "qc", "lead", "pm")):
+            target_room = "peer" if any(k in clean_role for k in ("peer", "dev", "design")) else ("qc" if "qc" in clean_role else ("lead" if "lead" in clean_role else ("pm" if "pm" in clean_role else "active")))
+            # Cho Ephemeral rooms (peer, qc): đảm bảo đóng sạch terminal cũ trước khi launch
+            if target_room in ("peer", "qc"):
+                close_ephemeral_subagent(target_room)
             print(f"🚀 [Ephemeral Auto-Launch]: Chưa có tab cho {role.upper()}. Đang mở AI Agent tab mới trên Orca...")
+            wt_target = f"name:room-{target_room}" if target_room in ("pm", "lead", "peer", "qc") else "active"
             cmd_launch = [
                 "orca", "agent", "launch",
-                "--worktree", "active",
+                "--worktree", wt_target,
                 "--agent", "hermes",
                 "--prompt", message,
                 "--focus",
@@ -180,18 +240,16 @@ def send_orca_notification(role: str, message: str) -> bool:
                         pass
 
                 titles_map = {
-                    "peer": "[Peer Dev 1] Code Executor",
+                    "peer": "[Peer Dev] Code & UI Executor",
                     "qc": "[QC] 5-Stage ISTQB Verifier",
-                    "design": "[Peer Design] UI/UX & Tokens",
                     "pm": "[PM] Feasibility & Alignment",
-                    "lead": "[Lead Dev] Architect & PM",
+                    "lead": "[Lead Dev] Technical Architect",
                 }
                 models_map = {
-                    "peer": "ag/gemini-3.8-flash-low",
+                    "peer": "ag/gemini-3.8-flash-high",
                     "qc": "ag/gemini-3.8-flash-high",
-                    "design": "ag/gemini-3.8-flash-high",
                 }
-                role_key = "peer" if any(k in clean_role for k in ("peer", "dev")) else ("qc" if "qc" in clean_role else ("design" if "design" in clean_role else clean_role))
+                role_key = "peer" if any(k in clean_role for k in ("peer", "dev", "design")) else ("qc" if "qc" in clean_role else clean_role)
                 term_title = titles_map.get(role_key, f"[{role.upper()}] Sub-Agent")
                 term_model = models_map.get(role_key, "ag/gemini-3.8-flash-high")
 
@@ -206,7 +264,7 @@ def send_orca_notification(role: str, message: str) -> bool:
                     if rtk_env_script.is_file():
                         subprocess.run(["orca", "terminal", "send", "--terminal", handle, "--text", f"source {rtk_env_script} {role_key}", "--enter"], capture_output=True, check=False)
 
-                    reg_file = Path(BASE_DIR) / "bmad" / "rooms" / "agent_terminals.json"
+                    reg_file = Path(SHARED_DIR) / "bmad" / "rooms" / "agent_terminals.json"
                     reg = {}
                     if reg_file.is_file():
                         try:
@@ -216,6 +274,8 @@ def send_orca_notification(role: str, message: str) -> bool:
                     reg[role_key] = {"handle": handle, "tabId": tab_id}
                     reg_file.parent.mkdir(parents=True, exist_ok=True)
                     reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
+                    # Re-check để đóng mọi shell/tab dư thừa trong cùng room
+                    has_live_terminal(role_key)
 
                 print(f"✅ [Ephemeral Auto-Launch]: Đã mở và đổi tên thành công AI Agent tab '{term_title}' ({handle}) trên Orca!")
                 return True
@@ -252,10 +312,6 @@ def auto_dispatch_agent(
         caller_role = (assigned_to_profile or assigned_to or "peer").lower()
         if "peer" in caller_role or "dev" in caller_role or "design" in caller_role:
             rec_role = "peer"
-            for p in ["peer4", "peer3", "peer2", "design"]:
-                if p in caller_role.replace("-", "").replace("_", ""):
-                    rec_role = p
-                    break
         elif "lead" in caller_role:
             rec_role = "lead"
         elif "qc" in caller_role:
@@ -285,23 +341,18 @@ def auto_dispatch_agent(
         target_peer = (assigned_to_profile or assigned_to or "").lower()
         if any(k in target_peer for k in ("peer", "design", "dev")):
             peer_role = "peer"
-            for p in ["peer4", "peer3", "peer2", "design"]:
-                if p in target_peer.replace("-", "").replace("_", ""):
-                    peer_role = p
-                    break
             msg_peer = f"📢 [NHIỆM VỤ MỚI]: Bạn được phân công {wi_type} #{item_id}: '{title}' ({target_state}). Đọc spec tại Harness DB / bmad/rooms/ và bắt đầu thi công!"
             send_orca_notification(peer_role, msg_peer)
             print(f"🔔 [Auto-Dispatch]: Đã tự động đánh thức {peer_role.upper()} thi công Work Item #{item_id}.")
 
     # CASE 3: QC hoặc Lead đóng task (target_state == "Closed")
-    # -> Báo cho Lead và Supervisor
+    # -> Báo cho Supervisor và đóng toàn bộ các phòng Sub-Agents (PM, Lead, Peer, QC) để chỉ giữ lại Supervisor
     elif state_lower == "closed":
         msg_done = f"📢 [NGHIỆM THU ĐÃ ĐÓNG]: {wi_type} #{item_id}: '{title}' đã được nghiệm thu và CLOSED thành công."
-        send_orca_notification("lead", msg_done)
         send_orca_notification("supervisor", msg_done)
-        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Lead và Supervisor.")
-        # Ephemeral Sub-Agent: Tự động đóng tab QC khi Task Closed để đưa RAM về 0
-        close_ephemeral_subagent("qc")
+        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Supervisor.")
+        for ep_role in ("qc", "peer", "lead", "pm"):
+            close_ephemeral_subagent(ep_role)
 
 class HarnessManager:
     def __init__(self, backend: str = HARNESS_BACKEND, db_path: str = DEFAULT_DB_PATH, engine: str = "auto"):
@@ -735,19 +786,22 @@ def main():
             )
             print(json.dumps(res, indent=2, ensure_ascii=False))
             if getattr(args, "dispatch", False) and args.assigned_to_profile:
-                call_script = os.path.join(BASE_DIR, "tools", "call_agent.py")
-                if os.path.exists(call_script):
-                    import subprocess
-                    item_id = res.get("id")
-                    prompt = f"Work Item #{item_id} [{args.type}]: {args.title}\n{args.description}"
-                    subprocess.run(["python3", call_script, "--profile", args.assigned_to_profile, "--prompt", prompt, "--item-id", str(item_id)])
+                item_id = res.get("id")
+                prompt = f"Work Item #{item_id} [{args.type}]: {args.title}\n{args.description}"
+                if shutil.which("orca"):
+                    send_orca_notification(args.assigned_to_profile, prompt)
+                else:
+                    call_script = os.path.join(BASE_DIR, "tools", "call_agent.py")
+                    if os.path.exists(call_script):
+                        subprocess.run(["python3", call_script, "--profile", args.assigned_to_profile, "--prompt", prompt, "--item-id", str(item_id)])
         elif args.command == "update":
             res = mgr.update_state(item_id=args.id, target_state=args.state, assigned_to=args.assigned_to, assigned_to_profile=args.assigned_to_profile)
             print(json.dumps(res, indent=2, ensure_ascii=False))
-            if getattr(args, "dispatch", False) and args.assigned_to_profile:
+            # Lưu ý: update_state đã gọi auto_dispatch_agent cho Active/Accepted/Resolved/Closed trên Orca.
+            # Chỉ gọi call_agent.py khi không có Orca hoặc state nằm ngoài luồng auto_dispatch_agent.
+            if getattr(args, "dispatch", False) and args.assigned_to_profile and not shutil.which("orca"):
                 call_script = os.path.join(BASE_DIR, "tools", "call_agent.py")
                 if os.path.exists(call_script):
-                    import subprocess
                     item = mgr.get_work_item(args.id) or {}
                     title = item.get("title", f"Work Item #{args.id}")
                     prompt = f"Work Item #{args.id} transitioned to '{args.state}': {title}"

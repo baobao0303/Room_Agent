@@ -1,9 +1,7 @@
 ---
 name: Supervisor
-provider: antigravity
-model: gemini-3.8-flash-high
-modeId: full-access
-thinkingOptionId: high
+provider: linux-prod
+model: ag/gemini-3.8-flash-high
 skills_dirs:
   - skills/supervisor
   - skills/shared

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "project": "WiCX CRM Frontend",
+  "project": "Demo CRM Frontend",
   "ecosystem": "Rsbuild + Angular 18 + Module Federation 2.0 + TDS-UI",
   "graph": {
     "nodes": [
@@ -9,7 +9,7 @@
         "label": "App Shell (Host)",
         "type": "host",
         "port": 4200,
-        "entry": "projects/wicx-crm-fe/apps/app-shell",
+        "entry": "projects/demo-crm-fe/apps/app-shell",
         "description": "Host Shell quản lý bố cục chung, Auth Guard, Menu bên trái và định tuyến tải động các Remote MFE."
       },
       {
@@ -17,7 +17,7 @@
         "label": "MFE CDP (Remote)",
         "type": "remote",
         "port": 4204,
-        "entry": "projects/wicx-crm-fe/apps/mfe-cdp",
+        "entry": "projects/demo-crm-fe/apps/mfe-cdp",
         "routes": [
           "/:shopId/customers/data-raw",
           "/:shopId/data-raw",
@@ -30,7 +30,7 @@
         "label": "MFE CRM (Remote)",
         "type": "remote",
         "port": 4203,
-        "entry": "projects/wicx-crm-fe/apps/mfe-crm",
+        "entry": "projects/demo-crm-fe/apps/mfe-crm",
         "routes": [
           "/:shopId/customers",
           "/:shopId/customers/:id",
@@ -43,7 +43,7 @@
         "label": "MFE Account (Remote)",
         "type": "remote",
         "port": 4201,
-        "entry": "projects/wicx-crm-fe/apps/mfe-account",
+        "entry": "projects/demo-crm-fe/apps/mfe-account",
         "routes": [
           "/auth/login",
           "/onboarding/tenant"
@@ -58,10 +58,10 @@
         "description": "Thư viện Design System chuẩn doanh nghiệp (Card, Avatar, Button, Timeline, Data-Table, Tag, Message)."
       },
       {
-        "id": "wicx-core",
-        "label": "@wicx/core",
+        "id": "demo-core",
+        "label": "@demo/core",
         "type": "shared-library",
-        "entry": "projects/wicx-crm-fe/libs/wicx-core",
+        "entry": "projects/demo-crm-fe/libs/demo-core",
         "description": "Thư viện nền tảng chia sẻ i18n resolver, provideWII18n, EventBus cross-MFE."
       },
       {
@@ -159,9 +159,9 @@
       },
       {
         "source": "mfe-cdp",
-        "target": "wicx-core",
+        "target": "demo-core",
         "kind": "dependency",
-        "description": "CDP kế thừa i18n và runtime providers từ @wicx/core"
+        "description": "CDP kế thừa i18n và runtime providers từ @demo/core"
       },
       {
         "source": "harness-cli-v0114",

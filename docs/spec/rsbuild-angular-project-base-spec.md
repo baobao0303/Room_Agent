@@ -1,7 +1,7 @@
 # HƯỚNG DẪN NÂNG CẤP & SỬ DỤNG RSBUILD CHO ANGULAR MICRO-FRONTEND
-## (HƯỚNG DẪN CHUẨN HÓA THEO MÔ HÌNH THỰC TẾ WICX CRM MONOREPO)
+## (HƯỚNG DẪN CHUẨN HÓA THEO MÔ HÌNH THỰC TẾ DEMO CRM MONOREPO)
 
-> **Mục tiêu**: Hướng dẫn chi tiết từng bước (step-by-step) giúp các lập trình viên dễ dàng **nâng cấp bất kỳ Remote MFE hoặc ứng dụng Angular nào** trong hệ thống Monorepo từ Webpack truyền thống lên **Rsbuild (Rspack Rust)** — bám sát 100% kiến trúc đang vận hành thực tế tại dự án **WiCX CRM**.
+> **Mục tiêu**: Hướng dẫn chi tiết từng bước (step-by-step) giúp các lập trình viên dễ dàng **nâng cấp bất kỳ Remote MFE hoặc ứng dụng Angular nào** trong hệ thống Monorepo từ Webpack truyền thống lên **Rsbuild (Rspack Rust)** — bám sát 100% kiến trúc đang vận hành thực tế tại dự án **Demo CRM**.
 
 ---
 
@@ -61,7 +61,7 @@ export function getSharedDependencies(isHost = false) {
     'rxjs': { singleton: true, strictVersion: false, eager, requiredVersion: false },
     'rxjs/operators': { singleton: true, strictVersion: false, eager, requiredVersion: false },
 
-    // WiCX Shared Suite & Design System
+    // Core Shared Suite & Design System
     '@wi-mfes/i18n': { singleton: true, strictVersion: false, eager, requiredVersion: false },
     '@wi-mfes/config': { singleton: true, strictVersion: false, eager, requiredVersion: false },
     '@wi-mfes/context': { singleton: true, strictVersion: false, eager, requiredVersion: false },
@@ -329,5 +329,5 @@ Sau khi thực hiện các bước trên cho app của bạn, hãy kiểm tra:
 ## 9. Tài Liệu Tham Khảo & Báo Cáo Đo Kiểm Hiệu Năng Thực Tế
 
 * 📊 **Báo cáo đối đầu thực tế trên GitHub Actions CI/CD**: Xem so sánh chi tiết giữa Rsbuild và Native Nx Angular (cả 2 cấp độ: Tiêu chuẩn 36s vs 2m30s và Tải nặng 3m32s vs 6m45s) cùng hình ảnh đối chiếu tại:  
-  👉 [**Giới thiệu về thư viện Rsbuild & Hệ sinh thái Rstack cho Angular**](https://outline.tpos.app/doc/gioi-thieu-ve-thu-vien-rsbuild-he-sinh-thai-rstack-cho-angular-rbHdDQJfTw)
+  👉 [**Giới thiệu về thư viện Rsbuild & Hệ sinh thái Rstack cho Angular**](https://docs.example.com/doc/gioi-thieu-ve-thu-vien-rsbuild-he-sinh-thai-rstack-cho-angular-rbHdDQJfTw)
 * **Kho mã nguồn mẫu chuẩn**: [https://github.com/baobao0303/project_base_rsbuild](https://github.com/baobao0303/project_base_rsbuild)

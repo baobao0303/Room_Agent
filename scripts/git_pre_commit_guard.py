@@ -29,15 +29,21 @@ def check_staged_changes():
     if not staged_files:
         sys.exit(0)
 
-    # 1.5. Chặn rò rỉ Source Repositories (Anti-Source-Leak Fence)
-    leaked_projects = [f for f in staged_files if f.startswith("projects/") or f == "projects"]
-    if leaked_projects:
-        print("⛔ [SOURCE REPO LEAK PREVENTION CHẶN COMMIT]:", file=sys.stderr)
-        print("   Phát hiện thư mục projects/ bị stage! Tuyệt đối CẤM commit submodule mã nguồn vào Room_Agent.", file=sys.stderr)
-        for lp in leaked_projects[:5]:
+    # 1.5. Chặn rò rỉ Source Repositories & Runtime Databases (Anti-Leak Fence)
+    forbidden_staged = [
+        f for f in staged_files
+        if f.startswith("projects/") or f == "projects"
+        or f.startswith(".harness/") or f.endswith(".db")
+        or f in (".env", ".harness_local_db.json", ".harness_progress.json", "bmad/architecture.json")
+        or (f.startswith("bmad/rooms/") and f.endswith(".json"))
+    ]
+    if forbidden_staged:
+        print("⛔ [SENSITIVE DATA & REPO LEAK PREVENTION CHẶN COMMIT]:", file=sys.stderr)
+        print("   Phát hiện file nhạy cảm / database runtime / sub-project bị stage!", file=sys.stderr)
+        for lp in forbidden_staged[:10]:
             print(f"   - {lp}", file=sys.stderr)
         print("\nHướng dẫn khắc phục:", file=sys.stderr)
-        print("   Chạy ngay: git restore --staged projects/", file=sys.stderr)
+        print("   Chạy ngay: git restore --staged <file>", file=sys.stderr)
         sys.exit(1)
 
     # 2. Kiểm tra Rào Cản Vai Trò (Role Fence)

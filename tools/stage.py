@@ -47,8 +47,12 @@ def stage(target_dir: str | Path) -> Path:
             (bmad_dest / room).mkdir(parents=True, exist_ok=True)
 
         # 5. Copy protocol
-        protocol_src = PROJECT_ROOT / "WORKSPACE_PROTOCOL.md"
+        protocol_src = PROJECT_ROOT / "docs" / "WORKSPACE_PROTOCOL.md"
+        if not protocol_src.is_file():
+            protocol_src = PROJECT_ROOT / "WORKSPACE_PROTOCOL.md"
         if protocol_src.is_file():
+            (target / "docs").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(protocol_src, target / "docs" / "WORKSPACE_PROTOCOL.md")
             shutil.copy2(protocol_src, target / "WORKSPACE_PROTOCOL.md")
 
     except Exception:

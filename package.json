@@ -1,0 +1,16 @@
+{
+  "name": "room-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SLPPC Room Agent Orchestration Workspace",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "python3 -m unittest discover -s tools/tests -p 'test_*.py'"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "license": "MIT"
+}

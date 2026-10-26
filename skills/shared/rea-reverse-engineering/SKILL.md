@@ -28,7 +28,7 @@ Hệ thống hỗ trợ 2 cơ chế thực thi:
 
 ## 2. Kịch Bản Thực Chiến 1: Dịch Ngược Remote MFE & Web Bundle
 
-Áp dụng khi cần tích hợp Remote MFE (VD: WiOnPOS Customer, Zoho widget, payment SDK) khi chỉ có link CDN:
+Áp dụng khi cần tích hợp Remote MFE (VD: Remote POS Customer, Zoho widget, payment SDK) khi chỉ có link CDN:
 
 ### A. Phân tích toàn cảnh Web Bundle & Metadata
 ```bash
@@ -36,7 +36,7 @@ Hệ thống hỗ trợ 2 cơ chế thực thi:
 rea analyze-web-bundle <url_hoặc_file_js> --json
 
 # Ví dụ phân tích manifest remote:
-rea analyze-web-bundle "https://team-fe.public.rke.app.dev.tds.local/wionpos/ver261019-3/apps/customer/mf-manifest.json" --json
+rea analyze-web-bundle "https://cdn.example.com/demo-pos/ver261019-3/apps/customer/mf-manifest.json" --json
 ```
 - **Kết quả trả về**: Danh sách chunk, exports, dependencies, routes và các endpoint API backend được nhúng trong bundle.
 
@@ -54,7 +54,7 @@ rea recover-javascript-sources "<file_bundle_hoac_map>" --json
 Phát hiện mã nguồn hiện tại trong repo có khớp 100% với bundle đang chạy trên staging/production không:
 ```bash
 rea compare-source-to-bundle \
-  --source-dir "projects/wicx-crm-fe/apps/app-shell" \
+  --source-dir "projects/demo-crm-fe/apps/app-shell" \
   --bundle-file "dist/apps/app-shell/main.js" \
   --json
 ```
@@ -91,7 +91,7 @@ rea decode-android-resources "app-release.apk" --out-dir "decompiled_res/"
 
 # 3. Tìm kiếm class và decompile hàm cụ thể
 rea search-android-classes "app-release.apk" --query "Customer" --json
-rea inspect-android-method "app-release.apk" --class-name "com.tmtco.pos.CustomerService" --method-name "getShopUsers"
+rea inspect-android-method "app-release.apk" --class-name "com.example.pos.CustomerService" --method-name "getShopUsers"
 ```
 
 ---

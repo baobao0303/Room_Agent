@@ -85,7 +85,7 @@ python3 tools/slppc_flow_guard.py audit
 python3 tools/zombie_reaper.py --dry-run
 
 # 4. Quét vi phạm Strict Typing
-python3 tools/strict_typing_scanner.py projects/wicx-crm-fe
+python3 tools/strict_typing_scanner.py projects/demo-crm-fe
 
 # 5. Chạy toàn bộ test suite của tools
 python3 -m unittest discover -s tools/tests

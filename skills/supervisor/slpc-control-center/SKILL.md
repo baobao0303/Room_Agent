@@ -33,7 +33,7 @@ Kích hoạt skill này khi:
 | **Dashboard Server & UI** | `scripts/harness_dashboard.py` | HTTP Server (`127.0.0.1:8765`) + Giao diện Stitch Obsidian Cyber-Matrix |
 | **5-Stage QC Test Generator** | `tools/qc_test_generator.py` | Pipeline 5 bước phân tích AST Codebase + Spec ➔ Sinh Unit Test & đẩy Harness |
 | **Harness State Manager** | `tools/harness_manager.py` | Quản lý State Machine (`New ➔ Accepted ➔ Active ➔ Resolved ➔ Closed`) |
-| **Floci & Local Fallback DB** | `tools/floci_client.py` | Kết nối Floci DynamoDB (`100.124.36.46:14566`) kèm fallback `.harness_local_db.json` (0.4s TCP check) |
+| **Floci & Local Fallback DB** | `tools/floci_client.py` | Kết nối Floci DynamoDB (`127.0.0.1:14566`) kèm fallback `.harness_local_db.json` (0.4s TCP check) |
 | **Remote Backlog Sync** | `tools/remote_sync.py` | Đồng bộ Work Items (`Epic`, `User Story`, `Task`, `Testcase`, `Bug`) từ Remote Backlog |
 | **SLPC Agent Dispatcher** | `tools/call_agent.py` | Giao thức đánh thức Agent (`Supervisor`, `Lead`, `Peer`, `QC`) qua Paseo CLI |
 

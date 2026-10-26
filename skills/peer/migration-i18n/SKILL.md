@@ -1,13 +1,13 @@
 ---
 name: migration-i18n
-description: Migrate i18n (đa ngôn ngữ) cho Angular 18 Micro-Frontend (Nx Monorepo, Module Federation, Rsbuild, @wi-mfes/i18n). Dùng khi cần thêm/refactor translation keys, chuẩn hóa JSON dictionary, hoặc audit lỗi missing key trên WiCRM/WionPOS. Không dùng cho các task Angular không liên quan đến i18n.
+description: Migrate i18n (đa ngôn ngữ) cho Angular 18 Micro-Frontend (Nx Monorepo, Module Federation, Rsbuild, @demo/i18n). Dùng khi cần thêm/refactor translation keys, chuẩn hóa JSON dictionary, hoặc audit lỗi missing key trên Demo-CRM/Demo-POS. Không dùng cho các task Angular không liên quan đến i18n.
 metadata:
-  short-description: i18n migration cho WiCRM/WionPOS MFE
+  short-description: i18n migration cho Demo-CRM/Demo-POS MFE
 ---
 
-# i18n Migration — WiCRM / WionPOS MFE
+# i18n Migration — Demo-CRM / Demo-POS MFE
 
-Workflow chuẩn di chuyển đa ngôn ngữ cho hệ sinh thái **WiCRM / WionPOS** (Angular 18, Nx Monorepo, Module Federation, Rsbuild).
+Workflow chuẩn di chuyển đa ngôn ngữ cho hệ sinh thái **Demo-CRM / Demo-POS** (Angular 18, Nx Monorepo, Module Federation, Rsbuild).
 
 Chi tiết đầy đủ trong `references/workflow.md`. Đọc file đó trước khi bắt tay vào bất kỳ module nào.
 

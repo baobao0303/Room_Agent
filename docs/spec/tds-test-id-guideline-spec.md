@@ -4,8 +4,8 @@
 **Phiên bản**: `2.2.0 (Enterprise Comprehensive Edition)`  
 **Ngày ban hành**: `2026-10-23`  
 **Cơ quan ban hành**: Ban Kỹ thuật Kiến trúc Frontend (Lead Dev) & Quản lý Sản phẩm (PM Agent) & Kiến trúc Kiểm thử (QC Architect)  
-**Tham chiếu gốc**: *📘 TDS TEST ID DESIGN GUIDELINE (Angular Shared Library – FE & QA)* (`https://outline.tpos.app/s/66321f37-3b10-43b8-9f16-f0b2d7e55d33`)  
-**Hệ thống áp dụng**: Toàn bộ hệ sinh thái Monorepo `projects/wicx-crm-fe` (App Shell, Remote MFEs: `mfe-crm`, `mfe-cdp`, `mfe-account`, `mfe-dashboard`, Thư viện nền tảng `@wicx/core`, Shared Libs `tds-ui`)  
+**Tham chiếu gốc**: *📘 TDS TEST ID DESIGN GUIDELINE (Angular Shared Library – FE & QA)* (`https://docs.example.com/s/66321f37-3b10-43b8-9f16-f0b2d7e55d33`)  
+**Hệ thống áp dụng**: Toàn bộ hệ sinh thái Monorepo `projects/demo-crm-fe` (App Shell, Remote MFEs: `mfe-crm`, `mfe-cdp`, `mfe-account`, `mfe-dashboard`, Thư viện nền tảng `@demo/core`, Shared Libs `tds-ui`)  
 
 ---
 
@@ -55,7 +55,7 @@ Trong quá trình phát triển các ứng dụng doanh nghiệp quy mô lớn (
 1. **Tạo Contract ổn định vĩnh cửu**: Biến thuộc tính kiểm thử thành một **Public Testing API** chính thức của hệ thống. Bất kỳ thay đổi nào liên quan đến Test ID đều phải tuân thủ quy trình kiểm soát phiên bản.
 2. **Refactor UI hoàn toàn tự do (Zero Test Fragility)**: Kỹ sư Frontend có thể đổi từ `<table>` sang `<div>` flexbox, chuyển từ TDS v1 sang TDS v2, thay đổi toàn bộ class Tailwind mà **100% test suite của QA không bị gãy**.
 3. **Tuyệt đối không phụ thuộc vào UI Text & i18n**: Ngôn ngữ giao diện có thể chuyển từ Tiếng Việt sang Tiếng Anh, Tiếng Nhật mà selector test vẫn giữ nguyên giá trị cố định.
-4. **Phạm vi bao phủ toàn diện**: Áp dụng nhất quán cho cả Shared Libraries (`libs/wicx-core`, thư viện dùng chung `tds-ui`) lẫn toàn bộ các tầng ứng dụng App Shell và Micro-Frontend remotes.
+4. **Phạm vi bao phủ toàn diện**: Áp dụng nhất quán cho cả Shared Libraries (`libs/demo-core`, thư viện dùng chung `tds-ui`) lẫn toàn bộ các tầng ứng dụng App Shell và Micro-Frontend remotes.
 
 > 💡 **Khẩu hiệu cốt lõi**: `tds-test-id = public testing API`
 
@@ -67,7 +67,7 @@ Mọi thành phần tham gia vào hệ thống phải tuân thủ nghiêm ngặt
 
 | Tầng (Layer) | Giá trị tiêu chuẩn | Chi tiết kỹ thuật & Quy tắc bắt buộc |
 | :--- | :--- | :--- |
-| **Angular Directive** | `tdsTestId` | Khai báo selector `[tdsTestId]`. Viết theo chuẩn `camelCase`. Phải là **Standalone Directive** (`standalone: true`) trong `@wicx/core`. |
+| **Angular Directive** | `tdsTestId` | Khai báo selector `[tdsTestId]`. Viết theo chuẩn `camelCase`. Phải là **Standalone Directive** (`standalone: true`) trong `@demo/core`. |
 | **DOM Attribute** | `tds-test-id` | Thuộc tính HTML được directive inject vào phần tử: `[attr.tds-test-id]`. Kháng hoàn toàn xung đột với các thư viện thứ ba dùng `data-testid` hoặc `id`. |
 | **Casing** | `kebab-case` | Toàn bộ ký tự viết thường (`lower-case`), các từ phân tách duy nhất bằng dấu gạch ngang (`-`). Cấm dùng `camelCase`, `snake_case`, hoặc khoảng trắng. |
 | **Ngôn ngữ** | `English` | Bắt buộc 100% danh từ, động từ và trạng thái bằng tiếng Anh kỹ thuật chuyên ngành. Nghiêm cấm tiếng Việt không dấu (ví dụ: cấm `khach-hang-xoa-btn`). |
@@ -353,12 +353,12 @@ await submitButton.click();
 ---
 
 ### 9.3. Bộ Công Cụ Trợ Giúp QA Chuẩn Hóa (QA Helper Library)
-Để thống nhất mã nguồn kiểm thử của đội QA, thư viện `@wicx/core` cung cấp sẵn bộ helper tiêu chuẩn:
+Để thống nhất mã nguồn kiểm thử của đội QA, thư viện `@demo/core` cung cấp sẵn bộ helper tiêu chuẩn:
 
 ```typescript
 /**
  * Thư viện Helper chính thức cho QA Automation (Playwright / Cypress)
- * File: libs/wicx-core/src/utils/qa-test-helper.ts
+ * File: libs/demo-core/src/utils/qa-test-helper.ts
  */
 
 export const getTdsTestIdSelector = (testId: string): string => `[tds-test-id="${testId}"]`;
@@ -474,7 +474,7 @@ Một User Story / Task phát triển giao diện chỉ được phép chuyển 
 
 ## 1️⃣5️⃣ Hiện Thực Hóa Mã Nguồn Sẵn Sàng Triển Khai (Production-Ready Source Code)
 
-### 15.1. Directive Lõi: `projects/wicx-crm-fe/libs/wicx-core/src/directives/tds-test-id.directive.ts`
+### 15.1. Directive Lõi: `projects/demo-crm-fe/libs/demo-core/src/directives/tds-test-id.directive.ts`
 ```typescript
 import { Directive, HostBinding, Input } from '@angular/core';
 
@@ -505,13 +505,13 @@ export class TdsTestIdDirective {
 }
 ```
 
-### 15.2. File Cập Nhật Export: `projects/wicx-crm-fe/libs/wicx-core/src/directives/index.ts`
+### 15.2. File Cập Nhật Export: `projects/demo-crm-fe/libs/demo-core/src/directives/index.ts`
 ```typescript
 export * from './upload.directive';
 export * from './tds-test-id.directive';
 ```
 
-### 15.3. Thư Viện QA Helper: `projects/wicx-crm-fe/libs/wicx-core/src/utils/qa-test-helper.ts`
+### 15.3. Thư Viện QA Helper: `projects/demo-crm-fe/libs/demo-core/src/utils/qa-test-helper.ts`
 ```typescript
 /**
  * QA Automation Test Helpers for Playwright, Cypress & DOM Testing
@@ -534,7 +534,7 @@ export const getDynamicTdsTestId = <T extends { locator: (selector: string) => a
 };
 ```
 
-### 15.4. Unit Test Suite Chuẩn: `projects/wicx-crm-fe/libs/wicx-core/src/directives/tds-test-id.directive.spec.ts`
+### 15.4. Unit Test Suite Chuẩn: `projects/demo-crm-fe/libs/demo-core/src/directives/tds-test-id.directive.spec.ts`
 ```typescript
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -611,20 +611,20 @@ Toàn bộ quy trình triển khai được phân rã thành các gói công vi�
          ▼                                    ▼                                    ▼
    [Peer Dev 1]                         [Peer Dev 2]                         [QC Verifier]
  Task 1: Directive & QA Helper       Task 2: Thí điểm Pilot                Task 3: Unit Test & DoD
- libs/wicx-core/src/directives/      Login (app-shell) & Customer (crm)    Nghiệm thu độc lập 100%
+ libs/demo-core/src/directives/      Login (app-shell) & Customer (crm)    Nghiệm thu độc lập 100%
 ```
 
 ### Chi Tiết Phân Bổ Task:
 1. **Task 1 (Peer Dev 1 - Low)**:
-   - *Target Files*: `projects/wicx-crm-fe/libs/wicx-core/src/directives/tds-test-id.directive.ts`, `index.ts`, `libs/wicx-core/src/utils/qa-test-helper.ts`.
+   - *Target Files*: `projects/demo-crm-fe/libs/demo-core/src/directives/tds-test-id.directive.ts`, `index.ts`, `libs/demo-core/src/utils/qa-test-helper.ts`.
    - *Nội dung*: Hiện thực hóa directive và QA helpers theo mục 15.1 đến 15.3.
-   - *Test Command*: `npx nx build wicx-core`.
+   - *Test Command*: `npx nx build demo-core`.
 2. **Task 2 (QC Verifier - Independent Test Architect)**:
-   - *Target Files*: `projects/wicx-crm-fe/libs/wicx-core/src/directives/tds-test-id.directive.spec.ts`.
+   - *Target Files*: `projects/demo-crm-fe/libs/demo-core/src/directives/tds-test-id.directive.spec.ts`.
    - *Nội dung*: Hiện thực hóa test suite theo mục 15.4, kiểm tra static, dynamic, null, undefined, trim space.
-   - *Test Command*: `npx jest libs/wicx-core/src/directives/tds-test-id.directive.spec.ts`.
+   - *Test Command*: `npx jest libs/demo-core/src/directives/tds-test-id.directive.spec.ts`.
 3. **Task 3 (Peer Dev 2 - Medium)**:
-   - *Target Files*: `projects/wicx-crm-fe/apps/app-shell/src/app/pages/account/login/login.component.html`, `projects/wicx-crm-fe/apps/mfe-crm/src/app/pages/customer/customer-list/customer-list.component.html`.
+   - *Target Files*: `projects/demo-crm-fe/apps/app-shell/src/app/pages/account/login/login.component.html`, `projects/demo-crm-fe/apps/mfe-crm/src/app/pages/customer/customer-list/customer-list.component.html`.
    - *Nội dung*: Thí điểm gắn `tdsTestId` cho màn hình đăng nhập và danh sách khách hàng.
    - *AC*: Kiểm tra trên trình duyệt render đúng các attribute `tds-test-id`.
 4. **Task 4 (QC Final Sign-Off Gate)**:

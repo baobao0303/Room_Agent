@@ -94,6 +94,14 @@ def sync_state_to_orca(task_id: str, state: str, worktree: str = "active"):
         res = subprocess.run(cmd, capture_output=True, text=True, check=True)
         print(f"✅ [Orca Board Sync]: Đã cập nhật Workspace '{worktree}' ➔ Cột [{orca_status.upper()}] (Harness #{task_id}: {state})")
     except subprocess.CalledProcessError as e:
+        if worktree == "active":
+            try:
+                cmd[4] = "name:main"
+                subprocess.run(cmd, capture_output=True, text=True, check=True)
+                print(f"✅ [Orca Board Sync]: Đã cập nhật Workspace 'name:main' ➔ Cột [{orca_status.upper()}] (Harness #{task_id}: {state})")
+                return
+            except Exception:
+                pass
         print(f"❌ [Orca Board Sync Lỗi]: {e.stderr or e.stdout}", file=sys.stderr)
 
 

@@ -7,7 +7,7 @@ commits = [
   "d35f2c2f675b494cacd31e1db7de8d2e3821fc2b"
 ]
 regexes = [
-  '''sk-142d5f48d188dcb1-igedxf-7876d5f9'''
+  '''sk-[a-f0-9]{16}-[a-z]{6}-[a-f0-9]{8}'''
 ]
 paths = [
   '''skills/systemone/systemone\.py''',

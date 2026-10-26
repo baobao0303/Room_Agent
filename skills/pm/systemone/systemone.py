@@ -12,7 +12,7 @@ import time
 import urllib.error
 import urllib.request
 
-ENDPOINT = os.environ.get("SYSTEMONE_URL", "http://100.124.36.46:8008/v1/systemone")
+ENDPOINT = os.environ.get("SYSTEMONE_URL", "http://127.0.0.1:8008/v1/systemone")
 API_KEY = os.environ.get("SYSTEMONE_KEY", "")
 DEFAULT_MODEL = os.environ.get("SYSTEMONE_MODEL", "kev-latest")
 

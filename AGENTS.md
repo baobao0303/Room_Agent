@@ -16,8 +16,8 @@
 - **Execution Scripts**: `scripts/` (Scripts cài đặt, khởi động phòng, cấu hình RTK proxy, CI guards).
 - **Harness Cloud Storage**: Floci DynamoDB & S3 (`http://<FLOCI_HOST>:14566`, Web UI `http://<FLOCI_HOST>:4566`).
 - **Subprojects (FE Source)**:
-  - `projects/wicx-crm-fe` (Angular 18, Nx, Rsbuild, Module Federation, TDS UI).
-  - `projects/wion_pos_fe` (Angular 18, Nx, Rsbuild/Webpack, Module Federation).
+  - `projects/demo-crm-fe` (Angular 18, Nx, Rsbuild, Module Federation, TDS UI).
+  - `projects/demo-pos-fe` (Angular 18, Nx, Rsbuild/Webpack, Module Federation).
 - **Model Standard**: Bắt buộc toàn bộ Agent Profiles trong phòng sử dụng model `ag/gemini-3.8-flash-high`.
 
 ---
@@ -167,17 +167,17 @@ Script thực hiện toàn bộ 6 khâu cài đặt:
 - Đồng bộ các Profile SLPPC vào `~/.paseo/config.json` qua `patch_paseo.py`.
 - Kiểm tra kết nối và cấu trúc dữ liệu Harness Database (Floci DynamoDB / Local Fallback).
 
-### Bước 4: Khởi Chạy & Quản Trị Agent Tabs (`./agent-start`)
+### Bước 4: Khởi Chạy & Quản Trị Agent Tabs (`./cli/agent-start`)
 ```bash
 # Khởi chạy 2 Agent Tabs thường trực (PM, Lead). Supervisor là tab hiện hành:
-./agent-start
+./cli/agent-start
 
 # Xem trạng thái chi tiết tất cả Agent và nhịp tim:
-./agent-start status
+./cli/agent-start status
 
 # Khởi chạy toàn bộ hoặc một agent cụ thể on-demand:
-./agent-start --all
-./agent-start peer
+./cli/agent-start --all
+./cli/agent-start peer
 ```
 
 ### Bước 5: Kiểm Tra & Giám Sát Sức Khỏe Phòng Ban
@@ -231,7 +231,7 @@ python3 tools/agent_heartbeat.py status
    - Tuyệt đối cấm đưa tên công ty nội bộ, địa chỉ thực tế, số điện thoại, email cá nhân, mã số thuế hoặc API token vào mã nguồn, commit Git hoặc PR công khai.
    - Bắt buộc chạy `python3 scripts/anti_leak_sentinel.py` fail-closed trước khi commit/push.
 7. **TDS Test ID & Testing Contract Gate**:
-   - 100% component FE có tương tác phải gắn directive `tdsTestId` từ `@wicx/core`.
+   - 100% component FE có tương tác phải gắn directive `tdsTestId` từ `@demo/core`.
    - Naming convention: `<domain>-<component>-<element>-<state?>` (100% tiếng Anh, kebab-case).
    - QC thẩm tra bằng `[tds-test-id="..."]` hoặc helper `getByTdsTestId()`, nghiêm cấm `getByText()` hay class CSS.
 
@@ -290,7 +290,7 @@ Chỉ cần sao chép các mẫu prompt dưới đây và dán vào phiên chat 
 #### Mẫu 1: Kích hoạt toàn bộ luồng SLPPC 5 cổng tự hành (Full Autonomous Flow)
 ```text
 Kích hoạt flow: [Tên tính năng hoặc yêu cầu nghiệp vụ]
-- Target Module: [projects/wicx-crm-fe hoặc tools/]
+- Target Module: [projects/demo-crm-fe hoặc tools/]
 - Mô tả chi tiết: [Mô tả cụ thể hành vi cần làm]
 - Tiêu chí nghiệm thu: [Các điều kiện hoàn thành bắt buộc]
 ```
@@ -323,7 +323,7 @@ Ngoài việc ra lệnh trong chat, bạn có thể chạy trực tiếp từ te
 
 ```bash
 # 1. Kích hoạt toàn bộ chu trình 5 cổng tự hành (PM ➔ Lead ➔ Peer ➔ QC):
-./trigger-flow "Nâng cấp tính năng X trên module Y"
+./cli/trigger-flow "Nâng cấp tính năng X trên module Y"
 
 # 2. Hoặc dùng script chi tiết với tùy chọn test:
 python3 scripts/run_pipeline.py "Nâng cấp tính năng X" --test-cmd "pytest ..."
@@ -348,10 +348,10 @@ python3 tools/call_agent.py --profile QC --prompt "Nghiệm thu Task #<id> với
 | **`[LƯỠNG-DIỆN]`**<br>`[DUAL]`<br>`[BOTH]`<br>*(Mặc định)* | **Lưỡng Diện (Dual-Anchor Thinking)** | BẮT BUỘC Agent tư duy 2 mặt song song trong khối Thinking:<br>1. `[THUẬN]`: Mặt thuận đáp ứng spec cốt lõi, hoàn tất AC.<br>2. `[NGHỊCH]`: Mặt nghịch bao phủ các bẫy lỗi và rủi ro phá vỡ kiến trúc. |
 
 **Ví dụ thực tế**:
-- Luồng Thuận: `./trigger-flow "[THUẬN] Tạo modal xác nhận xóa đơn hàng"`
-- Luồng Nghịch: `./trigger-flow "[NGHỊCH] Kiểm thử race condition khi 2 user cùng bấm thanh toán đơn hàng #123"`
-- Luồng Thảo Luận: `./trigger-flow "[THẢO LUẬN] Đánh giá phương án xác thực JWT vs HttpOnly Cookie"`
-- Luồng Lưỡng Diện: `./trigger-flow "[LƯỠNG-DIỆN] Refactor module auth token sang HttpOnly cookie"`
+- Luồng Thuận: `./cli/trigger-flow "[THUẬN] Tạo modal xác nhận xóa đơn hàng"`
+- Luồng Nghịch: `./cli/trigger-flow "[NGHỊCH] Kiểm thử race condition khi 2 user cùng bấm thanh toán đơn hàng #123"`
+- Luồng Thảo Luận: `./cli/trigger-flow "[THẢO LUẬN] Đánh giá phương án xác thực JWT vs HttpOnly Cookie"`
+- Luồng Lưỡng Diện: `./cli/trigger-flow "[LƯỠNG-DIỆN] Refactor module auth token sang HttpOnly cookie"`
 
 ---
 
@@ -369,8 +369,8 @@ Việc duy trì Sub-Agent chạy lâu dài qua nhiều task sẽ khiến **Conte
    - Khi vượt ngưỡng, tự động gửi lệnh `/compact` vào terminal, gọt tỉa 60%–70% token lịch sử thừa nhưng vẫn bảo toàn trạng thái trên đĩa cứng (`.harness_progress.json`).
 3. **Lệnh Dọn Dẹp Tức Thì 1 Chạm (Manual Context Purge)**:
    ```bash
-   ./agent-start clear    # Đóng toàn bộ tab Sub-Agent (Peer, QC, Design), giữ lại PM và Lead
-   ./agent-start stop --all # Đóng sạch toàn bộ
+   ./cli/agent-start clear    # Đóng toàn bộ tab Sub-Agent (Peer, QC, Design), giữ lại PM và Lead
+   ./cli/agent-start stop --all # Đóng sạch toàn bộ
    ```
 4. **Zombie Terminal Reaper (`tools/zombie_reaper.py`)**:
    - Khống chế trần thời gian tối đa **300 giây (5 phút)**. Tự động thu hồi các terminal mồ côi không có task Active bảo trợ.

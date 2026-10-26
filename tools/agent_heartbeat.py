@@ -27,7 +27,7 @@ from typing import Any, Dict
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 HEARTBEAT_FILE = PROJECT_ROOT / "bmad" / "rooms" / "heartbeats.json"
 
-ROLES = ["supervisor", "pm", "lead", "peer", "peer2", "peer3", "peer4", "design", "qc"]
+ROLES = ["supervisor", "pm", "lead", "peer", "qc"]
 
 
 def load_heartbeats() -> Dict[str, Any]:

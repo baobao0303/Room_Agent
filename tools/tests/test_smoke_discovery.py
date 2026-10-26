@@ -37,8 +37,9 @@ class TestSmokeDiscoveryAndStaging(unittest.TestCase):
         self.assertIn("Supervisor", names)
         self.assertIn("Lead", names)
         self.assertIn("PM", names)
+        self.assertIn("Peer", names)
         self.assertIn("QC", names)
-        self.assertEqual(len(profiles), 10, "Expected 10 profiles")
+        self.assertEqual(len(profiles), 5, "Expected 5 SLPPC profiles")
 
     def test_plugins_discovery(self):
         plugins = check_plugins(BASE_DIR / "plugins")

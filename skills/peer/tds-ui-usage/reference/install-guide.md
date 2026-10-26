@@ -15,7 +15,7 @@ tds-ui distrib qua private registry. Thêm vào `package.json`:
 ```json
 {
   "dependencies": {
-    "tds-ui": "https://tds.tds.local/lib/tds-ui-18.6.0.tgz"
+    "tds-ui": "https://design-system.local/lib/tds-ui-18.6.0.tgz"
   }
 }
 ```
@@ -202,11 +202,11 @@ ls node_modules/tds-ui/assets/v2/scss/theme/theme.all.scss
 @import "tailwindcss/utilities";
 @import "../node_modules/tds-ui/assets/v2/scss/components/tds.component.scss";
 // Tùy vào dự án chọn theme blue/green/orange/red/yellow hoặc all
-// TPOSV2
+// Theme Blue (Retail)
 // @import "../node_modules/tds-ui/assets/v2/scss/theme/theme.blue.scss";
-// TPageV2
+// Theme Green (Landing)
 // @import "../node_modules/tds-ui/assets/v2/scss/theme/theme.green.scss";
-// WIPIX
+// Theme Orange (Social)
 // @import "../node_modules/tds-ui/assets/v2/scss/theme/theme.orange.scss";
 // theme yellow
 // @import "../node_modules/tds-ui/assets/v2/scss/theme/theme.yellow.scss";
@@ -220,9 +220,9 @@ ls node_modules/tds-ui/assets/v2/scss/theme/theme.all.scss
 
 | Project | Theme file |
 |---------|-----------|
-| TPOSV2 | `theme.blue.scss` |
-| TPageV2 | `theme.green.scss` |
-| WIPIX | `theme.orange.scss` |
+| Retail / POS | `theme.blue.scss` |
+| Landing / Web | `theme.green.scss` |
+| Social / Pixel | `theme.orange.scss` |
 | Mặc định | `theme.all.scss` |
 
 ### Path reference table (consumer-facing files)
@@ -240,8 +240,8 @@ Note: `node_modules/tds-ui/icon/list-icon.js` là internal registry, **không c�
 Thêm vào `<head>` trong `src/index.html`:
 
 ```html
-<link rel="stylesheet" href="https://static-tds-public-projects.tds.local/assets/fonts/TMTSans/style.css">
-<link rel="stylesheet" href="https://static-tds-public-projects.tds.local/assets/font-icon/style.css">
+<link rel="stylesheet" href="https://static.design-system.local/assets/fonts/TMTSans/style.css">
+<link rel="stylesheet" href="https://static.design-system.local/assets/font-icon/style.css">
 ```
 
 - Link 1: Font TMTSans (font family mặc định của tds-ui components)

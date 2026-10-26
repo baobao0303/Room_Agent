@@ -36,7 +36,7 @@ Use `-m <model>` to switch models. Env overrides: `SYSTEMONE_URL`,
 
 ## Endpoint & Types
 
-Endpoint: `http://100.124.36.46:8008/v1/systemone` (Model: `kev-latest`).
+Endpoint: `http://127.0.0.1:8008/v1/systemone` (Model: `kev-latest`).
 
 Payload structure requires `state` (context string) and `questions` (map of question objects).
 

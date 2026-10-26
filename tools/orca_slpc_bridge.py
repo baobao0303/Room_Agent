@@ -82,14 +82,15 @@ def sync_board_status(task_id: str, state: str, worktree: str = "active"):
         run_cmd(cmd, check=True)
         print(f"✅ [Orca Board Sync]: Workspace '{worktree}' ➔ Cột [{orca_status.upper()}] (Task #{task_id}: {state})")
     except Exception as e:
+        if worktree == "active":
+            try:
+                cmd[4] = "name:main"
+                run_cmd(cmd, check=True)
+                print(f"✅ [Orca Board Sync]: Workspace 'name:main' ➔ Cột [{orca_status.upper()}] (Task #{task_id}: {state})")
+                return
+            except Exception:
+                pass
         print(f"⚠️ [Orca Board Sync Warning]: {e}", file=sys.stderr)
-
-    # Đồng bộ sang Aevum Kanban Real-time
-    try:
-        from aevum_harness_bridge import sync_harness_to_aevum  # type: ignore
-        sync_harness_to_aevum(limit=50)
-    except Exception:
-        pass
 
 
 # ==============================================================================
@@ -185,59 +186,71 @@ def cmd_create_task(run_id: Optional[str], parent_id: str, title: str, spec: str
 
 
 def find_live_terminal_for_role(role: str) -> Optional[str]:
-    """Tìm terminal handle của role tương ứng (Supervisor, Lead, Peer, QC) đang chạy trong Orca."""
-    if not shutil.which("orca"):
+    """Tìm terminal handle của role tương ứng (Supervisor, PM, Lead, Peer, QC) đang chạy trong Orca."""
+    if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
         return None
+    try:
+        try:
+            from agent_context_manager import has_live_terminal  # type: ignore
+        except ImportError:
+            from tools.agent_context_manager import has_live_terminal  # type: ignore
+        found = has_live_terminal(role)
+        if found:
+            return found
+    except Exception:
+        pass
+
     try:
         t_res = subprocess.run(["orca", "terminal", "list", "--json"], capture_output=True, text=True)
         t_data = json.loads(t_res.stdout)
-        terminals = t_data.get("result", {}).get("terminals", [])
-        live_handles = {t.get("handle") for t in terminals}
+        terminals = [
+            t for t in t_data.get("result", {}).get("terminals", [])
+            if t.get("handle") and not t.get("stopped") and t.get("connected", True)
+        ]
 
-        # 1. Tra cứu registry cố định bmad/rooms/agent_terminals.json
-        reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
         role_lower = role.lower().replace("-", "_").replace(" ", "_")
-        if "design" in role_lower:
-            target_role = "design"
-        elif "peer_4" in role_lower or "peer4" in role_lower:
-            target_role = "peer4"
-        elif "peer_3" in role_lower or "peer3" in role_lower:
-            target_role = "peer3"
-        elif "peer_2" in role_lower or "peer2" in role_lower:
-            target_role = "peer2"
-        elif "peer" in role_lower:
-            target_role = "peer"
+        if "supervisor" in role_lower or role_lower == "main":
+            target_room = "supervisor"
+        elif "lead" in role_lower:
+            target_room = "lead"
+        elif "pm" in role_lower:
+            target_room = "pm"
+        elif any(k in role_lower for k in ("peer", "dev", "design")):
+            target_room = "peer"
+        elif "qc" in role_lower:
+            target_room = "qc"
         else:
-            target_role = role.lower().split()[0]
+            target_room = role.lower().split()[0]
+
+        # Check PROJECT_ROOT / bmad/rooms/agent_terminals.json registry first
+        reg_file = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
         if reg_file.exists():
             try:
                 reg_data = json.loads(reg_file.read_text(encoding="utf-8"))
-                item = reg_data.get(target_role)
-                if item and item.get("handle") in live_handles:
-                    return item["handle"]
+                reg_h = (reg_data.get(target_room) or {}).get("handle")
+                if reg_h:
+                    for t in terminals:
+                        if t.get("handle") == reg_h:
+                            wt_p = (t.get("worktreePath") or "").lower().rstrip("/")
+                            br_p = (t.get("branch") or "").lower().rstrip("/")
+                            if not wt_p and not br_p:
+                                return reg_h
+                            if target_room in ("pm", "lead", "peer", "qc") and (wt_p.endswith(f"/room-{target_room}") or br_p.endswith(f"room-{target_room}")):
+                                return reg_h
+                            if target_room == "supervisor" and br_p in ("main", "refs/heads/main") and "/room-" not in wt_p:
+                                return reg_h
             except Exception:
                 pass
 
-        # 2. Fallback tra cứu theo worktree ps prompts
-        tab_to_handle = {t.get("tabId"): t.get("handle") for t in terminals}
-        p_res = subprocess.run(["orca", "worktree", "ps", "--json"], capture_output=True, text=True)
-        p_data = json.loads(p_res.stdout)
-        wts = p_data.get("result", {}).get("worktrees", [])
-        if wts:
-            agents = wts[0].get("agents", [])
-            for a in agents:
-                prompt = (a.get("prompt") or "").lower()
-                pane_key = a.get("paneKey") or ""
-                tab_id = pane_key.split(":")[0] if ":" in pane_key else pane_key
-                if f"[{target_role}" in prompt:
-                    if tab_id in tab_to_handle:
-                        return tab_to_handle[tab_id]
-
-        # 3. Fallback tra cứu theo title
         for t in terminals:
-            title = (t.get("title") or "").lower()
-            if target_role in title:
-                return t.get("handle")
+            wt_path = (t.get("worktreePath") or "").lower().rstrip("/")
+            branch = (t.get("branch") or "").lower().rstrip("/")
+            if target_room in ("pm", "lead", "peer", "qc"):
+                if wt_path.endswith(f"/room-{target_room}") or branch.endswith(f"room-{target_room}"):
+                    return t.get("handle")
+            elif target_room == "supervisor":
+                if branch in ("main", "refs/heads/main") and "/room-" not in wt_path:
+                    return t.get("handle")
     except Exception:
         pass
     return None
@@ -363,29 +376,13 @@ def cmd_report_design_done(task_id: str, spec_file: str):
 
 
 def cmd_dispatch_peer(task_id: str, prompt: str, parent_task_id: Optional[str] = None, target_peer: Optional[str] = None):
-    """Bước 3: Lead dispatch việc cho Peer Dev (tự động load balancing Peer 1 / Peer 2 / Peer 3 / Peer 4)."""
+    """Bước 3: Lead dispatch việc cho Peer (1 Peer duy nhất tại room-peer)."""
     print(f"=== [BƯỚC 3: DISPATCH CHO PEER THỰC THI TASK #{task_id}] ===")
 
-    # Tự động chọn Peer Dev rảnh nếu không chỉ định đích danh
-    valid_peers = ("peer", "peer2", "peer3", "peer4")
-    chosen_role = target_peer
-    if not chosen_role or chosen_role not in valid_peers:
-        hb_file = PROJECT_ROOT / "bmad" / "rooms" / "heartbeats.json"
-        chosen_role = "peer"
-        if hb_file.exists():
-            try:
-                hb_data = json.loads(hb_file.read_text(encoding="utf-8"))
-                for p in valid_peers:
-                    if hb_data.get(p, {}).get("status") == "idle":
-                        chosen_role = p
-                        break
-            except Exception:
-                pass
-
-    peer_num = chosen_role.replace("peer", "") or "1"
-    peer_label = f"Peer Dev {peer_num}"
+    chosen_role = "peer"
+    peer_label = "Peer Dev"
     mgr = HarnessManager()
-    mgr.update_state(int("".join(filter(str.isdigit, str(task_id)))), "Active", assigned_to_profile=peer_label)
+    mgr.update_state(int("".join(filter(str.isdigit, str(task_id)))), "Active", assigned_to_profile="peer")
     sync_board_status(str(task_id), "Active")
 
     try:
@@ -401,14 +398,21 @@ def cmd_dispatch_peer(task_id: str, prompt: str, parent_task_id: Optional[str] =
             print(f"🎯 [Direct Terminal Dispatch]: Tìm thấy {peer_label} ({peer_handle}). Bắn lệnh an toàn (chờ idle)...")
             send_to_terminal_safely(peer_handle, task_instruction)
             print(f"✅ Đã gửi lệnh trực tiếp vào terminal của {peer_label} Hermes!")
-            return
-
-        # Fallback launch Hermes agent mới và đổi tên
-        h = launch_and_rename_agent(chosen_role, f"[{peer_label}] Task #{task_id}", f"[Peer] #{task_id}: {prompt}", "ag/gemini-3.8-flash-low")
-        if h:
-            print(f"🚀 [Orca Agent Launch]: Đã spawn và đổi tên {peer_label} ({h}) cho Task #{task_id}.")
         else:
-            print(f"⚠️ Không thể launch agent cho {peer_label}.")
+            # Fallback launch Hermes agent mới và đổi tên
+            h = launch_and_rename_agent(chosen_role, f"[{peer_label}] Task #{task_id}", f"[Peer] #{task_id}: {prompt}", "ag/gemini-3.8-flash-high")
+            if h:
+                print(f"🚀 [Orca Agent Launch]: Đã spawn và đổi tên {peer_label} ({h}) cho Task #{task_id}.")
+            else:
+                print(f"⚠️ Không thể launch agent cho {peer_label}.")
+
+        # Lead đã hoàn tất phân rã và bàn giao cho Peer -> Tự động đóng tab Lead & PM
+        try:
+            from harness_manager import close_ephemeral_subagent  # type: ignore
+            close_ephemeral_subagent("lead")
+            close_ephemeral_subagent("pm")
+        except Exception:
+            pass
 
 
 def cmd_report_done(task_id: str, files: str):
@@ -416,8 +420,8 @@ def cmd_report_done(task_id: str, files: str):
     print(f"=== [BƯỚC 4: PEER NỘP CODE DIFF TASK #{task_id} CHO LEAD DEV REVIEW] ===")
     numeric_id = int("".join(filter(str.isdigit, str(task_id))))
     mgr = HarnessManager()
-    # Cập nhật task gán cho Lead để review
-    mgr.update_state(numeric_id, "Active", assigned_to_profile="lead")
+    # Giữ quyền sở hữu Task cho Peer trong lúc chờ Lead Dev thẩm định (tuân thủ Role Fence)
+    mgr.update_state(numeric_id, "Active", assigned_to_profile="peer")
     sync_board_status(str(task_id), "Active")
 
     # Ghi nhận handoff
@@ -439,12 +443,17 @@ def cmd_report_done(task_id: str, files: str):
         pass
 
     if shutil.which("orca"):
-        # Bắn lệnh trực tiếp vào LEAD Dev Hermes terminal để Lead vào review code
+        # Bắn lệnh trực tiếp vào LEAD Dev Hermes terminal (hoặc bật Lead on-demand nếu đã đóng) để Lead vào review code
+        lead_prompt = f"Review code Task #{task_id}: Peer đã nộp code ({files}). Hãy chạy: python3 tools/orca_slpc_bridge.py lead-review --task-id {task_id}"
         lead_handle = find_live_terminal_for_role("lead")
         if lead_handle:
             print(f"🎯 [Direct Terminal Dispatch]: Tìm thấy Lead Dev Hermes ({lead_handle}). Gửi yêu cầu review...")
-            send_to_terminal_safely(lead_handle, f"Review code Task #{task_id}: Peer đã nộp code ({files}). Hãy chạy: python3 tools/orca_slpc_bridge.py lead-review --task-id {task_id}")
+            send_to_terminal_safely(lead_handle, lead_prompt)
             print("✅ Đã bắn thông báo trực tiếp vào terminal của Lead Dev Hermes!")
+        else:
+            h_lead = launch_and_rename_agent("lead", "[Lead Dev] Technical Architect", lead_prompt, "ag/gemini-3.8-flash-high")
+            if h_lead:
+                print(f"🚀 [Ephemeral Auto-Launch]: Đã mở lại Lead Dev ({h_lead}) để review code Task #{task_id}!")
 
         try:
             run_cmd([
@@ -459,26 +468,29 @@ def cmd_report_done(task_id: str, files: str):
             pass
 
         # Ephemeral Lifecycle: Peer nộp xong tự động đóng terminal để tiết kiệm RAM & Token
-        peer_handle = find_live_terminal_for_role("peer")
-        if peer_handle:
-            try:
-                print(f"🚪 [Ephemeral Auto-Close]: Peer nộp việc xong, đang đóng terminal {peer_handle}...")
+        try:
+            from harness_manager import close_ephemeral_subagent  # type: ignore
+            close_ephemeral_subagent("peer")
+        except Exception:
+            peer_handle = find_live_terminal_for_role("peer")
+            if peer_handle:
                 subprocess.run(["orca", "terminal", "close", "--terminal", peer_handle, "--tab"], check=False)
-                print(f"✅ Đã đóng terminal tab của Peer ({peer_handle}) đưa RAM nền về 0.")
-            except Exception as e:
-                print(f"⚠️ Không thể đóng terminal Peer: {e}")
 
 
-def cmd_lead_review(task_id: str, repo_dir: str = "projects/wicx-crm-fe") -> bool:
+def cmd_lead_review(task_id: str, repo_dir: str = ".") -> bool:
     """Bước 5: Lead Dev thẩm định kiến trúc (5-Point Checklist). Nếu Pass mới bàn giao cho QC."""
     print(f"=== [BƯỚC 5: LEAD DEV CODE REVIEW TASK #{task_id}] ===")
     numeric_id = int("".join(filter(str.isdigit, str(task_id))))
+
+    target_repo = PROJECT_ROOT / repo_dir
+    if not target_repo.exists():
+        target_repo = PROJECT_ROOT
 
     # 1. Chạy công cụ thẩm định tự động lead_code_review.py
     print("🔍 [Lead Code Review]: Quét Single-Ownership, TDS Tokens, OnPush, YAGNI, Dead Code...")
     review_res = subprocess.run([
         "python3", str(PROJECT_ROOT / "tools" / "lead_code_review.py"),
-        "--repo-dir", str(PROJECT_ROOT / repo_dir),
+        "--repo-dir", str(target_repo),
         "--task-id", str(task_id),
         "--json"
     ], capture_output=True, text=True)
@@ -559,7 +571,7 @@ def cmd_lead_review(task_id: str, repo_dir: str = "projects/wicx-crm-fe") -> boo
         if shutil.which("orca"):
             print(f"🔄 [Reopen Peer Terminal]: Lead Review REJECTED Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
             prompt_fix = f"[Peer Fix Task #{task_id}]: Lead Review REJECTED. Hãy đọc bmad/rooms/tasks/{task_id}/lead_review_report_to_supervisor.md và khắc phục vi phạm!"
-            h = launch_and_rename_agent("peer", f"[Peer Dev 1] Fix Task #{task_id}", prompt_fix, "ag/gemini-3.8-flash-low")
+            h = launch_and_rename_agent("peer", f"[Peer Dev] Fix Task #{task_id}", prompt_fix, "ag/gemini-3.8-flash-high")
             if h:
                 print(f"🚀 Đã mở lại và đổi tên Orca terminal cho Peer ({h}) vào sửa lỗi Task #{task_id}!")
             else:
@@ -632,8 +644,16 @@ def cmd_lead_review(task_id: str, repo_dir: str = "projects/wicx-crm-fe") -> boo
         qc_handle = find_live_terminal_for_role("qc")
         if qc_handle:
             print(f"🎯 [Direct Terminal Dispatch]: Tìm thấy QC Hermes ({qc_handle}). Bắn lệnh nghiệm thu...")
-            send_to_terminal_safely(qc_handle, f"Nghiệm thu Task #{task_id}: Lead Dev đã review APPROVED. Hãy chạy test 5-Stage ISTQB.")
+            send_to_terminal_safely(qc_handle, f"Nghiệm thu Task #{task_id}: Lead Dev đã review APPROVED. Hãy chạy test 5-Stage ISTQB và chốt bằng lệnh: python3 tools/orca_slpc_bridge.py qc-verify --task-id {task_id} --source <file>")
             print("✅ Đã chuyển giao nhiệm vụ sang terminal QC!")
+
+        # Lead đã hoàn tất review và bàn giao sang QC -> Tự động đóng tab Lead & PM để giải phóng tài nguyên
+        try:
+            from harness_manager import close_ephemeral_subagent  # type: ignore
+            close_ephemeral_subagent("lead")
+            close_ephemeral_subagent("pm")
+        except Exception:
+            pass
 
     return True
 
@@ -649,7 +669,12 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
     print(f"🧪 [QC Test Runner]: Thực thi kiểm thử cho {source_file}...")
     test_passed = True
     try:
-        res = subprocess.run(["npx", "jest", source_file, "--passWithNoTests"], cwd=PROJECT_ROOT / "projects" / "wicx-crm-fe", capture_output=True, text=True)
+        if source_file.endswith(".py"):
+            res = subprocess.run(["python3", "-m", "py_compile", source_file], cwd=PROJECT_ROOT, capture_output=True, text=True)
+        else:
+            fe_dir = PROJECT_ROOT / "projects" / "demo-crm-fe"
+            run_cwd = fe_dir if fe_dir.is_dir() else PROJECT_ROOT
+            res = subprocess.run(["npx", "jest", source_file, "--passWithNoTests"], cwd=run_cwd, capture_output=True, text=True)
         if res.returncode != 0:
             test_passed = False
             print(f"❌ [Test Thất Bại]:\n{res.stderr or res.stdout[:500]}")
@@ -669,22 +694,13 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
             "--penalize"
         ], check=False)
 
-        # Mở lại Terminal Orca cho Peer vào fix Bug
+        # Mở lại Terminal Orca cho Peer vào fix Bug (đảm bảo 1-Room-1-Agent tại room-peer)
         if shutil.which("orca"):
             print(f"🔄 [Reopen Peer Terminal]: QC phát hiện Bug Task #{task_id}. Đang mở lại tab Orca cho Peer fix tiếp...")
-            try:
-                cmd_reopen = [
-                    "orca", "agent", "launch",
-                    "--worktree", "active",
-                    "--agent", "hermes",
-                    "--focus",
-                    "--prompt", f"[Peer Fix Bug Task #{task_id}]: QC độc lập phát hiện lỗi kiểm thử. Hãy đọc kết quả test và sửa code!",
-                    "--json"
-                ]
-                run_cmd(cmd_reopen, check=False)
-                print(f"🚀 Đã mở lại Orca terminal cho Peer vào sửa Bug Task #{task_id}!")
-            except Exception as e:
-                print(f"⚠️ Không thể mở lại terminal Peer: {e}")
+            prompt_fix = f"[Peer Fix Bug Task #{task_id}]: QC độc lập phát hiện lỗi kiểm thử. Hãy đọc kết quả test và sửa code!"
+            h = launch_and_rename_agent("peer", f"[Peer Dev] Fix Bug Task #{task_id}", prompt_fix, "ag/gemini-3.8-flash-high")
+            if h:
+                print(f"🚀 Đã mở lại Orca terminal cho Peer ({h}) vào sửa Bug Task #{task_id}!")
         return False
 
     print("✅ [QC VERDICT: 100% PASS & APPROVED]!")
@@ -708,9 +724,12 @@ def cmd_qc_verify(task_id: str, source_file: str, gate_id: Optional[str] = None)
     except Exception:
         pass
 
-    # 5. Dọn dẹp an toàn vào archive
+    # 5. Dọn dẹp an toàn vào archive & đóng sạch toàn bộ các sub-agent (PM, Lead, Peer, QC) chỉ giữ lại Supervisor
     try:
         subprocess.run(["python3", str(PROJECT_ROOT / "tools" / "room_cleanup.py"), "--task-id", str(task_id)], check=False)
+        from harness_manager import close_ephemeral_subagent  # type: ignore
+        for ep_r in ("qc", "peer", "lead", "pm"):
+            close_ephemeral_subagent(ep_r)
     except Exception:
         pass
 
@@ -746,11 +765,11 @@ def main():
     p_rd.add_argument("--spec", required=True, help="Đường dẫn file design_spec.md")
 
     # dispatch-peer
-    p3 = subparsers.add_parser("dispatch-peer", help="Dispatch task cho Peer Dev (tự động cân bằng tải hoặc chỉ định đích danh)")
+    p3 = subparsers.add_parser("dispatch-peer", help="Dispatch task cho Peer Dev tại room-peer")
     p3.add_argument("--task-id", required=True, help="Harness Task ID")
     p3.add_argument("--prompt", required=True, help="Yêu cầu chi tiết cho Peer")
     p3.add_argument("--parent-task", help="Orca Parent Task ID")
-    p3.add_argument("--peer", choices=["peer", "peer2", "peer3", "peer4"], help="Chỉ định đích danh peer (peer, peer2, peer3, peer4)")
+    p3.add_argument("--peer", default="peer", help="Vai trò Peer (mặc định: peer)")
 
     # report-done
     p4 = subparsers.add_parser("report-done", help="Peer báo cáo code hoàn thành cho Lead Review")
@@ -760,7 +779,7 @@ def main():
     # lead-review
     p_lead = subparsers.add_parser("lead-review", help="Lead Dev thẩm định kiến trúc code của Peer")
     p_lead.add_argument("--task-id", required=True, help="Harness Task ID")
-    p_lead.add_argument("--repo-dir", default="projects/wicx-crm-fe", help="Đường dẫn repository cần review")
+    p_lead.add_argument("--repo-dir", default="projects/demo-crm-fe", help="Đường dẫn repository cần review")
 
     # qc-verify
     p5 = subparsers.add_parser("qc-verify", help="QC review chéo, chạy test và mở Gate đóng task")

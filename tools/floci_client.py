@@ -78,9 +78,36 @@ class DecimalEncoder:
 import json
 import socket
 import time
+from pathlib import Path
 from urllib.parse import urlparse
 
-LOCAL_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.harness_local_db.json"))
+
+def _resolve_shared_root(default_root: Path) -> Path:
+    override = os.environ.get("SLPPC_SHARED_ROOT")
+    if override:
+        p = Path(override)
+        if os.access(p, os.R_OK | os.W_OK):
+            return p
+    git_entry = default_root / ".git"
+    try:
+        if git_entry.is_file():
+            raw = git_entry.read_text(encoding="utf-8").strip()
+            if raw.startswith("gitdir:"):
+                gitdir = Path(raw.split("gitdir:", 1)[1].strip())
+                if not gitdir.is_absolute():
+                    gitdir = (default_root / gitdir).resolve()
+                if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+                    main_root = gitdir.parent.parent.parent
+                    if os.access(main_root, os.R_OK | os.W_OK):
+                        return main_root
+    except Exception:
+        pass
+    return default_root
+
+
+_SHARED_ROOT = _resolve_shared_root(Path(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))))
+(_SHARED_ROOT / ".harness").mkdir(parents=True, exist_ok=True)
+LOCAL_DB_PATH = str(_SHARED_ROOT / ".harness" / "local_db.json")
 _REACHABLE_CACHE = {"ok": None, "checked_at": 0.0}
 
 
@@ -115,10 +142,11 @@ def _load_local_store() -> Dict[str, Any]:
                     data.setdefault("tools", {})
                     data.setdefault("skills", {})
                     data.setdefault("skills_inverted_index", {})
+                    data.setdefault("experiences", [])
                     return data
         except Exception:
             pass
-    return {"metadata": {}, "work_items": {}, "stories": {}, "tools": {}, "skills": {}, "skills_inverted_index": {}}
+    return {"metadata": {}, "work_items": {}, "stories": {}, "tools": {}, "skills": {}, "skills_inverted_index": {}, "experiences": []}
 
 
 def _save_local_store(store: Dict[str, Any]) -> None:
@@ -246,6 +274,10 @@ class FlociHarnessDB:
         if boto3 is None:
             return False
         return _check_endpoint_reachable(self.endpoint_url)
+
+    def is_floci_reachable(self) -> bool:
+        """Check whether Floci DynamoDB endpoint is reachable."""
+        return self._is_online()
 
     def init_schema(self) -> Dict[str, Any]:
         """Create tables in DynamoDB and bucket in S3 on Floci if they do not exist."""

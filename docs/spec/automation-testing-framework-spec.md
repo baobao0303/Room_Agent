@@ -6,7 +6,7 @@
 **Ngày ban hành**: `2026-10-23`  
 **Cơ quan ban hành**: Ban Đảm Bảo Chất Lượng SLPPC (QC Architect & Lead Dev)  
 **Tiêu chuẩn cốt lõi**: **100% Query độc quyền qua `tds-test-id` (Zero `getByText`, Zero CSS classes, Zero XPath)**  
-**Hệ thống mục tiêu**: `projects/wicx-crm-fe` (App Shell, MFE CRM, MFE CDP, MFE Account, MFE Dashboard)  
+**Hệ thống mục tiêu**: `projects/demo-crm-fe` (App Shell, MFE CRM, MFE CDP, MFE Account, MFE Dashboard)  
 
 ---
 
@@ -57,7 +57,7 @@ Room_Agent/
 
 | Mã Testcase | Tên kịch bản kiểm thử | Hành động & Dữ liệu đầu vào | Selector `tds-test-id` bắt buộc | Kết quả kỳ vọng (Assertion) |
 | :--- | :--- | :--- | :--- | :--- |
-| **`TC-AUTO-AUTH-01`** | Đăng nhập thành công với tài khoản hợp lệ | Nhập username, password hợp lệ và nhấn Submit | `auth-login-username-input`<br>`auth-login-password-input`<br>`auth-login-submit-btn` | URL chuyển sang Dashboard, hiển thị `system-notification-bell-btn`, cookie `wicx_session_token` được lưu. |
+| **`TC-AUTO-AUTH-01`** | Đăng nhập thành công với tài khoản hợp lệ | Nhập username, password hợp lệ và nhấn Submit | `auth-login-username-input`<br>`auth-login-password-input`<br>`auth-login-submit-btn` | URL chuyển sang Dashboard, hiển thị `system-notification-bell-btn`, cookie `demo_session_token` được lưu. |
 | **`TC-AUTO-AUTH-02`** | Đăng nhập thất bại khi bỏ trống mật khẩu | Nhập username, để trống password và nhấn Submit | `auth-login-password-input`<br>`auth-login-submit-btn`<br>`auth-login-error-alert` | Nút submit không kích hoạt API hoặc hiển thị alert lỗi `auth-login-error-alert`. Không chuyển trang. |
 | **`TC-AUTO-AUTH-03`** | Đăng nhập thất bại khi sai mật khẩu | Nhập mật khẩu sai và nhấn Submit | `auth-login-submit-btn`<br>`auth-login-error-alert` | Hiển thị thông báo lỗi `auth-login-error-alert`. |
 | **`TC-AUTO-AUTH-04`** | Hiển thị trạng thái quay khi đang gửi request | Nhấn nút đăng nhập và chờ phản hồi mạng | `auth-login-submit-btn-loading` | Nút đăng nhập chuyển sang `tds-test-id="auth-login-submit-btn-loading"` và bị vô hiệu hóa `disabled`. |

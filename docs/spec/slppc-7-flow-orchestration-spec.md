@@ -245,7 +245,7 @@ User: "[EXPLORE] Trace all downstream consumers of LoyaltyPointService"
   │
   ▼
 [Codebase Scanner]:
-  ├── Parse Nx project graph (`projects/wicx-crm-fe`, `projects/wion_pos_fe`)
+  ├── Parse Nx project graph (`projects/demo-crm-fe`, `projects/demo_pos_fe`)
   ├── Map dependency tree, DI injection points, and HTTP endpoints
   └── Compute Blast Radius Matrix (High / Medium / Low impact files)
   │
@@ -289,7 +289,7 @@ Users trigger these flows directly in chat with the Supervisor or via the 1-touc
 
 ### 5.1. Chat Trigger Examples:
 ```text
-[FEATURE] Build export customer list to Excel in wicx-crm-fe
+[FEATURE] Build export customer list to Excel in demo-crm-fe
 [BUGFIX] Resolve race condition in CartItemComponent quantity counter
 [ADVERSARIAL] Test behavior when API returns HTTP 504 Gateway Timeout
 [REFACTOR] Modernize AuthInterceptor to functional interceptor with inject()

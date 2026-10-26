@@ -24,11 +24,38 @@ import shutil
 import subprocess
 import sys
 import time
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ROOMS_DIR = PROJECT_ROOT / "bmad" / "rooms"
+
+
+def _resolve_shared_root(default_root: Path) -> Path:
+    override = os.environ.get("SLPPC_SHARED_ROOT")
+    if override:
+        p = Path(override)
+        if os.access(p, os.R_OK | os.W_OK):
+            return p
+    git_entry = default_root / ".git"
+    try:
+        if git_entry.is_file():
+            raw = git_entry.read_text(encoding="utf-8").strip()
+            if raw.startswith("gitdir:"):
+                gitdir = Path(raw.split("gitdir:", 1)[1].strip())
+                if not gitdir.is_absolute():
+                    gitdir = (default_root / gitdir).resolve()
+                if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+                    main_root = gitdir.parent.parent.parent
+                    if os.access(main_root, os.R_OK | os.W_OK):
+                        return main_root
+    except Exception:
+        pass
+    return default_root
+
+
+SHARED_ROOT = _resolve_shared_root(PROJECT_ROOT)
+ROOMS_DIR = SHARED_ROOT / "bmad" / "rooms"
 REG_FILE = ROOMS_DIR / "agent_terminals.json"
 HEARTBEAT_FILE = ROOMS_DIR / "heartbeats.json"
 
@@ -98,15 +125,62 @@ def audit_and_reap(dry_run: bool = False, timeout_s: int = DEFAULT_TIMEOUT_S, ex
     zombies = []
     stalled = []
 
-    # 1. Phát hiện Zombie / Orphaned Terminals
+    # 0. Xác định terminal chính duy nhất cho mỗi Persistent Room (main, room-pm, room-lead)
+    persistent_primary: Dict[str, str] = {}
+    for p_room in ("pm", "lead", "supervisor"):
+        candidates = []
+        for h, t in active_handles.items():
+            wt_path = (t.get("worktreePath") or "").lower().rstrip("/")
+            branch = (t.get("branch") or "").lower().rstrip("/")
+            if p_room in ("pm", "lead"):
+                if wt_path.endswith(f"/room-{p_room}") or branch.endswith(f"room-{p_room}"):
+                    candidates.append(t)
+            else:
+                if branch in ("main", "refs/heads/main") and "/room-" not in wt_path:
+                    candidates.append(t)
+        if candidates:
+            candidates.sort(
+                key=lambda x: (1 if x.get("handle") in registered else 0, x.get("lastOutputAt") or 0),
+                reverse=True,
+            )
+            primary_h = candidates[0].get("handle")
+            if primary_h:
+                persistent_primary[p_room] = primary_h
+
+    protected_persistent_handles = set(persistent_primary.values())
+
+    # 1. Phát hiện Zombie / Orphaned / Duplicate Terminals
     for handle, term in active_handles.items():
         title = (term.get("title") or "").lower()
         preview = (term.get("preview") or "").lower()
-        # Không reap supervisor, terminal chính đã đăng ký, hoặc terminal được exclude/đang chạy reaper
-        if "supervisor" in title or "scope" in title or handle in registered or handle in exclude:
+        wt_path = (term.get("worktreePath") or "").lower().rstrip("/")
+        branch = (term.get("branch") or "").lower().rstrip("/")
+
+        if handle in exclude:
             continue
         if any(kw in preview for kw in ("zombie_reaper", "audit_and_reap", "harness_manager", "room_cleanup")):
             continue
+
+        # Nếu thuộc persistent room (pm, lead, supervisor): chỉ giữ 1 primary duy nhất, reap mọi bản sao trùng lặp
+        is_persistent_wt = (
+            wt_path.endswith(("/room-pm", "/room-lead"))
+            or branch.endswith(("room-pm", "room-lead"))
+            or (branch in ("main", "refs/heads/main") and "/room-" not in wt_path)
+        )
+        if is_persistent_wt:
+            if handle in protected_persistent_handles:
+                continue
+            zombies.append({
+                "handle": handle,
+                "title": term.get("title", ""),
+                "reason": "Duplicate agent terminal in persistent room (strictly max 1 agent per room)"
+            })
+            continue
+
+        # Không reap supervisor hoặc terminal chính đã đăng ký
+        if "supervisor" in title or "scope" in title or handle in registered:
+            continue
+
         # Mọi terminal ngoài danh bạ đăng ký chính thức đều là ephemeral zombie
         zombies.append({
             "handle": handle,

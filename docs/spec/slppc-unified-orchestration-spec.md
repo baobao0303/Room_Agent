@@ -11,7 +11,7 @@
 ## 1. BẢNG THẨM ĐỊNH KEV SYSTEM ONE & Ý KIẾN MULTI-AGENT REVIEW
 
 ### 1.1. Thẩm định lượng hóa từ Kev System One (<50ms):
-- **Model**: `kev-latest` (`http://100.124.36.46:8008/v1/systemone`)
+- **Model**: `kev-latest` (`http://127.0.0.1:8008/v1/systemone`)
 - **Feasibility Rating**: **2.95 / 3.0** (`noul: 0.912` - Rất cao: Kế thừa 100% mã nguồn sạch, TypeScript native plugin, không xung đột dependency).
 - **Architectural Alignment**: **100% Fit** (`noul: 0.940` - Tương thích hoàn hảo với triết lý *Ephemeral by Default, Persistent by Exception*).
 - **Risk Lane**: **GREEN** (`noul: 0.895` - An toàn cao: Phân ranh rõ rệt giữa Plugin runtime daemon và Tools execution).
@@ -31,7 +31,7 @@
 #### 📊 [Agent 2: PM Agent - Decision Arbiter & Loop Enforcer]
 - **Đánh giá**: Kế thừa trọn vẹn thuật toán đánh giá `leadBrief`, `peerResponse`, `leadHandling` từ `paseo-supervision`.
 - **Chỉ đạo**:
-  1. Sử dụng Kev System One (`http://100.124.36.46:8008/v1/systemone`) để phân tích phát hiện **Protocol Drift** giữa Lead và Peer.
+  1. Sử dụng Kev System One (`http://127.0.0.1:8008/v1/systemone`) để phân tích phát hiện **Protocol Drift** giữa Lead và Peer.
   2. Khi độ tin cậy phát hiện lệch chuẩn $\ge 0.85$, plugin tự động tạo cảnh báo về thread của Supervisor.
   3. Khống chế trần vòng lặp Turn Ceiling $\le 3$ lần thử cho mỗi sub-agent.
 

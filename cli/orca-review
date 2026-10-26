@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# =========================================================================
+# cli/orca-review - CLI 1 chạm quản trị Worktree & Phê duyệt/Từ chối Merge
+# =========================================================================
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+if [ "$(basename "$SCRIPT_DIR")" = "cli" ] || [ "$(basename "$SCRIPT_DIR")" = "scripts" ]; then
+    ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+else
+    ROOT_DIR="$SCRIPT_DIR"
+fi
+
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+exec "$PYTHON_BIN" "$ROOT_DIR/tools/orca_worktree_manager.py" "$@"
