@@ -13,6 +13,7 @@ docs/spec/<tên-dự-án>/
 
 ---
 
-## Danh sách dự án hiện có:
+## Danh sách dự án & tài liệu kiến trúc hiện có:
+- [enterprise-ai-4-pillars-architecture-spec.md](file:///Users/bao312/Desktop/Room_Agent/docs/spec/enterprise-ai-4-pillars-architecture-spec.md): Bản đặc tả kỹ thuật Hệ thống AI Doanh nghiệp — 4 Trụ cột Kiến trúc Thực chiến (`ARCH-SPEC-ENTERPRISE-AI-4-PILLARS-2026-V1`: RAG, Multi-Agent, 3-Tier Memory, EVOS & Guardrails).
 - `crm/`: Hệ thống ACME Enterprise Customer Engagement & CDP Frontend Monorepo (`projects/crm-fe`).
 - `example-project/`: Dự án mẫu minh họa cấu trúc tài liệu.

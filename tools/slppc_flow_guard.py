@@ -97,6 +97,82 @@ def check_zero_search_compliance(description: str) -> Tuple[bool, List[str]]:
     return len(missing) == 0, missing
 
 
+def build_agent_handoff_envelope(
+    task_id: str | int,
+    from_role: str,
+    to_role: str,
+    status: str,
+    target_files: List[str],
+    anchors: List[str],
+    concrete_changes: str,
+    acceptance_criteria: List[str],
+    test_command: str,
+    exit_code: int = 0,
+    error_stack_trace: str = "",
+    retry_count: int = 0,
+) -> Dict[str, Any]:
+    """Khởi tạo JSON Schema AgentHandoffEnvelope chuẩn hóa giữa PM, Coder, Tester, Reviewer (Pillar 2)."""
+    return {
+        "schema_version": "ARCH-SPEC-ENTERPRISE-AI-4-PILLARS-2026-V1",
+        "task_id": str(task_id),
+        "from_role": from_role.upper().strip(),
+        "to_role": to_role.upper().strip(),
+        "status": status.upper().strip(),
+        "spec": {
+            "target_files": list(target_files),
+            "anchors": list(anchors),
+            "concrete_changes": str(concrete_changes),
+            "acceptance_criteria": list(acceptance_criteria),
+            "test_command": str(test_command),
+        },
+        "verification": {
+            "exit_code": int(exit_code),
+            "error_stack_trace": str(error_stack_trace),
+            "retry_count": int(retry_count),
+        },
+    }
+
+
+def validate_agent_handoff_envelope(envelope: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    """
+    Kiểm định JSON Schema AgentHandoffEnvelope và Feedback/Retry Loop:
+    - Đầy đủ các trường bắt buộc: task_id, from_role, to_role, status, spec, verification.
+    - Spec đủ 5 thành phần Zero-Search (target_files, anchors, concrete_changes, acceptance_criteria, test_command).
+    - Khi status == FAILED_RETRY (Tester -> Coder), bắt buộc có error_stack_trace và retry_count <= 3.
+    """
+    errors: List[str] = []
+    if not isinstance(envelope, dict):
+        return False, ["Envelope phải là một JSON object (dict)."]
+
+    for req_field in ("task_id", "from_role", "to_role", "status", "spec", "verification"):
+        if req_field not in envelope:
+            errors.append(f"Thiếu trường bắt buộc: '{req_field}'")
+
+    spec = envelope.get("spec")
+    if not isinstance(spec, dict):
+        errors.append("Trường 'spec' phải là JSON object.")
+    else:
+        for s_key in ("target_files", "anchors", "concrete_changes", "acceptance_criteria", "test_command"):
+            val = spec.get(s_key)
+            if val is None or (isinstance(val, (str, list)) and len(val) == 0):
+                errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+
+    ver = envelope.get("verification")
+    if not isinstance(ver, dict):
+        errors.append("Trường 'verification' phải là JSON object.")
+    else:
+        retry_count = ver.get("retry_count", 0)
+        if isinstance(retry_count, int) and retry_count > 3:
+            errors.append(f"Vượt quá trần vòng lặp Turn Ceiling: retry_count={retry_count} > 3")
+        status_str = str(envelope.get("status", "")).upper()
+        if status_str == "FAILED_RETRY":
+            stack = str(ver.get("error_stack_trace", "")).strip()
+            if not stack:
+                errors.append("Luồng Feedback/Retry Loop (FAILED_RETRY) bắt buộc phải đính kèm 'error_stack_trace'.")
+
+    return len(errors) == 0, errors
+
+
 def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     Kiểm tra xem Lead Dev có vi phạm role_trespass:
@@ -136,8 +212,8 @@ def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, 
 
 def audit_pm_bypass(supervisor_dir: Optional[Path] = None, pm_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
-    Kiểm tra xem có bỏ qua cổng PM (pm_bypass):
-    Tạo hoặc kích hoạt Epic mà chưa có Intake Memo từ PM Agent.
+    Kiểm tra xem có bỏ qua cổng thẩm định Feasibility & Alignment:
+    Tạo hoặc kích hoạt Epic mà chưa có Intake Decision Memo (từ Supervisor hoặc PM).
     """
     violations = []
     sup_dir = supervisor_dir if supervisor_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "supervisor")
@@ -164,16 +240,26 @@ def audit_pm_bypass(supervisor_dir: Optional[Path] = None, pm_dir: Optional[Path
                 # Bỏ qua các Epic lịch sử trước khi áp dụng chuẩn SLPPC (ID < 4116)
                 if int(epic_id) < 4116:
                     continue
-                has_pm_memo = False
-                if pm_d.is_dir():
+                has_memo = False
+                # Kiểm tra memo trong supervisor_dir
+                for sup_memo in sup_dir.glob("*.md"):
+                    if epic_id in sup_memo.name or f"#{epic_id}" in sup_memo.read_text(encoding="utf-8"):
+                        if "decision_memo" in sup_memo.name or "feasibility" in sup_memo.read_text(encoding="utf-8").lower():
+                            has_memo = True
+                            break
+                # Hoặc kiểm tra trong pm_dir cũ nếu có
+                if not has_memo and pm_d.is_dir():
                     for pm_memo in pm_d.glob("*.md"):
                         if epic_id in pm_memo.name or f"#{epic_id}" in pm_memo.read_text(encoding="utf-8"):
-                            has_pm_memo = True
+                            has_memo = True
                             break
-                if not has_pm_memo:
+                # Hoặc chính trong content của handoff có phần [SUPERVISOR INTAKE DECISION MEMO] hoặc Feasibility
+                if not has_memo and ("decision memo" in content.lower() or "feasibility" in content.lower()):
+                    has_memo = True
+                if not has_memo:
                     violations.append({
                         "file": str(handoff.relative_to(PROJECT_ROOT)) if handoff.is_relative_to(PROJECT_ROOT) else handoff.name,
-                        "evidence": f"Epic #{epic_id} được khởi tạo/giao việc mà chưa qua cổng thẩm định Feasibility/Alignment của PM Agent",
+                        "evidence": f"Epic #{epic_id} được khởi tạo/giao việc mà chưa qua cổng thẩm định Feasibility/Alignment của Supervisor",
                         "task_id": epic_id,
                     })
         except Exception:

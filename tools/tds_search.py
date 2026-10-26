@@ -110,7 +110,7 @@ def check_gateway_health() -> bool:
     except Exception:
         return False
 
-def search_tds(query: str, category_filter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+def search_tds(query: str, category_filter: Optional[str] = None, limit: int = 3) -> List[Dict[str, Any]]:
     """Tìm kiếm component theo từ khóa và danh mục"""
     q = query.lower().strip()
     words = re.findall(r"[a-zA-Z0-9_\-]+", q)
@@ -181,7 +181,7 @@ def main():
     parser = argparse.ArgumentParser(description="TDS Search Tool - Tra cứu component TMT Design System qua https://tds.design-system.local/")
     parser.add_argument("query", nargs="?", default="", help="Từ khóa tìm kiếm (vd: button, table, modal, datepicker, upload...)")
     parser.add_argument("--category", "-c", help="Lọc theo danh mục (Button, Layout, Navigation, Data entry, Data display, Feedback, Guide)")
-    parser.add_argument("--limit", "-n", type=int, default=5, help="Số lượng kết quả tối đa (mặc định: 5)")
+    parser.add_argument("--limit", "-n", type=int, default=3, help="Số lượng kết quả tối đa (mặc định: 3 context chunks chuẩn RAG)")
     parser.add_argument("--json", action="store_true", help="Xuất kết quả định dạng JSON cho AI Agent")
     parser.add_argument("--list-categories", action="store_true", help="Liệt kê toàn bộ danh mục TDS có trên website")
     parser.add_argument("--ping", action="store_true", help="Kiểm tra trạng thái kết nối tới cổng gateway https://tds.design-system.local/")

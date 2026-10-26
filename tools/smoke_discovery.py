@@ -35,20 +35,23 @@ def parse_frontmatter(content: str) -> dict[str, str]:
 def check_skills(skills_root: Path) -> dict[str, list[dict[str, str]]]:
     discovered: dict[str, list[dict[str, str]]] = {}
     if not skills_root.is_dir():
-        return discovered
+        if (PROJECT_ROOT / "profiles").is_dir():
+            skills_root = PROJECT_ROOT / "profiles"
+        else:
+            return discovered
 
     categories = [d for d in skills_root.iterdir() if d.is_dir()]
     for cat in sorted(categories, key=lambda c: c.name):
         discovered[cat.name] = []
-        for sdir in sorted(cat.iterdir(), key=lambda s: s.name):
-            skill_md = sdir / "SKILL.md" if sdir.is_dir() else None
-            if skill_md and skill_md.is_file():
-                fm = parse_frontmatter(skill_md.read_text(encoding="utf-8", errors="replace"))
-                discovered[cat.name].append({
-                    "name": fm.get("name") or sdir.name,
-                    "category": cat.name,
-                    "path": str(skill_md.relative_to(PROJECT_ROOT))
-                })
+        target_dir = cat / "skills" if (cat / "skills").is_dir() else cat
+        for skill_md in sorted(target_dir.rglob("SKILL.md")):
+            sdir = skill_md.parent
+            fm = parse_frontmatter(skill_md.read_text(encoding="utf-8", errors="replace"))
+            discovered[cat.name].append({
+                "name": fm.get("name") or sdir.name,
+                "category": cat.name,
+                "path": str(skill_md.relative_to(PROJECT_ROOT))
+            })
     return discovered
 
 
@@ -57,11 +60,16 @@ def check_profiles(profiles_root: Path) -> list[dict[str, str]]:
     if not profiles_root.is_dir():
         return discovered
 
-    for p in sorted(profiles_root.glob("*.md")):
+    candidates = list(sorted(profiles_root.glob("*.md")))
+    if not candidates:
+        candidates = list(sorted(profiles_root.glob("*/PROFILE.md")))
+
+    for p in candidates:
         content = p.read_text(encoding="utf-8", errors="replace")
         fm = parse_frontmatter(content)
+        name = fm.get("name") or (p.parent.name.capitalize() if p.name == "PROFILE.md" else p.stem)
         discovered.append({
-            "name": fm.get("name") or p.stem,
+            "name": name,
             "provider": fm.get("provider", "unknown"),
             "model": fm.get("model", "unknown"),
             "path": str(p.relative_to(PROJECT_ROOT))

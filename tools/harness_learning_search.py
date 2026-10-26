@@ -97,7 +97,7 @@ def search_experiences(
     query_text: str = "",
     domain: Optional[str] = None,
     min_confidence: Optional[str] = None,
-    limit: int = 20,
+    limit: int = 3,
 ) -> List[Dict[str, Any]]:
     # 1. Cố gắng tra cứu từ Floci DynamoDB qua GSI O(1) nếu domain được chỉ định
     raw_items: List[Dict[str, Any]] = []
@@ -273,7 +273,7 @@ def main():
     search_p.add_argument("query", nargs="?", default="", help="Từ khóa tìm kiếm (trong cue, lesson, evidence)")
     search_p.add_argument("--domain", "-d", help="Lọc theo domain (angular_fe, media_video, rust_cli...)")
     search_p.add_argument("--confidence", "-c", choices=["low", "medium", "high"], help="Lọc độ tin cậy")
-    search_p.add_argument("--limit", "-n", type=int, default=20, help="Số lượng kết quả tối đa")
+    search_p.add_argument("--limit", "-n", type=int, default=3, help="Số lượng kết quả tối đa (mặc định: 3 context chunks chuẩn RAG)")
     search_p.add_argument("--json", action="store_true", help="Xuất định dạng JSON")
 
     # 2. Audit command
@@ -288,7 +288,7 @@ def main():
         query = getattr(args, "query", "")
         domain = getattr(args, "domain", None)
         conf = getattr(args, "confidence", None)
-        limit = getattr(args, "limit", 20)
+        limit = getattr(args, "limit", 3)
         is_json = getattr(args, "json", False)
         items = search_experiences(query_text=query, domain=domain, min_confidence=conf, limit=limit)
         print_search_results(items, json_output=is_json)

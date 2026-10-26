@@ -26,32 +26,27 @@ HB_FILE = SCRIPT_DIR / "bmad" / "rooms" / "heartbeats.json"
 
 AGENTS = {
     "supervisor": (
-        "[Supervisor] Scope & Intent Guard in SLPPC. "
-        "Chuyên trách quản trị phạm vi, tạo Epic/Task trên Harness DB, "
-        "điều phối PM, Lead, Peer, QC và bảo vệ Single-Ownership Invariant."
-    ),
-    "pm": (
-        "[PM Agent] Product Manager & Decision Arbiter in SLPPC. "
-        "Chuyên trách đánh giá Feasibility và Alignment qua Kev System One (<50ms), "
-        "kiểm soát AC và kiểm tra bẫy lỗi cũ từ Harness Learn."
+        "[Supervisor] Scope, Intent Guard & Product Manager in SLPC (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách quản trị phạm vi, đánh giá Feasibility & Alignment (Kev System One <50ms hoặc Heuristic), "
+        "kiểm soát AC & trần vòng lặp (Turn Ceiling <= 3), tạo Epic/Task trên Harness DB, "
+        "điều phối Lead, Peer, QC, kiểm soát EVOS Release Gate (>=98%) và bảo vệ Single-Ownership Invariant."
     ),
     "lead": (
-        "[Lead Dev] Technical Architect. "
-        "Chuyên trách kiến trúc, phân rã task chuẩn Zero-Search và review code qua 7 tiêu chí."
+        "[Lead Dev] Technical Architect & Reviewer (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách kiến trúc, truy xuất Context-Bounded RAG (Top-3 chunks), phân rã task chuẩn Zero-Search (JSON Schema AgentHandoffEnvelope) và phản biện chéo (Cross-Critique)."
     ),
     "peer": (
-        "[Peer Dev] Code & UI Executor. "
-        "Chuyên trách thực thi mã nguồn Full-Stack, ánh xạ Figma/TDS UI tokens và nộp Resolved theo điều phối của Lead."
+        "[Peer Dev / Coder Agent] Code & UI Executor (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách thực thi mã nguồn Full-Stack trên Working Memory tinh gọn (<30k tokens), ánh xạ Figma/TDS UI tokens và nộp Resolved theo JSON Schema của Lead."
     ),
     "qc": (
-        "[QC] 5-Stage ISTQB Verifier. "
-        "Chuyên trách sinh test matrix, nghiệm thu độc lập và đóng task."
+        "[QC / Tester & EVOS Verifier] 5-Stage ISTQB & Destructive Tester (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách sinh test matrix, thực thi kiểm thử phá hoại (gửi Feedback/Retry Loop kèm Error Stack Trace nếu lỗi), chạy EVOS Engine (Pass Rate >= 98%) và độc quyền đóng task."
     ),
 }
 
 TITLES = {
-    "supervisor": "[Supervisor] Scope & Intent Guard",
-    "pm": "[PM] Feasibility & Alignment",
+    "supervisor": "[Supervisor] Scope, Intent & PM Guard",
     "lead": "[Lead Dev] Technical Architect",
     "peer": "[Peer Dev] Code & UI Executor",
     "qc": "[QC] 5-Stage ISTQB Verifier",
@@ -59,7 +54,6 @@ TITLES = {
 
 MODELS = {
     "supervisor": "ag/gemini-3.8-flash-high",
-    "pm": "ag/gemini-3.8-flash-high",
     "lead": "ag/gemini-3.8-flash-high",
     "peer": "ag/gemini-3.8-flash-high",
     "qc": "ag/gemini-3.8-flash-high",
@@ -67,15 +61,14 @@ MODELS = {
 
 REASONINGS = {
     "supervisor": "high",
-    "pm": "high",
     "lead": "high",
     "peer": "high",
     "qc": "high",
 }
 
 PERSISTENT_ROLES = ["supervisor"]
-EPHEMERAL_ROLES = ["pm", "lead", "peer", "qc"]
-ALL_ROLES = ["supervisor", "pm", "lead", "peer", "qc"]
+EPHEMERAL_ROLES = ["lead", "peer", "qc"]
+ALL_ROLES = ["supervisor", "lead", "peer", "qc"]
 
 
 def normalize_role(role: str) -> str:
@@ -175,6 +168,14 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         return primary_h
 
     prompt = AGENTS[role]
+    try:
+        sys.path.insert(0, str(SCRIPT_DIR / "tools"))
+        from agent_context_manager import build_rehydration_prompt  # type: ignore
+        hydration_block = build_rehydration_prompt(role=role, user_id=os.environ.get("USER", "enterprise_user"), project_id="Room_Agent")
+        prompt = f"{prompt}\n\n{hydration_block}"
+    except Exception:
+        pass
+
     print(f"--- 🚀 Đang khởi chạy: {title} ({role}) ---")
 
     target_room = normalize_role(role)
@@ -245,8 +246,8 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
         roles_to_run = ALL_ROLES
     else:
         roles_to_run = PERSISTENT_ROLES
-        print("💡 [SLPPC Architecture]: Mặc định khởi chạy 3 Persistent Agents (Supervisor, PM, Lead).")
-        print("   Các vai trò Ephemeral (Peer, QC) kích hoạt tự động theo task on-demand (hoặc dùng --all).")
+        print("💡 [SLPPC Ephemeral Architecture]: Mặc định duy trì Persistent Supervisor (Context sạch, RAM nền = 0).")
+        print("   Các vai trò Ephemeral (PM, Lead, Peer, QC) tự động kích hoạt on-demand kèm 3-Tier Dynamic Hydration (hoặc dùng --all).")
 
     for role in roles_to_run:
         if role not in AGENTS:

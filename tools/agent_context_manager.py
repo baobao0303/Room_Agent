@@ -259,22 +259,33 @@ def compact_agent_terminal(handle: str, max_wait_sec: int = 25) -> bool:
     return False
 
 
-def build_rehydration_prompt(role: str) -> str:
-    """Tạo bản tin context nạp lại cho Agent khi phiên bị /new hoặc khởi động lại."""
+def build_rehydration_prompt(
+    role: str,
+    user_id: str = "default_user",
+    project_id: str = "Room_Agent",
+    domain: Optional[str] = None,
+) -> str:
+    """
+    Tạo bản tin context nạp lại (3-Tier Dynamic Hydration) cho Agent khi phiên bị /new hoặc khởi động lại:
+    - Tầng 1 (Working Memory): Role profile & kỷ luật thực thi tức thời.
+    - Tầng 2 (Short-Term Memory): Task Active hiện hành & latest_handoff.md trong phiên.
+    - Tầng 3 (Long-Term Memory): Truy vấn Database (Harness Learn Store) theo User ID / Project ID để nạp top-3 quy chuẩn & bẫy lỗi lịch sử.
+    """
     clean_role = role.lower().replace("-", "_").replace(" ", "_")
     
-    # 1. Tra cứu file profile
+    # 1. Tra cứu file profile, IDENTITY.md và SOUL.md
     if clean_role in ("peer1", "peer2", "peer3", "peer4", "peer_2", "peer_3", "peer_4", "design", "peer_design", "peer_dev"):
         clean_role = "peer"
-    profile_map = {
-        "supervisor": "profiles/supervisor.md",
-        "pm": "profiles/pm.md",
-        "lead": "profiles/lead.md",
-        "peer": "profiles/peer.md",
-        "qc": "profiles/qc.md"
-    }
-    profile_file = PROJECT_ROOT / profile_map.get(clean_role, f"profiles/{clean_role}.md")
-    mission = f"Vai trò {role.upper()} trong mô hình điều hành 5 vai trò SLPPC."
+    if clean_role == "pm":
+        clean_role = "supervisor"
+    profile_file = PROJECT_ROOT / "profiles" / clean_role / "PROFILE.md"
+    if not profile_file.exists():
+        profile_file = PROJECT_ROOT / "profiles" / f"{clean_role}.md"
+    identity_file = PROJECT_ROOT / "profiles" / clean_role / "IDENTITY.md"
+    soul_file = PROJECT_ROOT / "profiles" / clean_role / "SOUL.md"
+    mission = f"Vai trò {role.upper()} trong mô hình điều hành SLPC."
+    identity_summary = f"Name: {role.upper()}"
+    soul_summary = "Direct, resourceful first, zero performative fluff."
     if profile_file.exists():
         try:
             lines = profile_file.read_text(encoding="utf-8").split("\n")
@@ -284,8 +295,26 @@ def build_rehydration_prompt(role: str) -> str:
                     break
         except Exception:
             pass
+    if identity_file.exists():
+        try:
+            id_lines = [
+                l.strip()
+                for l in identity_file.read_text(encoding="utf-8").splitlines()
+                if l.strip().startswith(("Name:", "Character:", "Vibe:", "Emoji:"))
+            ]
+            if id_lines:
+                identity_summary = " | ".join(id_lines)
+        except Exception:
+            pass
+    if soul_file.exists():
+        try:
+            s_lines = [l.strip() for l in soul_file.read_text(encoding="utf-8").splitlines() if l.strip().startswith("- ")]
+            if s_lines:
+                soul_summary = " ".join(s_lines[:2])
+        except Exception:
+            pass
 
-    # 2. Tra cứu task active trên Harness DB
+    # 2. Tra cứu task active trên Harness DB (Short-Term / Active Session State)
     active_tasks_info = "Không có task Active tồn đọng"
     try:
         sys.path.insert(0, str(PROJECT_ROOT / "tools"))
@@ -298,7 +327,7 @@ def build_rehydration_prompt(role: str) -> str:
     except Exception:
         pass
 
-    # 3. Tra cứu handoff gần nhất
+    # 3. Tra cứu handoff gần nhất & Session Buffer (Short-Term Memory: Bộ đệm phiên làm việc)
     handoff_info = "Không có biên bản handoff gần đây"
     role_dir = PROJECT_ROOT / "bmad" / "rooms" / clean_role
     if role_dir.exists():
@@ -311,13 +340,52 @@ def build_rehydration_prompt(role: str) -> str:
                     handoff_info = summary_match.group(1).strip()
             except Exception:
                 pass
+        session_buf = role_dir / "session_buffer.json"
+        if session_buf.exists():
+            try:
+                buf_obj = json.loads(session_buf.read_text(encoding="utf-8"))
+                loops = buf_obj.get("recent_loops", [])
+                if isinstance(loops, list) and loops:
+                    last_loop = loops[-1]
+                    if isinstance(last_loop, dict):
+                        handoff_info = f"{handoff_info} | Loop gần nhất: [{last_loop.get('stage')}] {last_loop.get('summary')}"
+            except Exception:
+                pass
+
+    # 4. Tra cứu Long-Term Memory (MEMORY.md + Database Learn Store) theo Project ID / Domain (Top-3 chunks)
+    memory_file = PROJECT_ROOT / "profiles" / clean_role / "MEMORY.md"
+    curated_memory_summary = ""
+    if memory_file.exists():
+        try:
+            m_lines = [l.strip() for l in memory_file.read_text(encoding="utf-8").splitlines() if l.strip().startswith("- ")]
+            if m_lines:
+                curated_memory_summary = " ".join(m_lines[:3])
+        except Exception:
+            pass
+
+    long_term_lessons = "Chưa có bài học lịch sử đặc thù; áp dụng chuẩn mặc định của dự án."
+    try:
+        from tools.harness_learning_search import search_experiences  # type: ignore
+        experiences = search_experiences(domain=domain, limit=3)
+        if experiences:
+            lesson_snippets = [
+                f"[{exp.get('domain', 'general')}] {exp.get('cue', '')}: {exp.get('lesson', '')}"
+                for exp in experiences[:3]
+            ]
+            long_term_lessons = " | ".join(lesson_snippets)
+    except Exception:
+        pass
+    if curated_memory_summary:
+        long_term_lessons = f"[Curated MEMORY.md: {curated_memory_summary}] | [Learn Store: {long_term_lessons}]"
 
     prompt = (
-        f"=== [SLPPC AUTO-REHYDRATION BOOT] ===\n"
-        f"Vai trò: {role.upper()}\n"
-        f"Sứ mệnh: {mission}\n"
-        f"Nhiệm vụ Active hiện tại: {active_tasks_info}\n"
-        f"Biên bản bàn giao gần nhất: {handoff_info}\n"
+        f"=== [SLPPC AUTO-REHYDRATION BOOT | 3-TIER DYNAMIC HYDRATION] ===\n"
+        f"Identity: User={user_id} | Project={project_id} | Vai trò={role.upper()}\n"
+        f"Agent Identity (profiles/{clean_role}/IDENTITY.md): {identity_summary}\n"
+        f"Soul Persona (profiles/{clean_role}/SOUL.md): {soul_summary}\n"
+        f"Tầng 1 (Working Memory - Sứ mệnh): {mission}\n"
+        f"Tầng 2 (Short-Term Memory - Phiên hiện tại): Task={active_tasks_info} | Handoff={handoff_info}\n"
+        f"Tầng 3 (Long-Term Memory - Tri thức bền vững Top-3): {long_term_lessons}\n"
         f"Kỷ luật: 100% Strict Typing (0 any/unknown), Chuẩn Zero-Search 5 thành phần, Anti-Leak, cấm role_trespass.\n"
         f"Xác nhận đã nạp lại context đầy đủ và sẵn sàng làm việc."
     )
