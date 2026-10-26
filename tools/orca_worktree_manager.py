@@ -47,6 +47,32 @@ def run_cmd(cmd: List[str], check: bool = False, cwd: Optional[str] = None) -> s
     return subprocess.run(cmd, capture_output=True, text=True, check=check, cwd=cwd or BASE_DIR)
 
 
+def abort_merge_safely(cwd: Optional[str] = None) -> bool:
+    """Safely abort an in-progress or failed git merge, restoring working tree to clean state.
+
+    1. Checks if a merge is in progress (MERGE_HEAD active via git rev-parse -q --verify MERGE_HEAD
+       or .git/MERGE_HEAD existence).
+    2. Runs git merge --abort if MERGE_HEAD is present.
+    3. If git merge --abort fails or returncode != 0, falls back to git reset --merge.
+    Returns True if working tree was successfully cleaned.
+    """
+    repo_dir = Path(cwd or BASE_DIR)
+    merge_head_file = repo_dir / ".git" / "MERGE_HEAD"
+    has_merge_head = merge_head_file.exists()
+    if not has_merge_head:
+        check_res = run_cmd(["git", "rev-parse", "-q", "--verify", "MERGE_HEAD"], cwd=cwd)
+        has_merge_head = (check_res.returncode == 0)
+
+    if has_merge_head:
+        abort_res = run_cmd(["git", "merge", "--abort"], cwd=cwd)
+        if abort_res.returncode == 0:
+            return True
+        reset_res = run_cmd(["git", "reset", "--merge"], cwd=cwd)
+        return reset_res.returncode == 0
+    return True
+
+
+
 def send_desktop_notification(title: str, message: str, level: str = "info"):
     """Bắn thông báo desktop qua libnotify (Linux) hoặc osascript (macOS)."""
     try:
@@ -270,11 +296,15 @@ def approve_and_merge_worktree(task_id: int | str, actor: str = "user", reason: 
     # 2. Merge vào branch hiện hành
     merge_res = run_cmd(["git", "merge", "--no-ff", "-m", f"feat: merge task #{task_id} ({wt_name}) [Reviewed & Approved by User]", clean_branch])
     if merge_res.returncode != 0:
-        print(f"⚠️ Merge thất bại: {merge_res.stderr.strip()}", file=sys.stderr)
+        err_msg = merge_res.stderr.strip() or merge_res.stdout.strip()
+        print(f"⚠️ Merge thất bại: {err_msg}", file=sys.stderr)
+        abort_merge_safely()
         print("Đang thử lại với fast-forward...")
         ff_res = run_cmd(["git", "merge", "--ff-only", clean_branch])
         if ff_res.returncode != 0:
-            print(f"❌ Không thể tự động merge. Vui lòng kiểm tra xung đột git.", file=sys.stderr)
+            abort_merge_safely()
+            ff_err = ff_res.stderr.strip() or ff_res.stdout.strip()
+            print(f"❌ Không thể tự động merge. Vui lòng kiểm tra xung đột git. {ff_err}".strip(), file=sys.stderr)
             return False
 
     print(f"✅ Đã merge thành công code của Task #{task_id} vào branch chính!")

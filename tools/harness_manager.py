@@ -490,12 +490,12 @@ class HarnessManager:
         except Exception:
             pass
 
-        # Auto-migrate legacy/truncated trace table (G-OBS-1)
+        # Auto-migrate legacy/truncated trace table (G-OBS-1) via table-copy
         try:
             cur = conn.cursor()
             trace_cols = {r[1] for r in cur.execute("PRAGMA table_info(trace);").fetchall()}
             if trace_cols:
-                if "task_summary" not in trace_cols:
+                if "task_summary" not in trace_cols or "content" in trace_cols:
                     row_count = cur.execute("SELECT count(*) FROM trace;").fetchone()[0]
                     if row_count == 0:
                         cur.execute("DROP TABLE trace;")
@@ -521,25 +521,76 @@ class HarnessManager:
                             );
                         """)
                     else:
-                        required_cols = [
-                            ("task_summary", "TEXT NOT NULL DEFAULT ''"),
-                            ("intake_id", "INTEGER"),
-                            ("agent", "TEXT"),
-                            ("actions_taken", "TEXT"),
-                            ("files_read", "TEXT"),
-                            ("files_changed", "TEXT"),
-                            ("decisions_made", "TEXT"),
-                            ("errors", "TEXT"),
-                            ("outcome", "TEXT"),
-                            ("duration_seconds", "INTEGER"),
-                            ("token_estimate", "INTEGER"),
-                            ("harness_friction", "TEXT"),
-                            ("notes", "TEXT"),
-                            ("run_id", "TEXT"),
-                        ]
-                        for c_name, c_def in required_cols:
-                            if c_name not in trace_cols:
-                                cur.execute(f"ALTER TABLE trace ADD COLUMN {c_name} {c_def};")
+                        conn.commit()
+                        conn.execute("PRAGMA foreign_keys = OFF;")
+                        try:
+                            cur.execute("""
+                                CREATE TABLE trace__migrated (
+                                    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+                                    task_summary     TEXT    NOT NULL,
+                                    intake_id        INTEGER REFERENCES intake(id),
+                                    story_id         TEXT    REFERENCES story(id) ON DELETE CASCADE,
+                                    agent            TEXT,
+                                    actions_taken    TEXT,
+                                    files_read       TEXT,
+                                    files_changed    TEXT,
+                                    decisions_made   TEXT,
+                                    errors           TEXT,
+                                    outcome          TEXT CHECK(outcome IN ('completed','blocked','partial','failed')),
+                                    duration_seconds INTEGER,
+                                    token_estimate   INTEGER,
+                                    harness_friction TEXT,
+                                    notes            TEXT,
+                                    run_id           TEXT
+                                );
+                            """)
+                            canonical_cols = [
+                                "id", "created_at", "task_summary", "intake_id", "story_id",
+                                "agent", "actions_taken", "files_read", "files_changed",
+                                "decisions_made", "errors", "outcome", "duration_seconds",
+                                "token_estimate", "harness_friction", "notes", "run_id"
+                            ]
+                            select_exprs = []
+                            for col in canonical_cols:
+                                if col == "id":
+                                    select_exprs.append("id")
+                                elif col == "created_at":
+                                    select_exprs.append("created_at" if "created_at" in trace_cols else "(datetime('now'))")
+                                elif col == "story_id":
+                                    select_exprs.append("CAST(story_id AS TEXT)" if "story_id" in trace_cols else "NULL")
+                                elif col == "task_summary":
+                                    if "task_summary" in trace_cols and "content" in trace_cols:
+                                        select_exprs.append("COALESCE(NULLIF(task_summary, ''), NULLIF(content, ''), 'migrated trace')")
+                                    elif "content" in trace_cols:
+                                        select_exprs.append("COALESCE(NULLIF(content, ''), 'migrated trace')")
+                                    elif "task_summary" in trace_cols:
+                                        select_exprs.append("COALESCE(task_summary, 'migrated trace')")
+                                    else:
+                                        select_exprs.append("'migrated trace'")
+                                elif col == "notes":
+                                    if "notes" in trace_cols and "tier" in trace_cols:
+                                        select_exprs.append("COALESCE(notes, 'migrated_legacy tier=' || tier)")
+                                    elif "tier" in trace_cols:
+                                        select_exprs.append("'migrated_legacy tier=' || tier")
+                                    elif "notes" in trace_cols:
+                                        select_exprs.append("notes")
+                                    else:
+                                        select_exprs.append("NULL")
+                                else:
+                                    select_exprs.append(col if col in trace_cols else "NULL")
+
+                            cols_str = ", ".join(canonical_cols)
+                            exprs_str = ", ".join(select_exprs)
+                            cur.execute(f"INSERT INTO trace__migrated ({cols_str}) SELECT {exprs_str} FROM trace;")
+                            cur.execute("DROP TABLE trace;")
+                            cur.execute("ALTER TABLE trace__migrated RENAME TO trace;")
+                            cur.execute("CREATE INDEX IF NOT EXISTS idx_trace_run_id ON trace(run_id);")
+                            cur.execute("CREATE INDEX IF NOT EXISTS idx_trace_story_id ON trace(story_id);")
+                            cur.execute("CREATE INDEX IF NOT EXISTS idx_trace_created_at ON trace(created_at);")
+                            conn.commit()
+                        finally:
+                            conn.execute("PRAGMA foreign_keys = ON;")
                 else:
                     if "run_id" not in trace_cols:
                         cur.execute("ALTER TABLE trace ADD COLUMN run_id TEXT;")
@@ -957,38 +1008,74 @@ class HarnessManager:
 
         with self._get_sqlite_db() as conn:
             cur = conn.cursor()
-            cur.execute(
-                """
-                INSERT INTO trace (
-                    task_summary, intake_id, story_id, agent,
-                    actions_taken, files_read, files_changed, decisions_made,
-                    errors, outcome, duration_seconds, token_estimate,
-                    harness_friction, notes, run_id
-                ) VALUES (
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?
-                );
-                """,
-                (
-                    task_summary,
-                    intake_id,
-                    str(story_id) if story_id is not None else None,
-                    agent,
-                    _to_json_str(actions_taken),
-                    _to_json_str(files_read),
-                    _to_json_str(files_changed),
-                    _to_json_str(decisions_made),
-                    _to_json_str(errors),
-                    norm_outcome,
-                    dur_sec,
-                    tok_est,
-                    harness_friction,
-                    notes,
-                    run_id,
-                ),
-            )
+            trace_cols = {r[1] for r in cur.execute("PRAGMA table_info(trace);").fetchall()}
+            if "content" in trace_cols:
+                cur.execute(
+                    """
+                    INSERT INTO trace (
+                        task_summary, intake_id, story_id, agent,
+                        actions_taken, files_read, files_changed, decisions_made,
+                        errors, outcome, duration_seconds, token_estimate,
+                        harness_friction, notes, run_id, content
+                    ) VALUES (
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?
+                    );
+                    """,
+                    (
+                        task_summary,
+                        intake_id,
+                        str(story_id) if story_id is not None else None,
+                        agent,
+                        _to_json_str(actions_taken),
+                        _to_json_str(files_read),
+                        _to_json_str(files_changed),
+                        _to_json_str(decisions_made),
+                        _to_json_str(errors),
+                        norm_outcome,
+                        dur_sec,
+                        tok_est,
+                        harness_friction,
+                        notes,
+                        run_id,
+                        task_summary or "",
+                    ),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO trace (
+                        task_summary, intake_id, story_id, agent,
+                        actions_taken, files_read, files_changed, decisions_made,
+                        errors, outcome, duration_seconds, token_estimate,
+                        harness_friction, notes, run_id
+                    ) VALUES (
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?
+                    );
+                    """,
+                    (
+                        task_summary,
+                        intake_id,
+                        str(story_id) if story_id is not None else None,
+                        agent,
+                        _to_json_str(actions_taken),
+                        _to_json_str(files_read),
+                        _to_json_str(files_changed),
+                        _to_json_str(decisions_made),
+                        _to_json_str(errors),
+                        norm_outcome,
+                        dur_sec,
+                        tok_est,
+                        harness_friction,
+                        notes,
+                        run_id,
+                    ),
+                )
             conn.commit()
             return int(cur.lastrowid or 0)
 
@@ -1039,7 +1126,12 @@ class HarnessManager:
             cur = conn.cursor()
             cur.execute("SELECT * FROM trace WHERE id = ?;", (trace_id,))
             row = cur.fetchone()
-            return dict(row) if row else None
+            if not row:
+                return None
+            d = dict(row)
+            if "content" not in d and "task_summary" in d:
+                d["content"] = d["task_summary"]
+            return d
 
     def list_traces(
         self,
@@ -1066,7 +1158,13 @@ class HarnessManager:
         with self._get_sqlite_db() as conn:
             cur = conn.cursor()
             cur.execute(query, params)
-            return [dict(r) for r in cur.fetchall()]
+            res = []
+            for r in cur.fetchall():
+                d = dict(r)
+                if "content" not in d and "task_summary" in d:
+                    d["content"] = d["task_summary"]
+                res.append(d)
+            return res
 
     def record_intervention(
         self,

@@ -83,7 +83,7 @@ class TestTraceSchemaAndObservability(unittest.TestCase):
         self.assertIn("token_estimate", cols)
 
     def test_03_auto_migration_populated_legacy_db(self):
-        """Verify that a populated legacy trace table is migrated via ALTER TABLE preserving existing data."""
+        """Verify that a populated legacy trace table is migrated via table-copy preserving data and accepting new traces."""
         conn = sqlite3.connect(self.db_path)
         conn.execute("""
             CREATE TABLE trace (
@@ -106,8 +106,39 @@ class TestTraceSchemaAndObservability(unittest.TestCase):
 
         self.assertIn("task_summary", cols)
         self.assertIn("run_id", cols)
-        self.assertEqual(row["content"], "historical trace content")
-        self.assertEqual(row["story_id"], 101)
+        self.assertNotIn("content", cols, "Legacy 'content' column should be retired during table-copy migration")
+        self.assertEqual(row["task_summary"], "historical trace content")
+        self.assertEqual(str(row["story_id"]), "101")
+        self.assertIn("migrated_legacy", row["notes"])
+
+        # Backward compatibility check via get_trace()
+        hist = mgr.get_trace(1)
+        self.assertIsNotNone(hist)
+        self.assertEqual(hist["task_summary"], "historical trace content")
+        self.assertEqual(hist["content"], "historical trace content")
+
+        # CRITICAL REGRESSION CHECK:
+        # Verify subsequent record_trace and record_trace_span succeed without IntegrityError
+        trace_id = mgr.record_trace(
+            task_summary="New trace after auto-migration",
+            run_id="run-mig-post-01"
+        )
+        self.assertGreater(trace_id, 1)
+
+        new_row = mgr.get_trace(trace_id)
+        self.assertIsNotNone(new_row)
+        self.assertEqual(new_row["task_summary"], "New trace after auto-migration")
+        self.assertEqual(new_row["run_id"], "run-mig-post-01")
+
+        span_id = mgr.record_trace_span(
+            run_id="run-mig-post-01",
+            stage="PEER",
+            agent="peer",
+            task_summary="Verify span insertion",
+            duration_seconds=15,
+            outcome="completed"
+        )
+        self.assertGreater(span_id, trace_id)
 
     def test_04_auto_migration_missing_run_id(self):
         """Verify that a 16-column table missing only run_id is migrated by adding run_id."""
@@ -236,6 +267,37 @@ class TestTraceSchemaAndObservability(unittest.TestCase):
         self.assertEqual(records[0]["actor"], "test_user")
         self.assertEqual(records[0]["action"], "approve")
         self.assertEqual(records[0]["reason"], "Verified code diff and QC report")
+
+    def test_08_record_trace_span_on_migrated_populated_db(self):
+        """Verify record_trace_span executes cleanly on a migrated legacy populated table."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("""
+            CREATE TABLE trace (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                story_id INTEGER,
+                tier INTEGER NOT NULL DEFAULT 1,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+        """)
+        conn.execute("INSERT INTO trace (story_id, tier, content) VALUES (202, 1, 'legacy span content');")
+        conn.commit()
+        conn.close()
+
+        mgr = HarnessManager(engine="sqlite", db_path=self.db_path)
+        span_id = mgr.record_trace_span(
+            run_id="run-span-migrated-99",
+            stage="QC",
+            agent="qc",
+            task_summary="ISTQB verification on migrated database",
+            duration_seconds=15,
+            outcome="completed"
+        )
+        self.assertGreater(span_id, 1)
+        traces = mgr.list_traces(run_id="run-span-migrated-99")
+        self.assertEqual(len(traces), 1)
+        self.assertEqual(traces[0]["agent"], "qc")
+        self.assertEqual(traces[0]["task_summary"], "ISTQB verification on migrated database")
 
 
 if __name__ == "__main__":
