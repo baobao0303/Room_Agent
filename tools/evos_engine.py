@@ -6,7 +6,7 @@ Thực thi Trụ cột 4 trong bản đặc tả ARCH-SPEC-ENTERPRISE-AI-4-PILLA
 1. Golden Dataset (Regression & Edge-Case Scenarios): Kiểm thử tự động bộ kịch bản biên phức tạp + Unit Test Suite.
 2. LLM As A Judge (Independent Scoring): Hỗ trợ cả Kev System One (<50ms) và Deterministic Rule-Based Judge (khi không bật Kev).
 3. Inline Guardrails (Real-time Security Filtering): Chặn đứng Prompt Injection, mã độc (malicious payloads) và rò rỉ dữ liệu mật (Anti-Leak).
-4. Release Gate Verification: Cấp phép đưa lên Production CHỈ KHI Pass Rate >= 98.0% và 0% vi phạm Guardrails.
+4. Release Gate Verification: Cấp phép đưa lên Production CHỈ KHI Pass Rate >= 98.5% và 0% vi phạm Guardrails.
 
 100% Strict Typing: Sử dụng Typed Dataclasses, không phụ thuộc bắt buộc vào Kev daemon.
 """
@@ -74,6 +74,7 @@ class JudgeEvaluationResult:
     overall_score: float
     passed: bool
     verdict: str
+    production_approved: bool = False
 
 
 @dataclass
@@ -303,12 +304,14 @@ def evaluate_golden_dataset(run_unit_suite: bool = False) -> GoldenDatasetReport
 def evaluate_with_judge(
     state_summary: str,
     use_kev: bool = False,
+    threshold: float = RELEASE_GATE_MIN_PASS_RATE,
+    golden_report: Optional[GoldenDatasetReport] = None,
 ) -> JudgeEvaluationResult:
     """
     Thẩm định tự động độc lập (LLM As A Judge):
     - Nếu use_kev=True và Kev System One online: Gọi POST /v1/systemone (<50ms).
-    - Nếu use_kev=False (mặc định khi chạy độc lập không cần Kev) hoặc Kev offline:
-      Sử dụng Deterministic Rule-Based Judge kiểm định khách quan dựa trên số liệu cơ học.
+      Nếu Kev endpoint lỗi, không phản hồi hoặc dữ liệu thiếu trường: Trả về INCONCLUSIVE.
+    - Nếu use_kev=False: Sử dụng Deterministic Rule-Based Judge đo lường động dựa trên số liệu cơ học thực tế.
     """
     if use_kev:
         payload = {
@@ -336,34 +339,137 @@ def evaluate_with_judge(
                 headers={"Content-Type": "application/json"},
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
-                kev_data = json.loads(resp.read().decode("utf-8"))
-                ans = kev_data.get("answers", {})
-                acc = float(ans.get("accuracy", {}).get("noul", 0.98))
-                log = float(ans.get("logic", {}).get("noul", 0.98))
-                comp = float(ans.get("compliance", {}).get("noul", 0.99))
-                overall = round(((acc + log + comp) / 3.0) * 100.0, 2)
+                raw_bytes = resp.read()
+                kev_data = json.loads(raw_bytes.decode("utf-8"))
+        except Exception:
+            return JudgeEvaluationResult(
+                engine_mode="kev_system_one",
+                accuracy_score=0.0,
+                logic_score=0.0,
+                compliance_score=0.0,
+                overall_score=0.0,
+                passed=False,
+                verdict="INCONCLUSIVE",
+                production_approved=False,
+            )
+
+        if not isinstance(kev_data, dict):
+            return JudgeEvaluationResult(
+                engine_mode="kev_system_one",
+                accuracy_score=0.0,
+                logic_score=0.0,
+                compliance_score=0.0,
+                overall_score=0.0,
+                passed=False,
+                verdict="INCONCLUSIVE",
+                production_approved=False,
+            )
+
+        ans = kev_data.get("answers")
+        if not isinstance(ans, dict):
+            return JudgeEvaluationResult(
+                engine_mode="kev_system_one",
+                accuracy_score=0.0,
+                logic_score=0.0,
+                compliance_score=0.0,
+                overall_score=0.0,
+                passed=False,
+                verdict="INCONCLUSIVE",
+                production_approved=False,
+            )
+
+        required_keys = ("accuracy", "logic", "compliance")
+        for q in required_keys:
+            if q not in ans or not isinstance(ans[q], dict) or "noul" not in ans[q] or ans[q]["noul"] is None:
                 return JudgeEvaluationResult(
                     engine_mode="kev_system_one",
-                    accuracy_score=round(acc * 100.0, 2),
-                    logic_score=round(log * 100.0, 2),
-                    compliance_score=round(comp * 100.0, 2),
-                    overall_score=overall,
-                    passed=overall >= RELEASE_GATE_MIN_PASS_RATE,
-                    verdict="APPROVED_BY_KEV_JUDGE" if overall >= RELEASE_GATE_MIN_PASS_RATE else "REJECTED_BY_KEV_JUDGE",
+                    accuracy_score=0.0,
+                    logic_score=0.0,
+                    compliance_score=0.0,
+                    overall_score=0.0,
+                    passed=False,
+                    verdict="INCONCLUSIVE",
+                    production_approved=False,
                 )
-        except Exception:
-            pass
+
+        try:
+            acc = float(ans["accuracy"]["noul"])
+            log = float(ans["logic"]["noul"])
+            comp = float(ans["compliance"]["noul"])
+        except (ValueError, TypeError):
+            return JudgeEvaluationResult(
+                engine_mode="kev_system_one",
+                accuracy_score=0.0,
+                logic_score=0.0,
+                compliance_score=0.0,
+                overall_score=0.0,
+                passed=False,
+                verdict="INCONCLUSIVE",
+                production_approved=False,
+            )
+
+        overall = round(((acc + log + comp) / 3.0) * 100.0, 2)
+        passed = overall >= threshold
+        return JudgeEvaluationResult(
+            engine_mode="kev_system_one",
+            accuracy_score=round(acc * 100.0, 2),
+            logic_score=round(log * 100.0, 2),
+            compliance_score=round(comp * 100.0, 2),
+            overall_score=overall,
+            passed=passed,
+            verdict="APPROVED_BY_KEV_JUDGE" if passed else "REJECTED_BY_KEV_JUDGE",
+            production_approved=passed,
+        )
 
     # Deterministic Heuristic Judge (Hoạt động 100% độc lập không cần Kev daemon)
     from tools.slppc_flow_guard import run_slppc_audit
 
-    audit_res = run_slppc_audit(auto_record=False)
-    violations_count = int(audit_res.get("violations_detected", 0))
+    try:
+        audit_res = run_slppc_audit(auto_record=False)
+        violations_count = int(audit_res.get("violations_detected", 0))
+    except Exception:
+        return JudgeEvaluationResult(
+            engine_mode="deterministic_heuristic_judge",
+            accuracy_score=0.0,
+            logic_score=0.0,
+            compliance_score=0.0,
+            overall_score=0.0,
+            passed=False,
+            verdict="INCONCLUSIVE",
+            production_approved=False,
+        )
 
-    acc_score = 100.0
+    # G-EVL-2: Tính toán accuracy_score động dựa trên số liệu đo lường thực tế (Golden Dataset Pass Rate)
+    # Tuyệt đối không gán cứng điểm accuracy (G-EVL-2)
+    measured_acc: Optional[float] = None
+    if golden_report is not None:
+        measured_acc = float(golden_report.pass_rate)
+    elif state_summary:
+        m = re.search(r"Golden Dataset pass_rate=([0-9.]+)\s*%", state_summary)
+        if m:
+            measured_acc = float(m.group(1))
+
+    if measured_acc is None:
+        try:
+            gd = evaluate_golden_dataset(run_unit_suite=False)
+            measured_acc = float(gd.pass_rate)
+        except Exception:
+            return JudgeEvaluationResult(
+                engine_mode="deterministic_heuristic_judge",
+                accuracy_score=0.0,
+                logic_score=0.0,
+                compliance_score=0.0,
+                overall_score=0.0,
+                passed=False,
+                verdict="INCONCLUSIVE",
+                production_approved=False,
+            )
+
+    acc_score = round(measured_acc, 2)
     logic_score = 100.0 if violations_count == 0 else max(0.0, 100.0 - violations_count * 10.0)
     comp_score = 100.0 if violations_count == 0 else max(0.0, 100.0 - violations_count * 15.0)
     overall = round((acc_score + logic_score + comp_score) / 3.0, 2)
+    passed = overall >= threshold
 
     return JudgeEvaluationResult(
         engine_mode="deterministic_heuristic_judge",
@@ -371,8 +477,9 @@ def evaluate_with_judge(
         logic_score=logic_score,
         compliance_score=comp_score,
         overall_score=overall,
-        passed=overall >= RELEASE_GATE_MIN_PASS_RATE,
-        verdict="APPROVED_BY_DETERMINISTIC_JUDGE" if overall >= RELEASE_GATE_MIN_PASS_RATE else "REJECTED_BY_DETERMINISTIC_JUDGE",
+        passed=passed,
+        verdict="APPROVED_BY_DETERMINISTIC_JUDGE" if passed else "REJECTED_BY_DETERMINISTIC_JUDGE",
+        production_approved=passed,
     )
 
 
@@ -390,8 +497,8 @@ def run_evos_release_gate(
     Chạy toàn diện cổng kiểm định EVOS Engine & Guardrails:
     Chỉ cấp phép Production khi:
     1. Inline Guardrails PASS (0 mối đe dọa, 0 rò rỉ).
-    2. Golden Dataset Pass Rate >= 98.0%.
-    3. Independent Judge Score >= 98.0%.
+    2. Golden Dataset Pass Rate >= 98.5%.
+    3. Independent Judge Score >= 98.5%.
     """
     guardrails = scan_inline_guardrails(sample_input, run_repo_anti_leak=run_repo_anti_leak)
     golden = evaluate_golden_dataset(run_unit_suite=run_unit_suite)
@@ -400,12 +507,25 @@ def run_evos_release_gate(
         f"Golden Dataset pass_rate={golden.pass_rate}% ({golden.passed_cases}/{golden.total_cases}); "
         f"Sample={sample_input}"
     )
-    judge = evaluate_with_judge(state_summary=state_str, use_kev=use_kev)
+    judge = evaluate_with_judge(
+        state_summary=state_str,
+        use_kev=use_kev,
+        threshold=threshold,
+        golden_report=golden,
+    )
 
     combined_rate = round((golden.pass_rate + judge.overall_score) / 2.0, 2)
-    approved = guardrails.passed and (golden.pass_rate >= threshold) and judge.passed and (combined_rate >= threshold)
+    approved = (
+        guardrails.passed
+        and (golden.pass_rate >= threshold)
+        and judge.passed
+        and judge.production_approved
+        and (combined_rate >= threshold)
+    )
 
-    if approved:
+    if not judge.passed and "INCONCLUSIVE" in judge.verdict:
+        summary = f"BLOCKED (Judge verdict: {judge.verdict}) — CHẶN PHÁT HÀNH"
+    elif approved:
         summary = f"PASS ({combined_rate:.2f}% >= {threshold:.1f}%) — ĐẠT CHUẨN PRODUCTION RELEASE GATE"
     else:
         summary = f"BLOCKED ({combined_rate:.2f}% < {threshold:.1f}% hoặc vi phạm Guardrails) — CHẶN PHÁT HÀNH"
@@ -421,6 +541,7 @@ def run_evos_release_gate(
         production_approved=approved,
         verdict_summary=summary,
     )
+
 
 
 def main() -> None:
