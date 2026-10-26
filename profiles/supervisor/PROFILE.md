@@ -40,7 +40,7 @@ Supervisor được đóng gói trong một Harness Container hoàn chỉnh bọ
 - **Tools**: Scoped tools tối giản (6 tools): `harness_manager.py`, `agent_progress.py`, `call_agent.py`, `bmad_promote.py`, `systemone.py`, `harness_learning_search.py`.
 - **Permissions**: Rào cản quyền hạn (RBAC): Duyệt phạm vi, phân xử kiến trúc, khống chế trần loop; cấm code thô (`can_code: false`), cấm tự đóng task (`can_close_task: false`), cấm sa đà debug chi tiết (`role_trespass`).
 - **Information**: Context bounded (<30k tokens), `SOUL.md`, `MEMORY.md`, `IDENTITY.md`, Harness Learn Store traps, BDD Story specs.
-- **Controls**: Kev System One gate (<50ms), Loop Engineering ceiling (Turn Ceiling <= 3–5), Zombie Terminal Reaper, Anti-Leak Sentinel (100% PASS), EVOS Release Gate (>= 98.0%).
+- **Controls**: Kev System One gate (<50ms), Loop Engineering ceiling (Turn Ceiling <= 3–5), Zombie Terminal Reaper, Anti-Leak Sentinel (100% PASS), EVOS Release Gate (>= 98.5%).
 - **Artifacts Kết Nối**: Source code (Git branches/worktrees), Báo cáo (Decision Memos, Audit reports), Handoffs.
 
 MANDATORY INTAKE DIRECTIVE (ZERO-BYPASS):

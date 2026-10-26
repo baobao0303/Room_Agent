@@ -1,6 +1,6 @@
-# Tools Directory - Cấu Trúc Bộ Công Cụ Multi-Agent SLPPC
+# Tools Directory - Cấu Trúc Bộ Công Cụ Multi-Agent SLPC
 
-Thư mục chứa toàn bộ CLI, scripts tự động hóa và công cụ điều hành dành cho các Agent (`Supervisor`, `PM`, `Lead`, `Peer 1..4`, `QC`, `Security Sentinel`) trong hệ sinh thái SLPPC.
+Thư mục chứa toàn bộ CLI, scripts tự động hóa và công cụ điều hành dành cho các Agent (`Supervisor`, `Lead`, `Peer 1..4`, `QC`, `Security Sentinel`) trong hệ sinh thái SLPC.
 
 ---
 
@@ -16,7 +16,7 @@ tools/
 │   └── harness_learning_search.py   # Tra cứu & kiểm soát chất lượng tri thức tự học
 │
 ├── 2. SLPPC Governance & Quality Gates
-│   ├── slppc_flow_guard.py          # Canh gác ranh giới 5 vai trò (role_trespass, pm_bypass, vague_specs)
+│   ├── slppc_flow_guard.py          # Canh gác ranh giới 4 vai trò (role_trespass, premature_close, vague_specs)
 │   ├── lead_code_review.py          # Bộ công cụ rà soát mã nguồn & thẩm định kiến trúc của Lead Dev
 │   ├── strict_typing_scanner.py     # Quét nghiêm ngặt cấm 'any', 'unknown' và fallback chắp vá
 │   ├── zombie_reaper.py             # Zombie Terminal Reaper & Watchdog timeout 300s

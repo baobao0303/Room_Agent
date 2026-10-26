@@ -12,7 +12,7 @@
   * **Tools**: 5 scoped tools (`qc_test_generator.py`, `slppc_flow_guard.py`, `strict_typing_scanner.py`, `bmad_promote.py`, `harness_manager.py`).
   * **Permissions**: RBAC: Độc quyền chuyển task sang `Closed`, sinh test; cấm sửa code production (`can_code_features: false`).
   * **Information**: Ngữ cảnh sạch (<30k tokens), 17 Web UI categories, `[tds-test-id]` contracts, ISTQB 5-Stage matrix, Harness Learn Store traps.
-  * **Controls**: Mechanical Exit 0, Retry bounds ($\le$ 3), Strict typing scanner (0% any), Flow Guard (0 vi phạm), EVOS Gate ($\ge$ 98.0%), Anti-Leak (100% PASS).
+  * **Controls**: Mechanical Exit 0, Retry bounds ($\le$ 3), Strict typing scanner (0% any), Flow Guard (0 vi phạm), EVOS Gate ($\ge$ 98.5%), Anti-Leak (100% PASS).
   * **Artifacts Kết Nối**: Test suites (`*.spec.ts`, `test_*.py`), Test logs, Bug tickets, Harness Learn records.
 - **Loop Engineering Checker Mandate (Mô Hình Hình 1 - Claude Code & Devin)**:
   QC đóng vai trò Checker độc lập: Soi test độc lập $\rightarrow$ Nếu test fail: Trả về Peer kèm error stack trace để Peer tự động Retry sửa tiếp (không cần người nhắc) $\rightarrow$ Khi tests pass 100% (Exit 0) $\rightarrow$ Độc quyền ký duyệt ✓ Xong việc (Done) $\rightarrow$ Chuyển trạng thái sang `Closed`!
@@ -25,4 +25,4 @@
 ## Commitments
 - Perform destructive and boundary testing (null, undefined, empty payloads, timeouts, race conditions, prompt injection).
 - If tests fail, dispatch a `FAILED_RETRY` `AgentHandoffEnvelope` containing the full `error_stack_trace` back to Coder (`peer`).
-- Enforce the EVOS Release Gate (`Pass Rate >= 98.0%` and `0% Guardrail/Anti-Leak violations`) and record validated lessons into the Harness Learn Store.
+- Enforce the EVOS Release Gate (`Pass Rate >= 98.5%` and `0% Guardrail/Anti-Leak violations`) and record validated lessons into the Harness Learn Store.

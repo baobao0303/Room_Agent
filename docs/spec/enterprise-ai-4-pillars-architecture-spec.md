@@ -4,7 +4,7 @@
 - **Phiên bản**: `1.0.0` (Production-Grade Enterprise Blueprint)
 - **Trạng thái**: `APPROVED` (Chuẩn hóa thực thi trên hệ sinh thái `Room_Agent` / SLPPC)
 - **Phạm vi áp dụng**: Toàn bộ kiến trúc AI Tác tử Doanh nghiệp (RAG Engine, Multi-Agent Orchestration, 3-Tier Memory Architecture, EVOS Evaluation & Guardrails Engine)
-- **Tiêu chuẩn cổng phát hành (Release Gate)**: Task Completion Rate $> 90\%$, EVOS Quality Pass Rate $> 98\%$
+- **Tiêu chuẩn cổng phát hành (Release Gate)**: Task Completion Rate $> 90\%$, EVOS Quality Pass Rate $\ge 98.5\%$
 
 ---
 
@@ -26,7 +26,7 @@ Nguyên nhân cốt lõi khiến mô hình AI đơn lẻ thất bại khi giải
 | Chỉ số Mục tiêu Kỹ thuật | Mô hình Đơn Tác tử (Single-Agent) | Hệ thống Đa Tác tử (Multi-Agent) | Tiêu chuẩn Ngưỡng Phát hành (Release Gate) |
 | :--- | :--- | :--- | :--- |
 | **Tỷ lệ hoàn thành tác vụ phức tạp** | 20% | **> 90%** | Yêu cầu bắt buộc đạt **> 90%** |
-| **Tỷ lệ vượt qua kiểm thử chất lượng (Pass Rate)** | Không có cơ chế tự động | Được thẩm định qua EVOS Engine | **> 98%** (Đạt chuẩn đưa vào Production) |
+| **Tỷ lệ vượt qua kiểm thử chất lượng (Pass Rate)** | Không có cơ chế tự động | Được thẩm định qua EVOS Engine | **>= 98.5%** (Đạt chuẩn đưa vào Production) |
 | **Rủi ro bịa đặt thông tin (Hallucination Rate)** | Cao (Không kiểm soát) | **0% (Context-Bounded)** | Bắt buộc trích xuất đúng **3 context chunks** |
 | **Khả năng duy trì trạng thái (Statefulness)** | Vô trạng thái (Stateless) | **3-Tier Dynamic Hydration** | Phục hồi 100% ngữ cảnh dự án/cá nhân hóa |
 
@@ -61,7 +61,7 @@ Nguyên nhân cốt lõi khiến mô hình AI đơn lẻ thất bại khi giải
 │  ┌───────────────────────────────────────────────────────────────────────────────────┐  │
 │  │            [4. PHÂN HỆ EVALS & GUARDRAILS (EVOS ENGINE - RELEASE GATE)]           │  │
 │  │  • Golden Dataset (Edge Cases Regression)   • LLM-as-a-Judge (Chấm điểm độc lập) │  │
-│  │  • Real-time Inline Guardrails (Anti-Leak)  • Release Gate: PASS RATE > 98%       │  │
+│  │  • Real-time Inline Guardrails (Anti-Leak)  • Release Gate: PASS RATE >= 98.5%       │  │
 │  └───────────────────────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -263,9 +263,9 @@ Hệ thống tích hợp 3 lớp kiểm soát thành một quy trình thống nh
                                                 ▼
                               ┌───────────────────────────────────┐
                               │     RELEASE GATE VERIFICATION     │
-                              │   Yêu cầu: PASS RATE >= 98.0%     │
+                              │   Yêu cầu: PASS RATE >= 98.5%     │
                               └─────────┬───────────────┬─────────┘
-                           (< 98%: BLOCK)               (>= 98%: ALLOW)
+                           (< 98.5%: BLOCK)             (>= 98.5%: ALLOW)
                                         ▼               ▼
                               [CHẶN TRIỂN KHAI]   [PRODUCTION DEPLOY]
 ```
@@ -279,7 +279,7 @@ Hệ thống tích hợp 3 lớp kiểm soát thành một quy trình thống nh
 
 ### 5.3. Tiêu chuẩn Phát hành Hệ thống (Release Gate)
 Hệ thống thiết lập ngưỡng kiểm soát tuyệt đối:
-- Chỉ khi toàn bộ hệ thống vượt qua bộ kịch bản kiểm thử của **EVOS Engine** và đạt điểm số **Pass Rate từ 98% trở lên ($\ge 98\%$)**, đồng thời đảm bảo **0% vi phạm Guardrails/Anti-Leak**, quy trình CI/CD mới cấp phép bấm nút đẩy hệ thống ra môi trường sản xuất thực chiến (*Production*).
+- Chỉ khi toàn bộ hệ thống vượt qua bộ kịch bản kiểm thử của **EVOS Engine** và đạt điểm số **Pass Rate từ 98.5% trở lên ($\ge 98.5\%$)**, đồng thời đảm bảo **0% vi phạm Guardrails/Anti-Leak**, quy trình CI/CD mới cấp phép bấm nút đẩy hệ thống ra môi trường sản xuất thực chiến (*Production*).
 
 ---
 
@@ -292,6 +292,6 @@ Bản đặc tả kỹ thuật hệ thống AI doanh nghiệp là sự kết h�
 | **1. Phân hệ RAG** | Chunking + Vector DB + Semantic Search (**Đúng 3 Context Chunks**) + Context-Bounded Prompting | Triệt tiêu hiện tượng học vẹt và bịa đặt thông tin (*Hallucination*) | **0% Bịa đặt ngoài ngữ cảnh** |
 | **2. Multi-Agent Architecture** | Chuyên môn hóa 4 vai trò (**PM, Coder, Tester, Reviewer**) + JSON Schema Hand-off + Retry Loop | Giải quyết triệt để hiện tượng loãng ngữ cảnh (*Context Window Dilution*) | Hoàn thành tác vụ phức tạp **> 90%** (so với 20% ở Single-Agent) |
 | **3. Memory Architecture** | Trí nhớ 3 tầng (**Working, Short-Term, Long-Term**) + Cơ chế **Dynamic Hydration** | Khắc phục bản chất vô trạng thái (*Stateless*) của LLM qua thời gian | **100% Phục hồi ngữ cảnh** sau nhiều tháng gián đoạn |
-| **4. EVOS Engine & Guardrails** | **Golden Dataset** + **LLM-as-a-Judge** + **Real-time Inline Guardrails** | Đảm bảo độ ổn định công nghiệp và an toàn thông tin tuyệt đối trước khi lên Production | **Pass Rate > 98%** tại cổng Release Gate |
+| **4. EVOS Engine & Guardrails** | **Golden Dataset** + **LLM-as-a-Judge** + **Real-time Inline Guardrails** | Đảm bảo độ ổn định công nghiệp và an toàn thông tin tuyệt đối trước khi lên Production | **Pass Rate >= 98.5%** tại cổng Release Gate |
 
 Việc tuân thủ nghiêm ngặt bản đặc tả `ARCH-SPEC-ENTERPRISE-AI-4-PILLARS-2026-V1` này là điều kiện tiên quyết giúp doanh nghiệp làm chủ công nghệ, đưa các hệ thống AI tác tử thực chiến vào vận hành ổn định, an toàn và đạt hiệu suất tối ưu.

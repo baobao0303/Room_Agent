@@ -36,7 +36,7 @@ class TestEvosEngineAndFourPillars(unittest.TestCase):
             target_files=["tools/evos_engine.py"],
             anchors=["run_evos_release_gate"],
             concrete_changes="Add inline guardrail check",
-            acceptance_criteria=["Pass rate >= 98%"],
+            acceptance_criteria=["Pass rate >= 98.5%"],
             test_command="python3 -m unittest tools/tests/test_evos_engine.py",
             exit_code=1,
             error_stack_trace="Traceback: AssertionError",

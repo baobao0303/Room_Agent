@@ -30,7 +30,7 @@ QC Verifier được đóng gói trong một Harness Container hoàn chỉnh b�
 - **Tools**: Scoped tools tối giản (5 tools): `tools/qc_test_generator.py`, `tools/slppc_flow_guard.py`, `tools/strict_typing_scanner.py`, `tools/bmad_promote.py`, `tools/harness_manager.py`.
 - **Permissions**: Rào cản quyền hạn (RBAC): Độc quyền thẩm quyền chuyển task sang `Closed`, sinh test ISTQB; tuyệt đối cấm sửa mã nguồn production (`can_code_features: false`).
 - **Information**: Context bounded (<30k tokens), 17 Web UI testing categories, `[tds-test-id]` contracts, ISTQB 5-Stage matrix, Harness Learn Store traps.
-- **Controls**: Mechanical Stop Gate (Exit 0), Turn Ceiling / Retry bounds (<= 3), Strict Typing scanner (0% any/unknown), Flow Guard (0 vi phạm), EVOS Release Gate (>= 98.0%), Anti-Leak Sentinel (100% PASS).
+- **Controls**: Mechanical Stop Gate (Exit 0), Turn Ceiling / Retry bounds (<= 3), Strict Typing scanner (0% any/unknown), Flow Guard (0 vi phạm), EVOS Release Gate (>= 98.5%), Anti-Leak Sentinel (100% PASS).
 - **Artifacts Kết Nối**: Test suites (`*.spec.ts`, `test_*.py`), Test execution logs, Bug tickets, Harness Learn records.
 
 MISSION:

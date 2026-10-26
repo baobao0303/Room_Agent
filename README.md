@@ -1,6 +1,6 @@
-# Room_Agent — Paseo SLPPC Multi-Agent Workspace
+# Room_Agent — Paseo SLPC Multi-Agent Workspace
 
-Không gian làm việc điều hành đa tác nhân theo mô hình **SLPPC (Supervisor - PM - Lead - Peer - QC)** tích hợp hệ điều hành **Paseo**, **Hermes Agent** và **Harness Framework v0.1.14**.
+Không gian làm việc điều hành đa tác nhân theo mô hình **SLPC (Supervisor - Lead - Peer - QC)** tích hợp hệ điều hành **Paseo**, **Hermes Agent** và **Harness Framework v0.1.14**.
 
 ---
 
@@ -15,54 +15,50 @@ Khi clone repository về máy nhà hoặc máy trạm mới, chỉ cần chạy
 Hoặc sau khi setup, khởi chạy và quản trị các Agent tabs trực tiếp trên Orca Desktop:
 
 ```bash
-./cli/agent-start         # Khởi chạy các Agent tabs thường trực (PM, Lead)
+./cli/agent-start         # Khởi chạy các Agent tabs thường trực (Lead)
 ./cli/agent-start status  # Xem bảng trạng thái chi tiết của tất cả Agent & nhịp tim
 ```
 
 ### Script tự động thực hiện trọn gói:
 1. **Kiểm tra công cụ cơ sở**: Tự động nhận diện `python3`, `git`, `orca`, `hermes`.
 2. **Cấu hình `.env`**: Khởi tạo cấu hình với model chuẩn `ag/gemini-3.8-flash-high`.
-3. **Master Skills Tree**: Quản lý tập trung tại thư mục canonical `skills/<nhóm>/<tên>/SKILL.md`, tự động symlink vào `~/.hermes/skills/`.
-4. **Đồng bộ 10 Profiles SLPPC**: Tự động đăng ký `Supervisor`, `PM Agent`, `Lead Dev`, `Peer Dev 1..4`, `Peer Design`, `QC`, `Security Sentinel` vào `~/.paseo/config.json`.
+3. **Master Skills Tree**: Quản lý tập trung tại thư mục canonical `profiles/<role>/skills/<tên>/SKILL.md` và `profiles/shared/skills/<tên>/SKILL.md`, tự động symlink vào `~/.hermes/skills/`.
+4. **Đồng bộ 4 Profiles SLPC**: Tự động đăng ký `Supervisor`, `Lead Dev`, `Peer Dev`, `QC` từ `profiles/<role>/PROFILE.md` vào `~/.paseo/config.json`.
 5. **Cài đặt Git Pre-Commit Guard**: Tự động kích hoạt hook kiểm soát thẩm quyền vai trò và chống mã màu hex cứng.
 6. **Đồng bộ Harness DB & Aevum Kanban**: Khởi tạo kết nối Floci DynamoDB Cloud (`:14566`) và tự động kích hoạt cơ chế Local Fallback nếu Floci offline.
 7. **Khởi chạy Multi-Agent Room**: (Khi dùng cờ `--launch` hoặc chạy `./cli/agent-start`).
 
 ---
 
-## 1. Mô Hình Điều Hành Phòng Ban SLPPC & 5 Cổng Kiểm Soát
+## 1. Mô Hình Điều Hành Phòng Ban SLPC & 4 Cổng Kiểm Soát
 
-Mọi tác vụ kỹ thuật trong workspace tuân thủ quy trình chuyển giao qua 5 cổng kiểm soát độc lập:
+Mọi tác vụ kỹ thuật trong workspace tuân thủ quy trình chuyển giao qua 4 cổng kiểm soát độc lập:
 
 ```text
 [Yêu cầu từ User]
        │
        ▼
-1. Supervisor (Scope & Intent Guard) ──► Tiếp nhận ý định User, tạo Epic/Task, cấm can thiệp code
+1. Supervisor (Scope & Intent Guard) ──► Tiếp nhận ý định User, thẩm định tính khả thi (Kev System One <50ms), tạo Epic/Task
        │
        ▼
-2. PM Agent (Feasibility & Alignment) ─► Thẩm định Khả thi / Phù hợp qua Kev System One (<50ms)
+2. Lead Dev (Architect & Technical PM) ─► Thiết kế kiến trúc, tra cứu bài học cũ, phân rã Zero-Search (Cấm tự code)
        │
        ▼
-3. Lead Dev (Architect & Technical PM) ─► Thiết kế kiến trúc, tra cứu bài học cũ, phân rã Zero-Search (Cấm tự code)
+3. Peer Devs (Code Executors 1..4) ───► Lập trình theo spec, tuân thủ Strict Typing, nộp Resolved (Cấm tự đóng task)
        │
        ▼
-4. Peer Devs (Code Executors 1..4) ───► Lập trình theo spec, tuân thủ Strict Typing, nộp Resolved (Cấm tự đóng task)
-       │
-       ▼
-5. QC (Quality Gate & Test Architect) ─► Sinh testcase 5-Stage ISTQB, kiểm tra anti-leak, độc quyền nghiệm thu & Closed
+4. QC (Quality Gate & Test Architect) ─► Sinh testcase 5-Stage ISTQB, kiểm tra anti-leak, độc quyền nghiệm thu & Closed
        │
        ▼
 [Task CLOSED]
 ```
 
 ### Chi Tiết Phân Quyền Các Vai Trò:
-1. **Supervisor (`supervisor`)**: Scope & Intent Guard. Kênh giao tiếp độc nhất với User. Phân tích phạm vi, tạo Epic/Task trên Harness DB (`--engine auto`), điều phối PM/Lead/Peer và kiểm soát rủi ro. Tuyệt đối cấm can thiệp code (`role_trespass`).
-2. **PM Agent (`pm`)**: Product Manager & Decision Arbiter (Kev System One Engine). Cố vấn định lượng ngầm cho Supervisor & Lead: đánh giá mức độ **Khả thi (Feasibility 0..3)** và **Phù hợp (Alignment)**, phân luồng sub-50ms trước khi phân rã task. Chặn đứng lỗi `pm_bypass`.
-3. **Lead Dev (`lead`)**: Technical Architect & PM. Thiết kế kiến trúc hệ thống, tra cứu bài học cũ qua `harness learn query`, duyệt giải pháp kỹ thuật và phân rã task Zero-Search 5 thành phần cho Peer. Nghiêm cấm tự ý code (`role_trespass`).
-4. **Peer Devs (`peer`, `peer2`, `peer3`, `peer4`, `design`)**: Code Executors (4 bậc tiết kiệm token: Low, Medium, High, Extra). Lập trình theo spec, tuân thủ Strict Typing (0% `any`, 0% `unknown`), nộp `Resolved`. Nghiêm cấm tự tiện đóng task (`premature_close`).
-5. **QC (`qc`)**: Independent Quality Gate & Test Architect. Độc quyền quyền hạn chuyển trạng thái task sang `Closed`. Nghiệm thu độc lập, sinh testcase theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria và chạy audit bảo đảm 100% tuân thủ quy trình.
-6. **Security Sentinel (`security`)**: Continuous Anti-Leak Gatekeeper & Open-Source Auditor. Giám sát liên tục chống lộ API spec tính năng, luồng nghiệp vụ FE, địa chỉ công ty và secrets; sở hữu quyền VETO chặn đứng mọi commit/push vi phạm.
+1. **Supervisor (`supervisor`)**: Scope & Intent Guard. Kênh giao tiếp độc nhất với User. Phân tích phạm vi, thẩm định Khả thi / Phù hợp qua Kev System One (<50ms), tạo Epic/Task trên Harness DB (`--engine auto`), điều phối Lead/Peer và kiểm soát rủi ro. Tuyệt đối cấm can thiệp code (`role_trespass`).
+2. **Lead Dev (`lead`)**: Technical Architect & PM. Thiết kế kiến trúc hệ thống, tra cứu bài học cũ qua `harness learn query`, duyệt giải pháp kỹ thuật và phân rã task Zero-Search 5 thành phần cho Peer. Nghiêm cấm tự ý code (`role_trespass`).
+3. **Peer Devs (`peer`, `peer2`, `peer3`, `peer4`, `design`)**: Code Executors (4 bậc tiết kiệm token: Low, Medium, High, Extra). Lập trình theo spec, tuân thủ Strict Typing (0% `any`, 0% `unknown`), nộp `Resolved`. Nghiêm cấm tự tiện đóng task (`premature_close`).
+4. **QC (`qc`)**: Independent Quality Gate & Test Architect. Độc quyền quyền hạn chuyển trạng thái task sang `Closed`. Nghiệm thu độc lập, sinh testcase theo chuẩn ISTQB 5-Stage (`tools/qc_test_generator.py`), xác nhận Acceptance Criteria và chạy audit bảo đảm 100% tuân thủ quy trình.
+5. **Security Sentinel (`security`)**: Continuous Anti-Leak Gatekeeper & Open-Source Auditor. Giám sát liên tục chống lộ API spec tính năng, luồng nghiệp vụ FE, địa chỉ công ty và secrets; sở hữu quyền VETO chặn đứng mọi commit/push vi phạm.
 
 ---
 
@@ -72,10 +68,9 @@ Mọi tác vụ kỹ thuật trong workspace tuân thủ quy trình chuyển gia
 .
 ├── setup.sh                   # Script cài đặt 1 bước trọn gói all-in-one
 ├── setup_harness.sh           # Script thiết lập nhanh cấu hình Harness và Floci
-├── patch_paseo.py             # Script đồng bộ 9 Agent Profiles vào cấu hình Paseo daemon
-├── AGENTS.md                  # Quy chuẩn điều hành & pháp lệnh rào cản SLPPC toàn hệ thống
-├── profiles/                  # Hồ sơ 9 Agent: supervisor, pm, lead, peer, peer_2..4, peer_design, qc, security
-├── skills/                    # Master Skills Registry (85+ skills canonical dạng skills/<name>/SKILL.md)
+├── patch_paseo.py             # Script đồng bộ 4 Agent Profiles vào cấu hình Paseo daemon
+├── AGENTS.md                  # Quy chuẩn điều hành & pháp lệnh rào cản SLPC toàn hệ thống
+├── profiles/                  # Hồ sơ 4 Agent: supervisor, lead, peer, qc (mỗi vai trò chứa PROFILE.md, IDENTITY.md, SOUL.md, MEMORY.md, skills/)
 ├── docs/                      # Tài liệu đặc tả và thiết kế
 │   ├── spec/                  # Đặc tả kỹ thuật các tính năng, nâng cấp & phân hệ
 │   │   ├── harness-cli-v0.1.14-upgrade-spec.md # Bản đặc tả nâng cấp v0.1.14 & SLPPC
@@ -84,8 +79,8 @@ Mọi tác vụ kỹ thuật trong workspace tuân thủ quy trình chuyển gia
 │   └── AGENT_PROGRESS.md      # Sổ cái ghi nhận tiến độ liên tục & bàn giao đa tác nhân
 ├── bmad/                      # Bộ não tri thức kiến trúc tập trung
 │   ├── architecture.json      # Đồ thị tương tác module & ranh giới hệ thống
-│   ├── rooms/                 # Không gian bàn giao của các Agent (supervisor, pm, lead, peer, qc)
-│   └── rooms/violations/      # Sổ cái biên bản vi phạm kỷ luật (role_trespass, pm_bypass...)
+│   ├── rooms/                 # Không gian bàn giao của các Agent (supervisor, lead, peer, qc)
+│   └── rooms/violations/      # Sổ cái biên bản vi phạm kỷ luật (role_trespass, premature_close...)
 ├── scripts/                   # Bộ kịch bản vận hành & khởi chạy
 │   ├── harness                # CLI quản lý Harness chính thức (./scripts/harness)
 │   ├── harness_dashboard.py   # Web Dashboard realtime giám sát Work Items (cổng :8765)
@@ -224,7 +219,7 @@ Tri thức tự học được lưu đồng bộ kép trên **SQLite local** (`h
 python3 tools/harness_learning_search.py search "strict_typing" --domain angular_fe
 python3 tools/harness_learning_search.py search --confidence high --limit 10
 
-# 2. Thẩm định chất lượng kho tri thức (PM & Supervisor Audit)
+# 2. Thẩm định chất lượng kho tri thức (Supervisor Audit)
 python3 tools/harness_learning_search.py audit
 
 # 3. Tự động thanh trừng bài học rác / tào lao không đạt chuẩn (< 0.60 điểm)
@@ -232,7 +227,7 @@ python3 tools/harness_learning_search.py audit --prune --threshold 0.60
 ```
 
 ### E. Bộ Canh Gác Quy Trình & Kỷ Luật Điều Hành (`tools/slppc_flow_guard.py`)
-Tự động quét và phát hiện các hành vi sai lệch quy trình (`role_trespass`, `pm_bypass`, `premature_close`, `vague_specs`), lưu biên bản bất biến tại `bmad/rooms/violations/`:
+Tự động quét và phát hiện các hành vi sai lệch quy trình (`role_trespass`, `premature_close`, `vague_specs`), lưu biên bản bất biến tại `bmad/rooms/violations/`:
 ```bash
 # Quét kiểm tra tuân thủ toàn diện phòng ban
 python3 tools/slppc_flow_guard.py

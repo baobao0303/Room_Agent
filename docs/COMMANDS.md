@@ -1,9 +1,9 @@
-# Room_Agent Command Cheatsheet (SLPPC Architecture)
+# Room_Agent Command Cheatsheet (SLPC Architecture)
 
 ## 1. Quản lý Vòng đời Agent (All-in-One CLI: `./cli/agent-start`)
 
 ```bash
-# Khởi chạy 2 tabs Agent thường trực (PM, Lead Dev) - Supervisor là terminal hiện hành
+# Khởi chạy tab Agent thường trực (Lead Dev) - Supervisor là terminal hiện hành
 ./cli/agent-start
 
 # Khởi chạy toàn bộ 8 vai trò (khi cần chạy full pool)
@@ -76,10 +76,10 @@ python3 tools/harness_manager.py update \
 ## 4. Kiểm tra Chất lượng & Chốt chặn An ninh (Quality & Governance Gates)
 
 ```bash
-# 1. Chạy toàn bộ 92 unit tests của bộ công cụ
+# 1. Chạy toàn bộ 322+ unit tests của bộ công cụ (326 test cases)
 python3 -m unittest discover -s tools/tests
 
-# 2. Kiểm tra tuân thủ phân luồng SLPPC & vệ sinh phòng ban
+# 2. Kiểm tra tuân thủ phân luồng SLPC & vệ sinh phòng ban
 python3 tools/slppc_flow_guard.py audit
 
 # 3. Quét an ninh chống lộ dữ liệu nội bộ, địa chỉ và secrets (Fail-Closed)

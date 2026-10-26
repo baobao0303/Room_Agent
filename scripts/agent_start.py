@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-scripts/agent_start.py - All-in-One CLI để quản lý, khởi chạy và giám sát các Agent SLPPC.
+scripts/agent_start.py - All-in-One CLI để quản lý, khởi chạy và giám sát các Agent SLPC.
 
 Sử dụng:
-  ./cli/agent-start                 Khởi chạy toàn bộ phòng multi-agent (idempotent, không mở trùng)
-  ./cli/agent-start <role>          Khởi chạy một agent cụ thể (pm, lead, peer, peer2, peer3, peer4, design, qc)
+  ./cli/agent-start                 Khởi chạy Controller multi-agent (idempotent, không mở trùng)
+  ./cli/agent-start <role>          Khởi chạy một agent cụ thể (lead, peer, peer2, peer3, peer4, design, qc)
   ./cli/agent-start status          Xem trạng thái chi tiết của tất cả các Agent và nhịp tim
   ./cli/agent-start restart         Khởi động lại toàn bộ các Agent
   ./cli/agent-start stop [role]     Đóng tab của agent (hoặc tất cả nếu dùng --all)
@@ -29,7 +29,7 @@ AGENTS = {
         "[Supervisor] Scope, Intent Guard & Product Manager in SLPC (Enterprise AI 4-Pillar Spec). "
         "Chuyên trách quản trị phạm vi, đánh giá Feasibility & Alignment (Kev System One <50ms hoặc Heuristic), "
         "kiểm soát AC & trần vòng lặp (Turn Ceiling <= 3), tạo Epic/Task trên Harness DB, "
-        "điều phối Lead, Peer, QC, kiểm soát EVOS Release Gate (>=98%) và bảo vệ Single-Ownership Invariant."
+        "điều phối Lead, Peer, QC, kiểm soát EVOS Release Gate (>= 98.5%) và bảo vệ Single-Ownership Invariant."
     ),
     "lead": (
         "[Lead Dev] Technical Architect & Reviewer (Enterprise AI 4-Pillar Spec). "
@@ -41,7 +41,7 @@ AGENTS = {
     ),
     "qc": (
         "[QC / Tester & EVOS Verifier] 5-Stage ISTQB & Destructive Tester (Enterprise AI 4-Pillar Spec). "
-        "Chuyên trách sinh test matrix, thực thi kiểm thử phá hoại (gửi Feedback/Retry Loop kèm Error Stack Trace nếu lỗi), chạy EVOS Engine (Pass Rate >= 98%) và độc quyền đóng task."
+        "Chuyên trách sinh test matrix, thực thi kiểm thử phá hoại (gửi Feedback/Retry Loop kèm Error Stack Trace nếu lỗi), chạy EVOS Engine (Pass Rate >= 98.5%) và độc quyền đóng task."
     ),
 }
 
@@ -241,7 +241,7 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
     live_terms = get_live_terminals()
 
     print("======================================================================")
-    print("⚡ [SLPPC 5-ROOM MULTI-AGENT - AGENT START CONTROLLER] ⚡")
+    print("⚡ [SLPC MULTI-AGENT - AGENT START CONTROLLER] ⚡")
     print("======================================================================")
 
     if target_roles:
@@ -254,8 +254,8 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
         roles_to_run = ALL_ROLES
     else:
         roles_to_run = PERSISTENT_ROLES
-        print("💡 [SLPPC Ephemeral Architecture]: Mặc định duy trì Persistent Supervisor (Context sạch, RAM nền = 0).")
-        print("   Các vai trò Ephemeral (PM, Lead, Peer, QC) tự động kích hoạt on-demand kèm 3-Tier Dynamic Hydration (hoặc dùng --all).")
+        print("💡 [SLPC Ephemeral Architecture]: Mặc định duy trì Persistent Supervisor (Context sạch, RAM nền = 0).")
+        print("   Các vai trò Ephemeral (Lead, Peer, QC) tự động kích hoạt on-demand kèm 3-Tier Dynamic Hydration (hoặc dùng --all).")
 
     for role in roles_to_run:
         if role not in AGENTS:
@@ -279,7 +279,7 @@ def cmd_status() -> int:
         except Exception:
             pass
 
-    print("\n📋 TRẠNG THÁI HIỆN TẠI CỦA 5 PHÒNG AGENT SLPPC:")
+    print("\n📋 TRẠNG THÁI HIỆN TẠI CỦA CÁC AGENT SLPC:")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
     print(f"{'VAI TRÒ (ROLE)':<34} | {'HANDLE':<24} | {'STATUS':<12} | {'MODEL':<24} | {'HEARTBEAT':<12}")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
@@ -374,20 +374,19 @@ def cmd_restart(target_roles: list[str]) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Agent Start & Manager CLI cho hệ thống 5-Room SLPPC (Supervisor, PM, Lead, Peer, QC).",
+        description="Agent Start & Manager CLI cho hệ thống SLPC (Supervisor, Lead, Peer, QC).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ví dụ:
-  ./cli/agent-start                  Khởi chạy 3 Persistent Agents (Supervisor, PM, Lead)
+  ./cli/agent-start                  Khởi chạy Controller (Supervisor persistent, Lead/Peer/QC ephemeral)
   ./cli/agent-start clear            Đóng toàn bộ Sub-Agent tạm thời (Peer, QC)
-  ./cli/agent-start pm               Khởi chạy riêng PM Agent
   ./cli/agent-start lead peer qc     Khởi chạy Lead, Peer và QC
-  ./cli/agent-start status           Xem bảng trạng thái chi tiết 5 phòng
+  ./cli/agent-start status           Xem bảng trạng thái chi tiết các phòng
   ./cli/agent-start restart          Khởi động lại toàn bộ
   ./cli/agent-start stop --all       Đóng tất cả agent
 """
     )
-    parser.add_argument("roles", nargs="*", help="Tên vai trò (supervisor, pm, lead, peer, qc, status, restart, stop, clear)")
+    parser.add_argument("roles", nargs="*", help="Tên vai trò (supervisor, lead, peer, qc, status, restart, stop, clear)")
     parser.add_argument("--status", action="store_true", help="Xem bảng trạng thái")
     parser.add_argument("--stop", action="store_true", help="Dừng agent")
     parser.add_argument("--all", action="store_true", help="Áp dụng cho tất cả agent")

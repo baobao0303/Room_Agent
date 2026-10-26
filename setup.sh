@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# setup.sh - SCRIPT CÀI ĐẶT 1 BƯỚC CHO HỆ THỐNG 5-ROOM SLPPC (ROOM_AGENT)
-# Kiến trúc 5 Phòng: Supervisor (main) | PM (room-pm) | Lead (room-lead) | Peer (room-peer) | QC (room-qc)
+# setup.sh - SCRIPT CÀI ĐẶT 1 BƯỚC CHO HỆ THỐNG 4-ROOM SLPC (ROOM_AGENT)
+# Kiến trúc 4 Phòng: Supervisor (main) | Lead (room-lead) | Peer (room-peer) | QC (room-qc)
 #
 # Cách sử dụng:
 #   ./setup.sh                Cài đặt & đồng bộ toàn bộ cấu trúc thư mục, worktree, skills, profiles, DB
 #   ./setup.sh --init-db      Khởi tạo mới bảng DynamoDB/S3 & seed dữ liệu mẫu trên Floci
-#   ./setup.sh --launch       Cài đặt xong và tự động bật 3 Persistent Agents (Supervisor, PM, Lead)
+#   ./setup.sh --launch       Cài đặt xong và tự động bật 2 Persistent Agents (Supervisor, Lead)
 # ==============================================================================
 set -e
 
@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "======================================================================"
-echo "⚡ [SLPPC 5-ROOM MULTI-AGENT SETUP - ONE-COMMAND ALL-IN-ONE] ⚡"
+echo "⚡ [SLPC 4-ROOM MULTI-AGENT SETUP - ONE-COMMAND ALL-IN-ONE] ⚡"
 echo "======================================================================"
 echo "📍 Thư mục gốc: $SCRIPT_DIR"
 
@@ -144,7 +144,7 @@ except Exception as e:
 echo "======================================================================"
 echo "✨ SETUP HOÀN TẤT 100%! CẤU TRÚC THƯ MỤC CHUẨN 4-ROOM SLPC:"
 echo "  • cli/        : agent-start | orca-review | trigger-flow"
-echo "  • profiles/   : supervisor.md | lead.md | peer.md | qc.md (Self-contained skills)"
+echo "  • profiles/   : supervisor/ | lead/ | peer/ | qc/ (Self-contained PROFILE.md & skills)"
 echo "  • bmad/rooms/ : supervisor/ | lead/ | peer/ | qc/ (+ tasks, archive, violations)"
 echo "  • worktrees   : main (Supervisor) | room-lead | room-peer | room-qc"
 echo "──────────────────────────────────────────────────────────────────────"
@@ -155,6 +155,6 @@ echo "  4. Kiểm toán kỷ luật quy trình SLPC:             python3 tools/s
 echo "======================================================================"
 
 if [[ "$*" == *"--launch"* || "$*" == *"-l"* ]]; then
-    echo "🚀 Tự động kích hoạt Persistent Agent tabs (Supervisor, PM, Lead) qua ./cli/agent-start..."
+    echo "🚀 Tự động kích hoạt Persistent Agent tabs (Supervisor, Lead) qua ./cli/agent-start..."
     bash "$SCRIPT_DIR/cli/agent-start" start
 fi
