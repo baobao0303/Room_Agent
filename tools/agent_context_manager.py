@@ -19,7 +19,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -419,8 +419,54 @@ def rehydrate_agent(role: str, handle: str) -> bool:
         return False
 
 
-def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) -> bool:
-    """Gửi thông điệp an toàn cho agent: Có ping check, có kiểm tra context để compact, chống đè lệnh."""
+def _extract_envelope_dict(message: Union[str, Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Helper to detect and extract an AgentHandoffEnvelope dict from dict or JSON string."""
+    if isinstance(message, dict):
+        if "schema_version" in message or ("spec" in message and "verification" in message) or ("from_role" in message and "to_role" in message and "task_id" in message):
+            return message
+    elif isinstance(message, str):
+        trimmed = message.strip()
+        if trimmed.startswith("{") and trimmed.endswith("}"):
+            try:
+                parsed = json.loads(trimmed)
+                if isinstance(parsed, dict) and (
+                    "schema_version" in parsed
+                    or ("spec" in parsed and "verification" in parsed)
+                    or ("from_role" in parsed and "to_role" in parsed and "task_id" in parsed)
+                ):
+                    return parsed
+            except Exception:
+                pass
+    return None
+
+
+def safe_send_agent_message(
+    role: str,
+    message: Union[str, Dict[str, Any]],
+    auto_compact: bool = True,
+    raise_on_invalid: bool = False
+) -> bool:
+    """Gửi thông điệp an toàn cho agent: Có validation envelope, ping check, context auto-compact, chống đè lệnh."""
+    # 0. Step 0: Validate AgentHandoffEnvelope immediately before terminal lookup
+    envelope_dict = _extract_envelope_dict(message)
+    if envelope_dict is not None:
+        try:
+            from tools.slppc_flow_guard import validate_agent_handoff_envelope
+        except ImportError:
+            try:
+                from slppc_flow_guard import validate_agent_handoff_envelope
+            except ImportError:
+                validate_agent_handoff_envelope = None
+
+        if validate_agent_handoff_envelope:
+            is_valid, errors = validate_agent_handoff_envelope(envelope_dict)
+            if not is_valid:
+                err_msg = f"Invalid AgentHandoffEnvelope: {'; '.join(errors)}"
+                print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+                if raise_on_invalid:
+                    raise ValueError(err_msg)
+                return False
+
     live_map = get_live_terminals()
     canonical_role = _normalize_room_role(role)
     handle = live_map.get(canonical_role)
@@ -445,20 +491,116 @@ def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) 
 
     # 3. Kiểm tra Context Window & Auto-Compact
     if auto_compact and state["needs_compact"]:
-        print(f"⚠️ [Context Warning]: {role.upper()} đạt {state['token_count_k']}k tokens (> {COMPACT_THRESHOLD_K}k). Đang tự động nén context...")
+        print(f"⚠️ [Context Warning]: {role.upper()} đạt {state['token_count_k']}k tokens. Đang tự động nén context...")
         compact_agent_terminal(handle, max_wait_sec=20)
         wait_for_terminal_ready(handle, max_wait_sec=5)
 
     # 4. Gửi lệnh
+    message_str = json.dumps(message, ensure_ascii=False, indent=2) if isinstance(message, dict) else str(message)
     try:
         subprocess.run(
-            ["orca", "terminal", "send", "--terminal", handle, "--text", message, "--enter"],
+            ["orca", "terminal", "send", "--terminal", handle, "--text", message_str, "--enter"],
             capture_output=True, timeout=10
         )
         return True
     except Exception as e:
         print(f"⚠️ [Send Error]: {e}")
         return False
+
+
+def send_handoff_envelope(
+    sender: str,
+    recipient: str,
+    envelope: Union[Dict[str, Any], str],
+    auto_compact: bool = True,
+    strict: bool = True,
+    persist_to_room: bool = True
+) -> bool:
+    """
+    Gửi thông điệp bàn giao có cấu trúc (AgentHandoffEnvelope) giữa 2 agent theo chuẩn MAG-02.
+    - Thẩm định schema và Zero-Search 5 thành phần trước khi gửi.
+    - Kiểm soát Feedback/Retry loop (FAILED_RETRY bắt buộc có stack trace, retry_count <= 3).
+    - Tùy chọn lưu trữ đồng bộ vào bmad/rooms/<recipient>/latest_handoff.md.
+    - Nếu strict=True và envelope không hợp lệ -> Ném ngoại lệ ValueError.
+    """
+    if isinstance(envelope, str):
+        try:
+            env_dict = json.loads(envelope)
+        except Exception as e:
+            err_msg = f"Envelope string is not valid JSON: {e}"
+            print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+            if strict:
+                raise ValueError(err_msg)
+            return False
+    elif isinstance(envelope, dict):
+        env_dict = dict(envelope)
+    else:
+        err_msg = f"Envelope must be a dict or JSON string, got {type(envelope).__name__}"
+        print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+        if strict:
+            raise ValueError(err_msg)
+        return False
+
+    norm_sender = _normalize_room_role(sender).upper()
+    norm_recipient = _normalize_room_role(recipient).upper()
+    if not env_dict.get("from_role"):
+        env_dict["from_role"] = norm_sender
+    if not env_dict.get("to_role"):
+        env_dict["to_role"] = norm_recipient
+
+    try:
+        from tools.slppc_flow_guard import validate_agent_handoff_envelope
+    except ImportError:
+        try:
+            from slppc_flow_guard import validate_agent_handoff_envelope
+        except ImportError:
+            validate_agent_handoff_envelope = None
+
+    if validate_agent_handoff_envelope:
+        is_valid, errors = validate_agent_handoff_envelope(env_dict)
+        if not is_valid:
+            err_msg = f"Invalid AgentHandoffEnvelope: {'; '.join(errors)}"
+            print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+            if strict:
+                raise ValueError(err_msg)
+            return False
+
+    if persist_to_room:
+        try:
+            target_room = _normalize_room_role(recipient)
+            room_dir = PROJECT_ROOT / "bmad" / "rooms" / target_room
+            if room_dir.exists():
+                handoff_file = room_dir / "latest_handoff.md"
+                spec = env_dict.get("spec", {})
+                ver = env_dict.get("verification", {})
+                content = (
+                    f"# AGENT HANDOFF ENVELOPE: {env_dict.get('from_role')} ➔ {env_dict.get('to_role')}\n\n"
+                    f"- **Task ID**: #{env_dict.get('task_id')}\n"
+                    f"- **Status**: {env_dict.get('status')}\n"
+                    f"- **Schema**: {env_dict.get('schema_version')}\n\n"
+                    f"## 1. Zero-Search Specification\n"
+                    f"- **Target Files**: {', '.join(spec.get('target_files', []))}\n"
+                    f"- **Anchors**: {', '.join(spec.get('anchors', []))}\n"
+                    f"- **Concrete Changes**: {spec.get('concrete_changes', '')}\n"
+                    f"- **Acceptance Criteria**:\n"
+                    + "\n".join(f"  * {ac}" for ac in spec.get("acceptance_criteria", []))
+                    + f"\n- **Test Command**: `{spec.get('test_command', '')}`\n\n"
+                    f"## 2. Verification Context\n"
+                    f"- **Exit Code**: {ver.get('exit_code', 0)}\n"
+                    f"- **Retry Count**: {ver.get('retry_count', 0)}\n"
+                    f"- **Stack Trace**: {ver.get('error_stack_trace', '') or 'None'}\n"
+                )
+                handoff_file.write_text(content, encoding="utf-8")
+        except Exception as e:
+            print(f"⚠️ [Handoff Persist Warning]: {e}")
+
+    return safe_send_agent_message(
+        role=recipient,
+        message=env_dict,
+        auto_compact=auto_compact,
+        raise_on_invalid=strict
+    )
+
 
 
 def main():

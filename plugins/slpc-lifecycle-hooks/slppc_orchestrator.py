@@ -521,16 +521,32 @@ class SlppcOrchestrator:
         title = target_task.get("title", f"Task #{task_id}")
         desc = target_task.get("description", "")
 
-        # 1. Harness² Pre-Flight Self-Learning Injection
+        # 1. Harness² Pre-Flight Self-Learning Injection via Context-Bounded RAG Prompt
         domain = target_task.get("domain") or "engineering"
         lessons_context = ""
         if query_lessons:
             try:
                 lessons = query_lessons(domain=domain, limit=3)
                 if lessons:
-                    lesson_lines = [f"- [Cue: {l.cue}] {l.lesson}" for l in lessons if l.lesson]
-                    if lesson_lines:
-                        lessons_context = "\n[BẪY QUÁ KHỨ & BÀI HỌC KINH NGHIỆM TỰ HỌC - HARNESS²]:\n" + "\n".join(lesson_lines)
+                    try:
+                        from tools.query_reader import build_context_bounded_prompt
+                    except ImportError:
+                        from query_reader import build_context_bounded_prompt
+                    chunks = [
+                        {
+                            "file": f"harness_experience:{getattr(l, 'domain', domain)}",
+                            "heading": getattr(l, "cue", f"Lesson #{idx}"),
+                            "content": getattr(l, "lesson", "")
+                        }
+                        for idx, l in enumerate(lessons, 1)
+                        if getattr(l, "lesson", None)
+                    ]
+                    if chunks:
+                        lessons_context = "\n" + build_context_bounded_prompt(
+                            query=f"Task #{task_id}: {title}",
+                            chunks=chunks,
+                            max_chunks=3
+                        )
             except Exception:
                 pass
 

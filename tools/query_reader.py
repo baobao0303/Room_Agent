@@ -348,21 +348,23 @@ def query_read(
         "status": "success"
     }
 
-def build_context_bounded_prompt(query: str, chunks: List[Dict[str, Any]]) -> str:
+def build_context_bounded_prompt(query: str, chunks: List[Dict[str, Any]], max_chunks: int = 3) -> str:
     """Đóng gói tối đa 3 đoạn ngữ cảnh thành Context-Bounded Prompt chống Hallucination (Pillar 1 RAG)."""
-    bounded_chunks = chunks[:3]
+    # Enforce strict ceiling of at most 3 chunks (clamped to [0, 3])
+    limit = min(max(0, int(max_chunks)), 3)
+    bounded_chunks = chunks[:limit]
     lines = [
         "=== [CONTEXT-BOUNDED RAG ENGINE (TOP-K = 3 CHUNKS)] ===",
         "NGUYÊN TẮC BẮT BUỘC ('Nói có sách, mách có chứng'):",
-        "1. Chỉ được phép tổng hợp câu trả lời DUY NHẤT từ 3 đoạn ngữ cảnh được trích xuất dưới đây.",
+        "1. Chỉ được phép tổng hợp câu trả lời DUY NHẤT từ các đoạn ngữ cảnh được trích xuất dưới đây (tối đa 3 chunks).",
         "2. Tuyệt đối không sử dụng trí nhớ ngoài hoặc tự suy diễn/bịa đặt thông tin (0% Hallucination).",
         f"Truy vấn: {query}",
         "---"
     ]
     for idx, ch in enumerate(bounded_chunks, 1):
-        src = ch.get("file") or ch.get("file_path") or "unknown"
-        heading = ch.get("heading", "")
-        content = ch.get("content", "")
+        src = ch.get("file") or ch.get("file_path") or ch.get("domain") or "unknown"
+        heading = ch.get("heading") or ch.get("cue") or f"Section #{idx}"
+        content = ch.get("content") or ch.get("lesson") or ""
         lines.append(f"[Chunk #{idx} | Source: {src} | Section: {heading}]")
         lines.append(str(content))
         lines.append("---")

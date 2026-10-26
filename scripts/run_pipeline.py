@@ -247,11 +247,28 @@ def run_lead_architect_gate(prompt: str, pm_memo: str, thinking_mode: str = "LƯ
         from harness_rust import query_lessons  # type: ignore
         lessons = query_lessons(domain="engineering", limit=3)
         if lessons:
-            lines = [f"- [Cue: {l.cue}] {l.lesson}" for l in lessons if getattr(l, "lesson", None)]
-            if lines:
-                lessons_prompt = "\n\n[BẪY QUÁ KHỨ & BÀI HỌC KINH NGHIỆM TỰ HỌC - HARNESS²]:\n" + "\n".join(lines)
+            try:
+                from tools.query_reader import build_context_bounded_prompt
+            except ImportError:
+                from query_reader import build_context_bounded_prompt
+            chunks = [
+                {
+                    "domain": getattr(l, "domain", "engineering"),
+                    "cue": getattr(l, "cue", f"Lesson #{idx}"),
+                    "lesson": getattr(l, "lesson", "")
+                }
+                for idx, l in enumerate(lessons, 1)
+                if getattr(l, "lesson", None)
+            ]
+            if chunks:
+                lessons_prompt = "\n\n" + build_context_bounded_prompt(
+                    query=f"Task: {prompt[:50]}",
+                    chunks=chunks,
+                    max_chunks=3
+                )
     except Exception:
         pass
+
 
     task = mgr.add_work_item(
         wi_type="Task",
