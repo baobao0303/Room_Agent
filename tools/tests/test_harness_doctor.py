@@ -102,6 +102,15 @@ class TestHarnessDoctor(unittest.TestCase):
         self.assertIn("rtk_binary", check_ids)
         self.assertEqual(rep["total_checks"], 9)
 
+    @patch("tools.harness_doctor._tcp_ping", return_value=False)
+    def test_check_paseo_daemon_canonical_4_roles(self, mock_ping):
+        """Verify check_paseo_daemon validates canonical 4 roles and repo profiles."""
+        res = hd.check_paseo_daemon(auto_heal=False)
+        self.assertEqual(res["id"], "paseo_daemon")
+        # In standby, valid profiles yields status "warn" (not "error")
+        self.assertIn(res["status"], ("ok", "warn"))
+        self.assertIn("SLPC Profiles: 4/4", res["summary"])
+
 
 if __name__ == "__main__":
     unittest.main()

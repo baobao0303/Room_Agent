@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-scripts/run_pipeline.py - Automated SLPPC Real-Time Pipeline Runner with KEV Dual-Anchor & Visual Hook Banners.
+scripts/run_pipeline.py - Automated SLPC Real-Time Pipeline Runner with KEV Dual-Anchor & Visual Hook Banners.
 
 Implements Master Architecture:
-- Head-of-Spec (PM Gate): Kev System One (<50ms) Feasibility & Alignment evaluation.
+- Head-of-Spec (Supervisor Gate): Kev System One (<50ms) Feasibility & Alignment evaluation.
 - Architect Gate (Lead): Zero-Search 5-section task decomposition.
-- Maker Execution (Peer): Ephemeral sub-agent dispatch (max model gemini-3.8-flash-medium).
+- Maker Execution (Peer): Ephemeral sub-agent dispatch (model ag/gemini-3.8-flash-high).
 - Tail-of-Spec (QC Gate): Deterministic test execution (Exit 0) + Kev verification before Closed.
 - Real-Time Memory Augmentation: Flushes invariants to .harness_progress.json and memory ledger.
 """
@@ -107,11 +107,11 @@ def resolve_thinking_directive(prompt: str) -> tuple[str, str, str]:
 
 
 # ==============================================================================
-# STEP 1: HEAD-OF-SPEC GATE (PM + KEV SYSTEM ONE)
+# STEP 1: HEAD-OF-SPEC GATE (SUPERVISOR INTAKE + KEV SYSTEM ONE)
 # ==============================================================================
-def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinking_directive: str = "") -> Dict[str, Any]:
-    print_banner("HEAD", "PM Intake & Feasibility Check", [
-        ("Evaluator", "PM Agent (Kev System One)"),
+def run_supervisor_intake_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinking_directive: str = "") -> Dict[str, Any]:
+    print_banner("HEAD", "Supervisor Intake & Feasibility Check", [
+        ("Evaluator", "Supervisor (Kev System One)"),
         ("Thinking Mode", thinking_mode),
         ("Endpoint", KEV_ENDPOINT),
         ("Target Prompt", prompt[:48])
@@ -121,7 +121,7 @@ def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinki
     import urllib.error
 
     payload = {
-        "state": f"Yêu cầu SLPPC: {prompt}",
+        "state": f"Yêu cầu SLPC: {prompt}",
         "questions": {
             "feasibility": {
                 "type": "score",
@@ -172,12 +172,12 @@ def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinki
     alignment = answers.get("alignment", {}).get("choice", "perfect_fit")
     risk = answers.get("risk_decision", {}).get("choice", "green")
 
-    # Lưu biên bản PM Intake Memo
-    pm_dir = PROJECT_ROOT / "bmad" / "rooms" / "pm"
-    pm_dir.mkdir(parents=True, exist_ok=True)
+    # Lưu biên bản Supervisor Intake Memo
+    supervisor_dir = PROJECT_ROOT / "bmad" / "rooms" / "supervisor"
+    supervisor_dir.mkdir(parents=True, exist_ok=True)
     ts = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    memo_file = pm_dir / f"intake_memo_run_{ts}.md"
-    memo_content = f"""# PM INTAKE DECISION MEMO (HEAD-OF-SPEC)
+    memo_file = supervisor_dir / f"intake_memo_run_{ts}.md"
+    memo_content = f"""# SUPERVISOR INTAKE DECISION MEMO (HEAD-OF-SPEC)
 - **Thời gian**: `{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`
 - **Yêu cầu gốc**: {prompt}
 - **Kev Feasibility Score**: `{score:.2f} / 3.0`
@@ -187,7 +187,7 @@ def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinki
 """
     memo_file.write_text(memo_content, encoding="utf-8")
 
-    print_banner("HEAD", "PM Intake Approved", [
+    print_banner("HEAD", "Supervisor Intake Approved", [
         ("Feasibility", f"{score:.2f} / 3.0"),
         ("Alignment", alignment),
         ("Risk Lane", risk),
@@ -202,10 +202,14 @@ def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinki
     }
 
 
+# Backward compatibility alias
+run_pm_head_gate = run_supervisor_intake_gate
+
+
 # ==============================================================================
 # STEP 2: ARCHITECT GATE (LEAD DEV TASK BREAKDOWN)
 # ==============================================================================
-def run_lead_architect_gate(prompt: str, pm_memo: str, thinking_mode: str = "LƯỠNG DIỆN", thinking_directive: str = "") -> Dict[str, Any]:
+def run_lead_architect_gate(prompt: str, intake_memo: str, thinking_mode: str = "LƯỠNG DIỆN", thinking_directive: str = "") -> Dict[str, Any]:
     print_banner("ARCHITECT", "Lead Dev Zero-Search Decomposition", [
         ("Architect", "Lead Dev (gemini-3.8-flash-high)"),
         ("Thinking Mode", thinking_mode),
@@ -223,7 +227,7 @@ def run_lead_architect_gate(prompt: str, pm_memo: str, thinking_mode: str = "LƯ
     epic = mgr.add_work_item(
         wi_type="Epic",
         title=f"[Pipeline] - {prompt[:60]}",
-        description=f"Automated pipeline run. PM Memo: {pm_memo}\nThinking Mode: {thinking_mode}",
+        description=f"Automated pipeline run. Intake Memo: {intake_memo}\nThinking Mode: {thinking_mode}",
         assigned_to="lead",
         assigned_to_profile="lead",
         source="bot"
@@ -318,7 +322,7 @@ def run_peer_maker_gate(
     run_id: Optional[str] = None,
 ) -> Tuple[bool, str]:
     details = [
-        ("Sub-Agent Role", "Peer Dev 1 (Maker Pool)"),
+        ("Sub-Agent Role", "Peer Dev (Maker Pool)"),
         ("Model Tier", "ag/gemini-3.8-flash-high"),
         ("Task ID", f"#{task_id}"),
         ("Attempt", f"{attempt}/4 (Retry {attempt - 1})" if attempt > 1 else "1/4 (Initial)"),
@@ -567,28 +571,28 @@ def main(argv: Optional[List[str]] = None) -> int:
     cleaned_prompt, thinking_mode, thinking_directive = resolve_thinking_directive(args.prompt)
 
     print("\n" + "=" * 78)
-    print("  🚀 KHỞI CHẠY SLPPC REAL-TIME PIPELINE (KEV DUAL-ANCHOR + HOOK BANNERS)")
+    print("  🚀 KHỞI CHẠY SLPC REAL-TIME PIPELINE (KEV DUAL-ANCHOR + HOOK BANNERS)")
     print(f"  🧠 CHẾ ĐỘ TƯ DUY: {thinking_mode}")
     print(f"  🔗 RUN ID: {run_id}")
     print("=" * 78)
 
     # 1. Head Gate
     t_head = time.time()
-    pm_res = run_pm_head_gate(cleaned_prompt, thinking_mode=thinking_mode, thinking_directive=thinking_directive)
+    intake_res = run_supervisor_intake_gate(cleaned_prompt, thinking_mode=thinking_mode, thinking_directive=thinking_directive)
     head_dur = max(0, int(time.time() - t_head))
     mgr.record_trace_span(
         run_id=run_id,
         stage="head",
         agent="supervisor",
-        task_summary=f"Head Gate (PM Evaluation): {cleaned_prompt[:40]}",
+        task_summary=f"Head Gate (Supervisor Intake): {cleaned_prompt[:40]}",
         duration_seconds=head_dur,
         outcome="completed",
-        notes=f"feasibility={pm_res['score']:.2f}; alignment={pm_res['alignment']}"
+        notes=f"feasibility={intake_res['score']:.2f}; alignment={intake_res['alignment']}"
     )
 
     # 2. Architect Gate
     t_lead = time.time()
-    lead_res = run_lead_architect_gate(cleaned_prompt, pm_res["memo_file"], thinking_mode=thinking_mode, thinking_directive=thinking_directive)
+    lead_res = run_lead_architect_gate(cleaned_prompt, intake_res["memo_file"], thinking_mode=thinking_mode, thinking_directive=thinking_directive)
     lead_dur = max(0, int(time.time() - t_lead))
     mgr.record_trace_span(
         run_id=run_id,
@@ -605,7 +609,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if thinking_mode.startswith("THẢO LUẬN"):
         print_banner("ARCHITECT", "Architectural Discussion & ADR Recording", [
             ("Epic ID", f"#{lead_res['epic_id']}"),
-            ("Parties", "Supervisor, PM Agent, Lead Dev"),
+            ("Parties", "Supervisor, Lead Dev"),
             ("Action", "Recording ADR Discussion Minutes"),
             ("Directory", "bmad/rooms/discussions/ & bmad/adrs/")
         ], status="CONSENSUS")
@@ -615,9 +619,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             "python3", "tools/record_discussion.py",
             "--task-id", str(lead_res["epic_id"]),
             "--topic", cleaned_prompt[:50],
-            "--parties", "Supervisor, PM Agent, Lead Dev",
+            "--parties", "Supervisor, Lead Dev",
             "--conflict", f"Thảo luận đánh giá phương án kiến trúc cho yêu cầu: {cleaned_prompt}",
-            "--consensus", f"PM Kev Feasibility ({pm_res['score']:.2f}/3.0) & Alignment ({pm_res['alignment']}). Lead Dev chốt phương án tuân thủ Zero-Search & YAGNI.",
+            "--consensus", f"Supervisor Kev Feasibility ({intake_res['score']:.2f}/3.0) & Alignment ({intake_res['alignment']}). Lead Dev chốt phương án tuân thủ Zero-Search & YAGNI.",
             "--actions", "Chuyển giao cho User xác nhận trước khi phân rã task code [THUẬN].",
             "--adr"
         ], cwd=PROJECT_ROOT, capture_output=True, text=True)

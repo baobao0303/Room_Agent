@@ -429,12 +429,12 @@ def auto_dispatch_agent(
             print(f"🔔 [Auto-Dispatch]: Đã tự động đánh thức {peer_role.upper()} thi công Work Item #{item_id}.")
 
     # CASE 3: QC đóng task (target_state == "Closed")
-    # -> Báo cho Supervisor và đóng toàn bộ các phòng Sub-Agents (PM, Lead, Peer, QC) để chỉ giữ lại Supervisor
+    # -> Báo cho Supervisor và đóng toàn bộ các phòng Sub-Agents (Lead, Peer, QC) để chỉ giữ lại Supervisor
     elif state_lower == "closed":
         msg_done = f"📢 [NGHIỆM THU ĐÃ ĐÓNG]: {wi_type} #{item_id}: '{title}' đã được nghiệm thu và CLOSED thành công."
         send_orca_notification("supervisor", msg_done)
         print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Supervisor.")
-        for ep_role in ("qc", "peer", "lead", "pm"):
+        for ep_role in ("qc", "peer", "lead"):
             close_ephemeral_subagent(ep_role)
 
     # CASE 4: Task bị tắc nghẽn (target_state == "Blocked")

@@ -2,13 +2,12 @@
 """
 tools/slppc_flow_guard.py - Bộ Canh Gác Tuân Thủ Quy Trình Điều Hành SLPPC & Tự Động Lập Biên Bản Vi Phạm (SLPPC Flow Guard & Automated Violation Auditor).
 
-Mô hình SLPPC (Supervisor - PM - Lead - Peer - QC):
+Mô hình SLPC (Supervisor - Lead - Peer - QC):
 Kiểm tra tự động và lập biên bản phạt khi:
 1. Lead Dev tự ý gõ code (role_trespass) thay vì bóc tách Zero-Search task giao cho Peers.
 2. Supervisor tự ý code tính năng hoặc duyệt task mơ hồ.
-3. Bỏ qua cổng thẩm định Khả thi & Phù hợp của PM Agent (pm_bypass).
-4. Peer tự tiện đóng task (premature_close) không qua nghiệm thu độc lập của QC.
-5. Giao task 1 dòng cẩu thả vi phạm Zero-Search Mandate (vague_specs).
+3. Peer tự tiện đóng task (premature_close) không qua nghiệm thu độc lập của QC.
+4. Giao task 1 dòng cẩu thả vi phạm Zero-Search Mandate (vague_specs).
 """
 
 from __future__ import annotations
@@ -230,64 +229,6 @@ def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, 
                         "file": str(memo_file.relative_to(PROJECT_ROOT)) if memo_file.is_relative_to(PROJECT_ROOT) else memo_file.name,
                         "evidence": "Lead Dev ghi nhận trực tiếp sửa mã nguồn sản phẩm thay vì giao cho Peer",
                         "task_id": tid_match.group(1) if tid_match else None,
-                    })
-        except Exception:
-            pass
-
-    return violations
-
-
-def audit_pm_bypass(supervisor_dir: Optional[Path] = None, pm_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
-    """
-    Kiểm tra xem có bỏ qua cổng thẩm định Feasibility & Alignment:
-    Tạo hoặc kích hoạt Epic mà chưa có Intake Decision Memo (từ Supervisor hoặc PM).
-    """
-    violations = []
-    sup_dir = supervisor_dir if supervisor_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "supervisor")
-    pm_d = pm_dir if pm_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "pm")
-
-    if not sup_dir.is_dir():
-        return violations
-
-    now = time.time()
-    candidates = list(sup_dir.glob("handoff_*.md"))
-    latest_file = sup_dir / "latest_handoff.md"
-    if latest_file.is_file():
-        candidates.append(latest_file)
-
-    for handoff in candidates:
-        try:
-            # Chỉ quét các biên bản gần nhất trong vòng 2 giờ
-            if (now - handoff.stat().st_mtime) > 7200:
-                continue
-            content = handoff.read_text(encoding="utf-8")
-            epic_match = re.search(r"Epic\s*#(\d+)", content, re.IGNORECASE)
-            if epic_match:
-                epic_id = epic_match.group(1)
-                # Bỏ qua các Epic lịch sử trước khi áp dụng chuẩn SLPPC (ID < 4116)
-                if int(epic_id) < 4116:
-                    continue
-                has_memo = False
-                # Kiểm tra memo trong supervisor_dir
-                for sup_memo in sup_dir.glob("*.md"):
-                    if epic_id in sup_memo.name or f"#{epic_id}" in sup_memo.read_text(encoding="utf-8"):
-                        if "decision_memo" in sup_memo.name or "feasibility" in sup_memo.read_text(encoding="utf-8").lower():
-                            has_memo = True
-                            break
-                # Hoặc kiểm tra trong pm_dir cũ nếu có
-                if not has_memo and pm_d.is_dir():
-                    for pm_memo in pm_d.glob("*.md"):
-                        if epic_id in pm_memo.name or f"#{epic_id}" in pm_memo.read_text(encoding="utf-8"):
-                            has_memo = True
-                            break
-                # Hoặc chính trong content của handoff có phần [SUPERVISOR INTAKE DECISION MEMO] hoặc Feasibility
-                if not has_memo and ("decision memo" in content.lower() or "feasibility" in content.lower()):
-                    has_memo = True
-                if not has_memo:
-                    violations.append({
-                        "file": str(handoff.relative_to(PROJECT_ROOT)) if handoff.is_relative_to(PROJECT_ROOT) else handoff.name,
-                        "evidence": f"Epic #{epic_id} được khởi tạo/giao việc mà chưa qua cổng thẩm định Feasibility/Alignment của Supervisor",
-                        "task_id": epic_id,
                     })
         except Exception:
             pass
@@ -761,31 +702,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 2. Kiểm tra PM Bypass
-    pm_bypasses = audit_pm_bypass()
-    for v in pm_bypasses:
-        results["violations_detected"] += 1
-        v_info = {
-            "from": "PM",
-            "to": "Supervisor",
-            "type": "pm_bypass",
-            "evidence": v["evidence"],
-            "task_id": v.get("task_id"),
-            "message": "Bỏ qua cổng thẩm định Khả thi & Phù hợp của PM Agent trước khi tạo/kích hoạt Epic.",
-        }
-        results["violations_list"].append(v_info)
-        if auto_record:
-            path = record_violation_minute(
-                from_role="PM",
-                to_role="Supervisor",
-                violation_type="pm_bypass",
-                task_id=v.get("task_id"),
-                evidence=v["evidence"],
-                message=v_info["message"],
-            )
-            results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
-
-    # 3. Kiểm tra Premature Close
+    # 2. Kiểm tra Premature Close
     premature_closes = audit_premature_close()
     for v in premature_closes:
         results["violations_detected"] += 1
@@ -809,7 +726,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 4. Kiểm tra Vague Specs
+    # 3. Kiểm tra Vague Specs
     vague_specs = audit_vague_specs()
     for v in vague_specs:
         results["violations_detected"] += 1
@@ -833,7 +750,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 5. Kiểm tra Ephemeral Room Hygiene
+    # 4. Kiểm tra Ephemeral Room Hygiene
     hygiene_issues = audit_ephemeral_room_hygiene()
     for v in hygiene_issues:
         results["violations_detected"] += 1
@@ -856,7 +773,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 6. Kiểm tra Settlement Verification Gate (Task Resolved bắt buộc có record verification của Settlement Gate)
+    # 5. Kiểm tra Settlement Verification Gate (Task Resolved bắt buộc có record verification của Settlement Gate)
     settlement_bypasses = audit_settlement_verification_gate()
     for v in settlement_bypasses:
         results["violations_detected"] += 1
@@ -880,7 +797,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 7. Kiểm tra Circuit Breaker State
+    # 6. Kiểm tra Circuit Breaker State
     cb_trips = audit_circuit_breaker()
     for v in cb_trips:
         results["violations_detected"] += 1

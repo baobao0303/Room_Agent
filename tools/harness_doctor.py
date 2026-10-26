@@ -144,9 +144,16 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
     latency_ms = int((time.time() - t0) * 1000)
 
     cfg_path = Path.home() / ".paseo" / "config.json"
-    required_roles = {"supervisor", "pm", "lead", "peer", "qc"}
+    required_roles = {"supervisor", "lead", "peer", "qc"}
     found_roles = set()
     cfg_valid = False
+
+    # Validate that canonical 4 roles exist in repository: profiles/<role>/PROFILE.md
+    repo_profiles_dir = BASE_DIR / "profiles"
+    repo_profiles_valid = all(
+        (repo_profiles_dir / r / "PROFILE.md").is_file() for r in required_roles
+    )
+
     if cfg_path.is_file():
         try:
             cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
@@ -156,9 +163,11 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
                     nm = p.get("name") or p.get("id") or ""
                     if nm:
                         found_roles.add(str(nm).strip().lower())
-            cfg_valid = required_roles.issubset(found_roles)
+            cfg_valid = required_roles.issubset(found_roles) and repo_profiles_valid
         except Exception:
             cfg_valid = False
+    else:
+        cfg_valid = repo_profiles_valid
 
     healed = None
     if not cfg_valid and auto_heal:
@@ -169,8 +178,8 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
             try:
                 subprocess.run([sys.executable, str(patch_script)], check=False, timeout=10)
                 found_roles.update(required_roles)
-                cfg_valid = True
-                healed = _record_heal("paseo_daemon", "Đồng bộ lại 5 profile SLPPC qua scripts/patch_paseo.py", True)
+                cfg_valid = repo_profiles_valid
+                healed = _record_heal("paseo_daemon", "Đồng bộ lại 4 profile SLPC qua scripts/patch_paseo.py", True)
             except Exception as e:
                 healed = _record_heal("paseo_daemon", "Chạy scripts/patch_paseo.py", False, str(e))
 
