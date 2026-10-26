@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import argparse
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
 
 # Transparent fallback to venv with boto3 if current python lacks boto3
@@ -90,6 +90,88 @@ ALLOWED_PROFILES = [
     "PM",
     "Security"
 ]
+
+# Module-level permissions cache to avoid disk thrashing
+_PROFILE_PERMISSIONS_CACHE: Dict[str, Dict[str, Any]] = {}
+
+def normalize_role(role: Optional[str]) -> str:
+    """Normalize arbitrary role and profile strings to canonical 4-role identity."""
+    if not role:
+        return ""
+    r = str(role).strip().lower()
+    if r in ("supervisor", "lead", "peer", "qc"):
+        return r
+    if any(k in r for k in ("lead",)):
+        return "lead"
+    if any(k in r for k in ("qc", "qa", "tester")):
+        return "qc"
+    if any(k in r for k in ("peer", "dev", "design", "ba")):
+        return "peer"
+    if any(k in r for k in ("supervisor", "sup")):
+        return "supervisor"
+    return r
+
+def parse_profile_permissions(profile_path: Path) -> Dict[str, Any]:
+    """Parse YAML frontmatter permissions from PROFILE.md using stdlib only."""
+    if not profile_path.is_file():
+        return {}
+    try:
+        content = profile_path.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return {}
+
+    if not content.startswith("---"):
+        return {}
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return {}
+
+    yaml_text = parts[1]
+    permissions: Dict[str, Any] = {}
+    in_permissions = False
+
+    for line in yaml_text.splitlines():
+        trimmed = line.strip()
+        if not trimmed or trimmed.startswith("#"):
+            continue
+        if line.startswith("permissions:"):
+            in_permissions = True
+            continue
+        if in_permissions:
+            # Child elements of permissions: must be indented
+            if line.startswith(" ") or line.startswith("\t"):
+                if ":" in trimmed:
+                    k, v = trimmed.split(":", 1)
+                    k = k.strip()
+                    v_str = v.strip().lower()
+                    if v_str == "true":
+                        permissions[k] = True
+                    elif v_str == "false":
+                        permissions[k] = False
+                    elif v_str.isdigit():
+                        permissions[k] = int(v_str)
+                    else:
+                        permissions[k] = v.strip().strip("'\"")
+            else:
+                # Reached a new top-level key (e.g. scoped_tools:)
+                in_permissions = False
+
+    return permissions
+
+def get_role_permissions(role: Optional[str], base_dir: Optional[Path] = None) -> Dict[str, Any]:
+    """Get permissions declared in profiles/<role>/PROFILE.md with caching."""
+    canonical = normalize_role(role)
+    if not canonical:
+        return {}
+    if canonical in _PROFILE_PERMISSIONS_CACHE:
+        return _PROFILE_PERMISSIONS_CACHE[canonical]
+
+    root = base_dir or Path(BASE_DIR)
+    profile_file = root / "profiles" / canonical / "PROFILE.md"
+    perms = parse_profile_permissions(profile_file)
+    _PROFILE_PERMISSIONS_CACHE[canonical] = perms
+    return perms
+
 
 def close_ephemeral_subagent(role: str) -> bool:
     """Close an ephemeral sub-agent terminal (PM, Lead, Peer, or QC) to return RAM to 0."""
@@ -345,7 +427,7 @@ def auto_dispatch_agent(
             send_orca_notification(peer_role, msg_peer)
             print(f"🔔 [Auto-Dispatch]: Đã tự động đánh thức {peer_role.upper()} thi công Work Item #{item_id}.")
 
-    # CASE 3: QC hoặc Lead đóng task (target_state == "Closed")
+    # CASE 3: QC đóng task (target_state == "Closed")
     # -> Báo cho Supervisor và đóng toàn bộ các phòng Sub-Agents (PM, Lead, Peer, QC) để chỉ giữ lại Supervisor
     elif state_lower == "closed":
         msg_done = f"📢 [NGHIỆM THU ĐÃ ĐÓNG]: {wi_type} #{item_id}: '{title}' đã được nghiệm thu và CLOSED thành công."
@@ -394,6 +476,74 @@ class HarnessManager:
                     cur.execute("ALTER TABLE work_item ADD COLUMN created_by_profile TEXT;")
                 if "assigned_to_profile" not in cols:
                     cur.execute("ALTER TABLE work_item ADD COLUMN assigned_to_profile TEXT;")
+                conn.commit()
+        except Exception:
+            pass
+
+        # Auto-migrate missing columns in intervention table
+        try:
+            cur = conn.cursor()
+            cols_int = {r[1] for r in cur.execute("PRAGMA table_info(intervention);").fetchall()}
+            if cols_int and "action" not in cols_int:
+                cur.execute("ALTER TABLE intervention ADD COLUMN action TEXT DEFAULT 'approved';")
+                conn.commit()
+        except Exception:
+            pass
+
+        # Auto-migrate legacy/truncated trace table (G-OBS-1)
+        try:
+            cur = conn.cursor()
+            trace_cols = {r[1] for r in cur.execute("PRAGMA table_info(trace);").fetchall()}
+            if trace_cols:
+                if "task_summary" not in trace_cols:
+                    row_count = cur.execute("SELECT count(*) FROM trace;").fetchone()[0]
+                    if row_count == 0:
+                        cur.execute("DROP TABLE trace;")
+                        cur.execute("""
+                            CREATE TABLE trace (
+                                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                                created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+                                task_summary     TEXT    NOT NULL,
+                                intake_id        INTEGER REFERENCES intake(id),
+                                story_id         TEXT    REFERENCES story(id) ON DELETE CASCADE,
+                                agent            TEXT,
+                                actions_taken    TEXT,
+                                files_read       TEXT,
+                                files_changed    TEXT,
+                                decisions_made   TEXT,
+                                errors           TEXT,
+                                outcome          TEXT CHECK(outcome IN ('completed','blocked','partial','failed')),
+                                duration_seconds INTEGER,
+                                token_estimate   INTEGER,
+                                harness_friction TEXT,
+                                notes            TEXT,
+                                run_id           TEXT
+                            );
+                        """)
+                    else:
+                        required_cols = [
+                            ("task_summary", "TEXT NOT NULL DEFAULT ''"),
+                            ("intake_id", "INTEGER"),
+                            ("agent", "TEXT"),
+                            ("actions_taken", "TEXT"),
+                            ("files_read", "TEXT"),
+                            ("files_changed", "TEXT"),
+                            ("decisions_made", "TEXT"),
+                            ("errors", "TEXT"),
+                            ("outcome", "TEXT"),
+                            ("duration_seconds", "INTEGER"),
+                            ("token_estimate", "INTEGER"),
+                            ("harness_friction", "TEXT"),
+                            ("notes", "TEXT"),
+                            ("run_id", "TEXT"),
+                        ]
+                        for c_name, c_def in required_cols:
+                            if c_name not in trace_cols:
+                                cur.execute(f"ALTER TABLE trace ADD COLUMN {c_name} {c_def};")
+                else:
+                    if "run_id" not in trace_cols:
+                        cur.execute("ALTER TABLE trace ADD COLUMN run_id TEXT;")
+                cur.execute("CREATE INDEX IF NOT EXISTS idx_trace_run_id ON trace(run_id);")
                 conn.commit()
         except Exception:
             pass
@@ -531,17 +681,43 @@ class HarnessManager:
             auto_dispatch_agent(item_id, wi_type, title, "New", assigned_to, assigned_to_profile)
             return {"success": True, "id": item_id, "type": wi_type, "title": title, "state": "New", "storage": "sqlite"}
 
-    def update_state(self, item_id: int, target_state: str, assigned_to: Optional[str] = None, assigned_to_profile: Optional[str] = None) -> Dict[str, Any]:
-        """Update work item lifecycle state with State Machine transition check."""
-        # Rào cản phân quyền nghiêm ngặt: Peer là DEV ONLY, tuyệt đối cấm đóng task sang 'Closed'
-        if target_state.lower() == "closed":
-            caller_prof = (assigned_to_profile or "").strip().lower()
-            if caller_prof in ("peer", "peer dev", "peer ba", "peer design"):
+    def _enforce_permissions(
+        self,
+        wi_type: str,
+        target_state: str,
+        assigned_to_profile: Optional[str] = None,
+        current_assignee_profile: Optional[str] = None
+    ) -> None:
+        """Enforce role permissions from profiles/<role>/PROFILE.md during state transitions."""
+        if (target_state or "").strip().lower() != "closed":
+            return
+
+        raw_profile = (assigned_to_profile or current_assignee_profile or "").strip()
+        canonical_role = normalize_role(raw_profile)
+        perms = get_role_permissions(canonical_role)
+
+        if wi_type.lower() == "task":
+            # G-HRN-1 / G-HRN-2: Only QC has can_close_task: true.
+            # Lead, Peer, Supervisor, and unknown roles must be rejected.
+            can_close = perms.get("can_close_task", False)
+            if not can_close:
+                dev_hint = " là DEV ONLY" if canonical_role == "peer" else ""
+                profile_desc = f"profiles/{canonical_role}/PROFILE.md" if canonical_role else "PROFILE.md"
                 raise PermissionError(
-                    f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{assigned_to_profile}' là DEV ONLY. "
-                    "Nghiêm cấm Dev tự tiện đóng Task sang 'Closed'! Chỉ QC hoặc Lead mới có quyền nghiệm thu và đóng Task."
+                    f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{raw_profile}'{dev_hint} không có quyền đóng Task "
+                    f"('can_close_task: false' trong {profile_desc}). "
+                    "Chỉ QC mới có quyền nghiệm thu và đóng Task."
+                )
+        elif wi_type.lower() in ("epic", "feature", "story", "user story", "technical story"):
+            # Peer is DEV ONLY and strictly barred from closing macro artifacts
+            if canonical_role == "peer":
+                raise PermissionError(
+                    f"⛔ RÀO CẢN VAI TRÒ (ROLE FENCE): Role '{raw_profile}' là DEV ONLY. "
+                    f"Nghiêm cấm Dev tự tiện đóng {wi_type} sang 'Closed'!"
                 )
 
+    def update_state(self, item_id: int, target_state: str, assigned_to: Optional[str] = None, assigned_to_profile: Optional[str] = None) -> Dict[str, Any]:
+        """Update work item lifecycle state with State Machine transition check."""
         if self.backend == "floci":
             current_item = self.floci_db.get_work_item(item_id)
             if not current_item:
@@ -550,6 +726,13 @@ class HarnessManager:
             current_state = current_item.get("state", "New")
             wi_type = current_item.get("type", "Task")
             title = current_item.get("title", f"Work Item #{item_id}")
+
+            self._enforce_permissions(
+                wi_type=wi_type,
+                target_state=target_state,
+                assigned_to_profile=assigned_to_profile,
+                current_assignee_profile=current_item.get("assigned_to_profile") or current_item.get("assigned_to")
+            )
 
             # Rào cản vai trò (PM Gate): Cấm gán hoặc kích hoạt Task thi công cho Lead/Supervisor (ngoại trừ khi đóng Closed)
             effective_assignee = (assigned_to_profile or assigned_to or current_item.get("assigned_to_profile") or current_item.get("assigned_to") or "").strip().lower()
@@ -607,6 +790,13 @@ class HarnessManager:
             current_state = row["state"]
             wi_type = row["type"]
             title = row["title"]
+
+            self._enforce_permissions(
+                wi_type=wi_type,
+                target_state=target_state,
+                assigned_to_profile=assigned_to_profile,
+                current_assignee_profile=row["assigned_to_profile"] or row["assigned_to"]
+            )
 
             # Rào cản vai trò (PM Gate - SQLite branch): Cấm gán hoặc kích hoạt Task thi công cho Lead/Supervisor (ngoại trừ khi đóng Closed)
             sqlite_effective = (assigned_to_profile or assigned_to or row["assigned_to_profile"] or row["assigned_to"] or "").strip().lower()
@@ -712,6 +902,222 @@ class HarnessManager:
             if self.backend == "rust":
                 stats["native_binary"] = os.path.exists(os.path.join(BASE_DIR, "scripts/bin/harness-cli"))
             return stats
+
+    def record_trace(
+        self,
+        task_summary: str,
+        intake_id: Optional[int] = None,
+        story_id: Optional[str] = None,
+        agent: Optional[str] = None,
+        actions_taken: Optional[Union[str, List[Any]]] = None,
+        files_read: Optional[Union[str, List[str]]] = None,
+        files_changed: Optional[Union[str, List[str]]] = None,
+        decisions_made: Optional[Union[str, List[str]]] = None,
+        errors: Optional[Union[str, List[str]]] = None,
+        outcome: Optional[str] = "completed",
+        duration_seconds: Optional[int] = None,
+        token_estimate: Optional[int] = None,
+        harness_friction: Optional[str] = None,
+        notes: Optional[str] = None,
+        run_id: Optional[str] = None,
+    ) -> int:
+        """
+        Record an agent execution trace span into the canonical trace table (G-OBS-1).
+        Conforms to 16 canonical columns from 001-init.sql / harness-cli plus run_id.
+        Returns the inserted row ID.
+        """
+        def _to_json_str(val: Any) -> Optional[str]:
+            if val is None:
+                return None
+            if isinstance(val, str):
+                return val
+            try:
+                return json.dumps(val, ensure_ascii=False)
+            except Exception:
+                return str(val)
+
+        norm_outcome = "completed"
+        if outcome:
+            o_lower = outcome.lower().strip()
+            if o_lower in ("completed", "pass", "passed", "ok", "success"):
+                norm_outcome = "completed"
+            elif o_lower in ("failed", "fail", "error", "err"):
+                norm_outcome = "failed"
+            elif o_lower in ("blocked", "block"):
+                norm_outcome = "blocked"
+            elif o_lower in ("partial", "inconclusive", "warn", "warning"):
+                norm_outcome = "partial"
+            elif o_lower in ("completed", "blocked", "partial", "failed"):
+                norm_outcome = o_lower
+            else:
+                norm_outcome = "completed"
+
+        dur_sec = int(duration_seconds) if duration_seconds is not None else None
+        tok_est = int(token_estimate) if token_estimate is not None else None
+
+        with self._get_sqlite_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO trace (
+                    task_summary, intake_id, story_id, agent,
+                    actions_taken, files_read, files_changed, decisions_made,
+                    errors, outcome, duration_seconds, token_estimate,
+                    harness_friction, notes, run_id
+                ) VALUES (
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?
+                );
+                """,
+                (
+                    task_summary,
+                    intake_id,
+                    str(story_id) if story_id is not None else None,
+                    agent,
+                    _to_json_str(actions_taken),
+                    _to_json_str(files_read),
+                    _to_json_str(files_changed),
+                    _to_json_str(decisions_made),
+                    _to_json_str(errors),
+                    norm_outcome,
+                    dur_sec,
+                    tok_est,
+                    harness_friction,
+                    notes,
+                    run_id,
+                ),
+            )
+            conn.commit()
+            return int(cur.lastrowid or 0)
+
+    def record_trace_span(
+        self,
+        run_id: str,
+        stage: str,
+        agent: str,
+        task_summary: str,
+        duration_seconds: int,
+        outcome: str = "completed",
+        errors: Optional[Union[str, List[str]]] = None,
+        story_id: Optional[str] = None,
+        intake_id: Optional[int] = None,
+        token_estimate: Optional[int] = None,
+        harness_friction: Optional[str] = None,
+        notes: Optional[str] = None,
+        **kwargs: Any,
+    ) -> int:
+        """
+        Record a pipeline stage span conforming to M1 <-> M2 interface contract.
+        Wraps record_trace with stage metadata and shared run_id.
+        """
+        combined_notes = notes
+        if not combined_notes and stage:
+            combined_notes = f"stage={stage}"
+        elif stage and combined_notes and f"stage={stage}" not in combined_notes:
+            combined_notes = f"stage={stage}; {combined_notes}"
+
+        return self.record_trace(
+            task_summary=task_summary,
+            intake_id=intake_id,
+            story_id=story_id,
+            agent=agent,
+            errors=errors,
+            outcome=outcome,
+            duration_seconds=duration_seconds,
+            token_estimate=token_estimate,
+            harness_friction=harness_friction,
+            notes=combined_notes,
+            run_id=run_id,
+            **kwargs,
+        )
+
+    def get_trace(self, trace_id: int) -> Optional[Dict[str, Any]]:
+        """Retrieve a single trace record by primary key."""
+        with self._get_sqlite_db() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM trace WHERE id = ?;", (trace_id,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    def list_traces(
+        self,
+        run_id: Optional[str] = None,
+        story_id: Optional[str] = None,
+        agent: Optional[str] = None,
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
+        """List trace records, optionally filtered by run_id, story_id, or agent."""
+        query = "SELECT * FROM trace WHERE 1=1"
+        params: List[Any] = []
+        if run_id:
+            query += " AND run_id = ?"
+            params.append(run_id)
+        if story_id:
+            query += " AND story_id = ?"
+            params.append(str(story_id))
+        if agent:
+            query += " AND agent = ?"
+            params.append(agent)
+        query += " ORDER BY id DESC LIMIT ?"
+        params.append(limit)
+
+        with self._get_sqlite_db() as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            return [dict(r) for r in cur.fetchall()]
+
+    def record_intervention(
+        self,
+        target_type: str,
+        target_id: int,
+        actor: str,
+        reason: str,
+        action: Optional[str] = None
+    ) -> int:
+        """Record reviewer/human intervention into the intervention table."""
+        with self._get_sqlite_db() as conn:
+            cur = conn.cursor()
+            cols = {r[1] for r in cur.execute("PRAGMA table_info(intervention);").fetchall()}
+            if "action" in cols:
+                cur.execute(
+                    """
+                    INSERT INTO intervention (target_type, target_id, actor, action, reason)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (target_type, int(target_id), actor, action or "approved", reason)
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO intervention (target_type, target_id, actor, reason)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (target_type, int(target_id), actor, f"[{action.upper()}] {reason}" if action else reason)
+                )
+            conn.commit()
+            return int(cur.lastrowid or 0)
+
+    def get_interventions(
+        self,
+        target_type: Optional[str] = None,
+        target_id: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """Query intervention history."""
+        with self._get_sqlite_db() as conn:
+            cur = conn.cursor()
+            query = "SELECT * FROM intervention WHERE 1=1"
+            params: List[Any] = []
+            if target_type:
+                query += " AND target_type = ?"
+                params.append(target_type)
+            if target_id is not None:
+                query += " AND target_id = ?"
+                params.append(int(target_id))
+            query += " ORDER BY id DESC"
+            rows = cur.execute(query, params).fetchall()
+            return [dict(r) for r in rows]
 
 def main():
     parser = argparse.ArgumentParser(description="Harness Operating Framework Manager Tool (Floci / DynamoDB)")
