@@ -542,10 +542,13 @@ class SlppcOrchestrator:
                         if getattr(l, "lesson", None)
                     ]
                     if chunks:
-                        lessons_context = "\n" + build_context_bounded_prompt(
-                            query=f"Task #{task_id}: {title}",
-                            chunks=chunks,
-                            max_chunks=3
+                        lessons_context = (
+                            "\n[BẪY QUÁ KHỨ & BÀI HỌC KINH NGHIỆM TỰ HỌC - HARNESS²]:\n"
+                            + build_context_bounded_prompt(
+                                query=f"Task #{task_id}: {title}",
+                                chunks=chunks,
+                                max_chunks=3
+                            )
                         )
             except Exception:
                 pass
