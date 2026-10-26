@@ -52,7 +52,47 @@ SHARED_ROOT = resolve_shared_root(PROJECT_ROOT)
 BASE_DIR = str(SHARED_ROOT)
 REGISTRY_FILE = SHARED_ROOT / "bmad" / "rooms" / "agent_terminals.json"
 
-COMPACT_THRESHOLD_K = 200.0  # Ngưỡng token (k) để kích hoạt tự động /compact
+# Ngưỡng compact theo vai trò (G-MEM-1, CTX-02):
+# Peer <= 30k, QC <= 30k, Lead <= 60k, Supervisor <= 100k
+ROLE_COMPACT_THRESHOLDS_K: Dict[str, float] = {
+    "peer": 30.0,
+    "peer1": 30.0,
+    "peer2": 30.0,
+    "peer3": 30.0,
+    "peer4": 30.0,
+    "peer_design": 30.0,
+    "design": 30.0,
+    "dev": 30.0,
+    "coder": 30.0,
+    "qc": 30.0,
+    "qc_tester": 30.0,
+    "tester": 30.0,
+    "lead": 60.0,
+    "lead_architect": 60.0,
+    "supervisor": 100.0,
+    "pm": 100.0,  # PM được sáp nhập vào Supervisor
+}
+DEFAULT_COMPACT_THRESHOLD_K: float = 30.0  # Ngưỡng an toàn cho sub-agent ephemeral / role chưa xác định
+COMPACT_THRESHOLD_K: float = 30.0  # Alias tương thích ngược
+
+
+def get_compact_threshold_k(role: Optional[str] = None) -> float:
+    """
+    Trả về ngưỡng token (k) để kích hoạt tự động nén context (/compact) theo vai trò (G-MEM-1, CTX-02):
+    - peer / qc: 30.0 (<= 30k)
+    - lead: 60.0 (<= 60k)
+    - supervisor / pm: 100.0 (<= 100k)
+    - Mặc định: 30.0 cho role chưa xác định hoặc None.
+    Hỗ trợ alias: peer1..4, peer_design, dev, coder, qc_tester, lead_architect, pm.
+    """
+    if not role:
+        return DEFAULT_COMPACT_THRESHOLD_K
+    clean = str(role).lower().strip()
+    if clean in ROLE_COMPACT_THRESHOLDS_K:
+        return ROLE_COMPACT_THRESHOLDS_K[clean]
+    norm = _normalize_room_role(clean)
+    return ROLE_COMPACT_THRESHOLDS_K.get(norm, DEFAULT_COMPACT_THRESHOLD_K)
+
 
 
 def _normalize_room_role(role: str) -> str:
@@ -172,14 +212,29 @@ def has_live_terminal(role: str) -> Optional[str]:
     return live_map.get(canonical)
 
 
-def inspect_terminal(handle: str) -> Dict[str, Any]:
-    """Đọc màn hình terminal, trích xuất token usage, trạng thái bận/rảnh."""
-    info = {
+def inspect_terminal(handle: str, role: Optional[str] = None) -> Dict[str, Any]:
+    """Đọc màn hình terminal, trích xuất token usage, trạng thái bận/rảnh theo vai trò (G-MEM-1)."""
+    inferred_role = role
+    if not inferred_role and REGISTRY_FILE.exists():
+        try:
+            reg_data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
+            for r, v in reg_data.items():
+                if isinstance(v, dict) and v.get("handle") == handle:
+                    inferred_role = r
+                    break
+        except Exception:
+            pass
+
+    threshold_k = get_compact_threshold_k(inferred_role)
+
+    info: Dict[str, Any] = {
         "handle": handle,
+        "role": inferred_role,
         "is_live": False,
         "is_ready": False,
         "is_busy": True,
         "token_count_k": 0.0,
+        "compact_threshold_k": threshold_k,
         "needs_compact": False,
         "status_line": ""
     }
@@ -201,7 +256,7 @@ def inspect_terminal(handle: str) -> Dict[str, Any]:
         if match:
             tokens_k = float(match.group(1))
             info["token_count_k"] = tokens_k
-            info["needs_compact"] = tokens_k >= COMPACT_THRESHOLD_K
+            info["needs_compact"] = tokens_k >= threshold_k
 
         # Kiểm tra trạng thái prompt
         lines = [line.strip() for line in screen.split("\n") if line.strip()]
@@ -257,6 +312,95 @@ def compact_agent_terminal(handle: str, max_wait_sec: int = 25) -> bool:
     except Exception as e:
         print(f"⚠️ [Auto-Compact Error]: {e}")
     return False
+
+
+def compact_context_if_needed(
+    role: str,
+    handle: Optional[str] = None,
+    max_wait_sec: int = 20
+) -> bool:
+    """
+    Kiểm tra context window của role theo ngưỡng ngân sách vai trò (G-MEM-1):
+    - peer/qc <= 30k
+    - lead <= 60k
+    - supervisor <= 100k
+    Nếu vượt ngưỡng (needs_compact), tự động kích hoạt /compact trên terminal.
+    Trả về True nếu đã thực hiện nén thành công, False nếu không cần nén hoặc gặp lỗi.
+    """
+    if not handle:
+        live_map = get_live_terminals()
+        canonical_role = _normalize_room_role(role)
+        handle = live_map.get(canonical_role)
+        if not handle:
+            clean_role = role.lower().strip().replace("-", "_").replace(" ", "_")
+            handle = live_map.get(clean_role)
+    if not handle:
+        return False
+
+    state = inspect_terminal(handle, role=role)
+    if state.get("needs_compact"):
+        threshold_k = state.get("compact_threshold_k", get_compact_threshold_k(role))
+        tokens_k = state.get("token_count_k", 0.0)
+        print(
+            f"⚠️ [Context Warning]: {role.upper()} đạt {tokens_k}k tokens "
+            f"(vượt ngưỡng ngân sách vai trò {threshold_k}k). Đang tự động nén context..."
+        )
+        compacted = compact_agent_terminal(handle, max_wait_sec=max_wait_sec)
+        wait_for_terminal_ready(handle, max_wait_sec=5)
+        return compacted
+    return False
+
+
+def load_curated_memory(role_or_path: Union[str, Path]) -> str:
+    """
+    Nạp toàn bộ nội dung curated long-term memory (G-MEM-5) từ file MEMORY.md:
+    - Loại bỏ comment HTML <!-- ... -->
+    - Giữ trọn vẹn toàn bộ các khối Facts, Preferences, Commitments và quy chuẩn cốt lõi (không cắt ở 3 dòng đầu).
+    - Hỗ trợ truyền vào tên role (e.g. 'peer', 'lead', 'qc', 'supervisor') hoặc đường dẫn file Path.
+    """
+    if isinstance(role_or_path, (str, Path)) and not Path(role_or_path).is_file():
+        role_str = str(role_or_path).lower().strip().replace("-", "_")
+        if role_str in ("peer1", "peer2", "peer3", "peer4", "peer_2", "peer_3", "peer_4", "design", "peer_design", "peer_dev"):
+            role_str = "peer"
+        elif role_str == "pm":
+            role_str = "supervisor"
+        p = PROJECT_ROOT / "profiles" / role_str / "MEMORY.md"
+        if not p.exists():
+            p = PROJECT_ROOT / "bmad" / "rooms" / role_str / "MEMORY.md"
+    else:
+        p = Path(role_or_path)
+
+    if not p.exists():
+        return ""
+
+    raw = p.read_text(encoding="utf-8")
+    clean = re.sub(r"<!--.*?-->", "", raw, flags=re.DOTALL).strip()
+    if not clean:
+        return ""
+
+    sections: Dict[str, List[str]] = {}
+    current_sec = "Curated Memory"
+    for line in clean.splitlines():
+        sline = line.strip()
+        if not sline:
+            continue
+        if sline.startswith("## "):
+            current_sec = sline.lstrip("#").strip()
+            sections[current_sec] = []
+        elif sline.startswith("# "):
+            continue
+        else:
+            sections.setdefault(current_sec, []).append(sline)
+
+    sec_parts: List[str] = []
+    for sec_name, sec_lines in sections.items():
+        if not sec_lines:
+            continue
+        joined = " ".join(sec_lines)
+        sec_parts.append(f"{sec_name}: {joined}")
+
+    return " | ".join(sec_parts)
+
 
 
 def build_rehydration_prompt(
@@ -353,15 +497,11 @@ def build_rehydration_prompt(
                 pass
 
     # 4. Tra cứu Long-Term Memory (MEMORY.md + Database Learn Store) theo Project ID / Domain (Top-3 chunks)
-    memory_file = PROJECT_ROOT / "profiles" / clean_role / "MEMORY.md"
     curated_memory_summary = ""
-    if memory_file.exists():
-        try:
-            m_lines = [l.strip() for l in memory_file.read_text(encoding="utf-8").splitlines() if l.strip().startswith("- ")]
-            if m_lines:
-                curated_memory_summary = " ".join(m_lines[:3])
-        except Exception:
-            pass
+    try:
+        curated_memory_summary = load_curated_memory(clean_role)
+    except Exception as e:
+        sys.stderr.write(f"⚠️ [Rehydration Warning]: Lỗi nạp curated MEMORY.md cho {clean_role}: {e}\n")
 
     long_term_lessons = "Chưa có bài học lịch sử đặc thù; áp dụng chuẩn mặc định của dự án."
     try:
@@ -373,8 +513,9 @@ def build_rehydration_prompt(
                 for exp in experiences[:3]
             ]
             long_term_lessons = " | ".join(lesson_snippets)
-    except Exception:
-        pass
+    except Exception as e:
+        sys.stderr.write(f"⚠️ [Rehydration Warning]: Lỗi truy vấn bài học từ Learn Store: {e}\n")
+
     if curated_memory_summary:
         long_term_lessons = f"[Curated MEMORY.md: {curated_memory_summary}] | [Learn Store: {long_term_lessons}]"
 
@@ -476,8 +617,8 @@ def safe_send_agent_message(
     if not handle:
         return False
 
-    # 1. Ping check: Kiểm tra terminal còn sống và trạng thái hiện tại
-    state = inspect_terminal(handle)
+    # 1. Ping check: Kiểm tra terminal còn sống và trạng thái hiện tại theo vai trò (G-MEM-1)
+    state = inspect_terminal(handle, role=role)
     if not state["is_live"]:
         print(f"⚠️ [Ping Check]: Terminal của {role.upper()} ({handle}) không phản hồi.")
         return False
@@ -489,11 +630,16 @@ def safe_send_agent_message(
             print(f"⚠️ [Ping Check]: {role.upper()} vẫn bận sau 8s. Hủy gửi để tránh gián đoạn tiến trình.")
             return False
 
-    # 3. Kiểm tra Context Window & Auto-Compact
+    # 3. Kiểm tra Context Window & Auto-Compact theo vai trò (G-MEM-1)
     if auto_compact and state["needs_compact"]:
-        print(f"⚠️ [Context Warning]: {role.upper()} đạt {state['token_count_k']}k tokens. Đang tự động nén context...")
+        threshold_k = state.get("compact_threshold_k", get_compact_threshold_k(role))
+        print(
+            f"⚠️ [Context Warning]: {role.upper()} đạt {state['token_count_k']}k tokens "
+            f"(vượt ngưỡng ngân sách vai trò {threshold_k}k). Đang tự động nén context..."
+        )
         compact_agent_terminal(handle, max_wait_sec=20)
         wait_for_terminal_ready(handle, max_wait_sec=5)
+
 
     # 4. Gửi lệnh
     message_str = json.dumps(message, ensure_ascii=False, indent=2) if isinstance(message, dict) else str(message)
