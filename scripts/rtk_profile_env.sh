@@ -17,9 +17,11 @@ export RTK_COMPACT_MODE=1
 export RTK_TEST_FAILURES_ONLY=1
 
 # 2. Kiểm tra binary RTK
-if ! command -v rtk &> /dev/null; then
+if ! (command -v rtk >/dev/null 2>&1 || which rtk >/dev/null 2>&1); then
+    >&2 echo "[WARN] rtk binary not found on PATH; falling back to unproxied commands"
     return 0 2>/dev/null || exit 0
 fi
+
 
 # 3. Role-specific CLI Aliases
 case "$ROLE" in

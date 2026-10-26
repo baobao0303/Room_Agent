@@ -81,9 +81,14 @@ def normalize_role(role: str) -> str:
 def run_cmd(args: list[str]) -> tuple[int, str]:
     try:
         res = subprocess.run(args, capture_output=True, text=True, cwd=str(SCRIPT_DIR))
-        return res.returncode, res.stdout.strip()
+        out = res.stdout.strip()
+        err = res.stderr.strip()
+        if res.returncode != 0 and err:
+            out = f"{out}\n{err}".strip() if out else err
+        return res.returncode, out
     except Exception as exc:
         return 1, str(exc)
+
 
 
 def get_live_terminals() -> dict[str, dict]:
@@ -173,8 +178,9 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         from agent_context_manager import build_rehydration_prompt  # type: ignore
         hydration_block = build_rehydration_prompt(role=role, user_id=os.environ.get("USER", "enterprise_user"), project_id="Room_Agent")
         prompt = f"{prompt}\n\n{hydration_block}"
-    except Exception:
-        pass
+    except Exception as exc:
+        sys.stderr.write(f"⚠️ [WARN] Memory rehydration failed for role '{role}': {exc}\n")
+
 
     print(f"--- 🚀 Đang khởi chạy: {title} ({role}) ---")
 
@@ -219,7 +225,9 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
             if t_h != handle and _is_term_in_role_room(t_val, role):
                 run_cmd(["orca", "terminal", "close", "--terminal", t_h, "--tab", "--json"])
     else:
-        print(f"  ⚠️  Không nhận được handle từ Orca cho agent {role}.")
+        err_detail = f" (code={code}, output={out})" if out else f" (code={code})"
+        print(f"  ⚠️  Không nhận được handle từ Orca cho agent {role}.{err_detail}", file=sys.stderr)
+
 
     time.sleep(1)
     return handle
@@ -350,8 +358,9 @@ def cmd_clear_ephemerals() -> int:
     if shutil.which("orca"):
         try:
             subprocess.run(["python3", str(SCRIPT_DIR / "tools" / "zombie_reaper.py")], capture_output=True, text=True, timeout=5)
-        except Exception:
-            pass
+        except Exception as exc:
+            sys.stderr.write(f"⚠️ [WARN] Zombie reaper execution failed: {exc}\n")
+
     print("✨ Toàn bộ sub-agent tạm thời (Peer, QC) đã được đóng. Context đưa về trạng thái sạch sẽ, RAM đưa về 0.")
     return res
 
