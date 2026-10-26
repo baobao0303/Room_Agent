@@ -88,6 +88,8 @@ class TwoWaySyncSummary:
 
 
 def is_binary_available() -> bool:
+    if sys.platform != "linux":
+        return False
     return NATIVE_BIN.is_file() and os.access(str(NATIVE_BIN), os.X_OK)
 
 
@@ -102,6 +104,8 @@ class HarnessRustBridge:
         return self.is_binary_available()
 
     def is_binary_available(self) -> bool:
+        if sys.platform != "linux":
+            return False
         return self.bin_path.is_file() and os.access(str(self.bin_path), os.X_OK)
 
     def supervise_task(self, text: str, timeout: float = 10.0) -> SupervisionEvaluationResult:
@@ -251,6 +255,36 @@ class HarnessRustBridge:
                     result.sqlite_error = res.stderr.strip()
             except Exception as e:
                 result.sqlite_error = str(e)
+
+        # 1b. Fallback: Ghi trực tiếp vào SQLite qua Python nếu Rust binary không chạy được
+        if not result.sqlite_synced:
+            try:
+                from tools.harness_learning_search import get_sqlite_conn  # type: ignore
+                conn = get_sqlite_conn()
+                if conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        """
+                        INSERT INTO harness_experience (domain, work_item_id, cue, lesson, evidence, confidence, pattern_hash)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            domain,
+                            int(work_item_id) if work_item_id is not None and str(work_item_id).isdigit() else None,
+                            cue,
+                            lesson,
+                            evidence,
+                            confidence,
+                            pattern_hash
+                        )
+                    )
+                    conn.commit()
+                    conn.close()
+                    result.sqlite_synced = True
+                    result.sqlite_error = None
+            except Exception as e:
+                if not result.sqlite_error:
+                    result.sqlite_error = str(e)
 
         # 2. Đồng bộ lên Floci DynamoDB
         try:

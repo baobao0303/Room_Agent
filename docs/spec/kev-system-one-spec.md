@@ -74,7 +74,7 @@ Payload bao gồm đúng 2 trường:
 ### 3.1. Request Mẫu (Gộp cả 3 loại câu hỏi trong 1 forward pass)
 
 ```bash
-curl -s -X POST http://100.124.36.46:8008/v1/systemone \
+curl -s -X POST http://127.0.0.1:8008/v1/systemone \
   -H "Content-Type: application/json" \
   -d '{
     "state": "User message: Sắp hết hạn hợp đồng chưa? Cho tôi hủy gói Premium ngay lập tức.",

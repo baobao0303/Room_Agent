@@ -24,9 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Candidate database paths
 DB_CANDIDATES = [
+    BASE_DIR / ".harness" / "harness.db",
     BASE_DIR / "harness.db",
     BASE_DIR / "projects/harness/harness.db",
-    Path(os.environ.get("HARNESS_DB", str(BASE_DIR / "harness.db"))),
+    Path(os.environ.get("HARNESS_DB", str(BASE_DIR / ".harness" / "harness.db"))),
 ]
 
 # Garbage / Trivial phrases filter (Ngăn chặn bài học tào lao)

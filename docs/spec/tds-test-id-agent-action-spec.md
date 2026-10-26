@@ -26,9 +26,9 @@
 
 ### 1.2. Dành Cho PEER DEVS (`profiles/peer.md` - Peer 1, Peer 2, Peer 3, Peer 4, Design)
 - **Nhiệm vụ cốt lõi**:
-  1. **Import Directive**: Mọi Component Standalone khi render giao diện phải import `TdsTestIdDirective` từ `@wicx/core`:
+  1. **Import Directive**: Mọi Component Standalone khi render giao diện phải import `TdsTestIdDirective` từ `@demo/core`:
      ```typescript
-     import { TdsTestIdDirective } from '@wicx/core';
+     import { TdsTestIdDirective } from '@demo/core';
 
      @Component({
        standalone: true,
@@ -51,7 +51,7 @@
 ### 1.3. Dành Cho QC VERIFIER (`profiles/qc.md` - BẮT BUỘC BỔ SUNG UNIT TEST)
 - **Nhiệm vụ cốt lõi**:
   1. **BỔ SUNG UNIT TEST NGAY LẬP TỨC CHO DIRECTIVE**:
-     - File đích: `projects/wicx-crm-fe/libs/wicx-core/src/directives/tds-test-id.directive.spec.ts`.
+     - File đích: `projects/demo-crm-fe/libs/demo-core/src/directives/tds-test-id.directive.spec.ts`.
      - Kịch bản kiểm thử bắt buộc:
        * `[TC-01]`: Gán tĩnh (`tdsTestId="auth-login-submit-btn"`) $\rightarrow$ Render đúng `tds-test-id="auth-login-submit-btn"`.
        * `[TC-02]`: Gán động (`[tdsTestId]="'customer-row-' + id"`) $\rightarrow$ Render đúng ID động khi input thay đổi.
@@ -77,7 +77,7 @@
 
 ## 2. TỔNG KẾT HÀNH ĐỘNG CẦN KÍCH HOẠT NGAY
 
-1. **Giai đoạn 1**: Peer Dev 1 tạo file `tds-test-id.directive.ts` và QA helper trong `libs/wicx-core`.
+1. **Giai đoạn 1**: Peer Dev 1 tạo file `tds-test-id.directive.ts` và QA helper trong `libs/demo-core`.
 2. **Giai đoạn 2**: **QC Verifier viết bộ unit test suite `tds-test-id.directive.spec.ts`** và chạy lệnh test pass 100%.
 3. **Giai đoạn 3**: Peer Dev 2 áp dụng thí điểm cho màn hình Login (`app-shell`) và Customer List (`mfe-crm`).
 4. **Giai đoạn 4**: QC nghiệm thu độc lập và đóng task.

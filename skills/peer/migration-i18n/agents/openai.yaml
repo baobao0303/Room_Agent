@@ -1,3 +1,3 @@
 interface:
   display_name: "i18n Migration"
-  short_description: "i18n migration cho WiCRM/WionPOS Angular MFE"
+  short_description: "i18n migration cho Demo-CRM/Demo-POS Angular MFE"

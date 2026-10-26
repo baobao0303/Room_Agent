@@ -22,32 +22,154 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BASE_DIR = str(PROJECT_ROOT)
-REGISTRY_FILE = PROJECT_ROOT / "bmad" / "rooms" / "agent_terminals.json"
+
+
+def resolve_shared_root(default_root: Path) -> Path:
+    """Resolve canonical main worktree root so all room-* worktrees share bmad/rooms."""
+    override = os.environ.get("SLPPC_SHARED_ROOT")
+    if override:
+        p = Path(override)
+        if os.access(p, os.R_OK | os.W_OK):
+            return p
+    git_entry = default_root / ".git"
+    try:
+        if git_entry.is_file():
+            raw = git_entry.read_text(encoding="utf-8").strip()
+            if raw.startswith("gitdir:"):
+                gitdir = Path(raw.split("gitdir:", 1)[1].strip())
+                if not gitdir.is_absolute():
+                    gitdir = (default_root / gitdir).resolve()
+                if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+                    main_root = gitdir.parent.parent.parent
+                    if os.access(main_root, os.R_OK | os.W_OK):
+                        return main_root
+    except Exception:
+        pass
+    return default_root
+
+
+SHARED_ROOT = resolve_shared_root(PROJECT_ROOT)
+BASE_DIR = str(SHARED_ROOT)
+REGISTRY_FILE = SHARED_ROOT / "bmad" / "rooms" / "agent_terminals.json"
 
 COMPACT_THRESHOLD_K = 200.0  # Ngưỡng token (k) để kích hoạt tự động /compact
 
 
+def _normalize_room_role(role: str) -> str:
+    r = role.lower().strip().replace("-", "_")
+    if "supervisor" in r or r == "main":
+        return "supervisor"
+    if "lead" in r:
+        return "lead"
+    if "pm" in r:
+        return "pm"
+    if any(k in r for k in ("peer", "dev", "design")):
+        return "peer"
+    if "qc" in r:
+        return "qc"
+    return r
+
+
+def _infer_terminal_room(term: Dict[str, Any]) -> Optional[str]:
+    wt_path = (term.get("worktreePath") or "").lower().rstrip("/")
+    wt_id = (term.get("worktreeId") or "").lower().rstrip("/")
+    branch = (term.get("branch") or "").lower().rstrip("/")
+
+    for r in ("pm", "lead", "peer", "qc"):
+        token = f"room-{r}"
+        if (
+            wt_path.endswith(f"/{token}")
+            or f"/{token}/" in wt_path
+            or wt_id.endswith(f"/{token}")
+            or branch.endswith(f"/{token}")
+            or branch == token
+        ):
+            return r
+
+    if branch in ("main", "refs/heads/main") or (
+        wt_path and "/room-" not in wt_path and not wt_path.endswith(("/room-pm", "/room-lead", "/room-peer", "/room-qc"))
+    ):
+        return "supervisor"
+
+    title = (term.get("title") or "").lower()
+    if "[supervisor]" in title or "scope & intent" in title:
+        return "supervisor"
+    if "[lead" in title or "technical architect" in title:
+        return "lead"
+    if "[pm]" in title or "[pm agent]" in title or "feasibility" in title:
+        return "pm"
+    if "[peer" in title or "code executor" in title:
+        return "peer"
+    if "[qc]" in title or "istqb" in title or "verifier" in title:
+        return "qc"
+    return None
+
+
 def get_live_terminals() -> Dict[str, str]:
-    """Trả về mapping {role: handle} cho các terminal đang active trong Orca."""
-    if not shutil.which("orca") or not REGISTRY_FILE.exists():
+    """Trả về mapping {role: handle} cho các terminal đang active trong Orca (tự động đóng tab trùng trong cùng room)."""
+    if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
         return {}
     try:
-        reg_data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
+        reg_data: Dict[str, Any] = {}
+        if REGISTRY_FILE.exists():
+            try:
+                reg_data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
+            except Exception:
+                reg_data = {}
+
         res = subprocess.run(["orca", "terminal", "list", "--json"], capture_output=True, text=True, timeout=5)
         if res.returncode != 0:
             return {}
-        terminals = json.loads(res.stdout).get("result", {}).get("terminals", [])
-        live_handles = {t.get("handle") for t in terminals}
-        
-        valid_map = {}
-        for role, meta in reg_data.items():
-            h = meta.get("handle")
-            if h and h in live_handles:
-                valid_map[role.lower()] = h
+        terminals = [
+            t for t in json.loads(res.stdout).get("result", {}).get("terminals", [])
+            if t.get("handle") and not t.get("stopped") and t.get("connected", True)
+        ]
+
+        by_room: Dict[str, list[Dict[str, Any]]] = {}
+        for t in terminals:
+            room = _infer_terminal_room(t)
+            if room:
+                by_room.setdefault(room, []).append(t)
+
+        valid_map: Dict[str, str] = {}
+        updated_reg = False
+
+        for room, room_terms in by_room.items():
+            reg_h = (reg_data.get(room) or {}).get("handle") if isinstance(reg_data.get(room), dict) else None
+            room_terms.sort(
+                key=lambda x: (1 if x.get("handle") == reg_h else 0, x.get("lastOutputAt") or 0),
+                reverse=True,
+            )
+            primary = room_terms[0]
+            primary_h = primary.get("handle")
+            if primary_h:
+                valid_map[room] = primary_h
+                if reg_h != primary_h:
+                    reg_data[room] = {"handle": primary_h, "tabId": primary.get("tabId") or ""}
+                    updated_reg = True
+                # Đóng mọi terminal dư thừa trong cùng room (đảm bảo đúng 1 agent/room)
+                for extra in room_terms[1:]:
+                    extra_h = extra.get("handle")
+                    if extra_h and extra_h != primary_h:
+                        subprocess.run(["orca", "terminal", "close", "--terminal", extra_h, "--tab", "--json"], capture_output=True, timeout=5)
+
+        if updated_reg:
+            try:
+                REGISTRY_FILE.parent.mkdir(parents=True, exist_ok=True)
+                REGISTRY_FILE.write_text(json.dumps(reg_data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            except Exception:
+                pass
+
         return valid_map
     except Exception:
         return {}
+
+
+def has_live_terminal(role: str) -> Optional[str]:
+    """Kiểm tra xem room tương ứng với role đã có live terminal hay chưa."""
+    live_map = get_live_terminals()
+    canonical = _normalize_room_role(role)
+    return live_map.get(canonical)
 
 
 def inspect_terminal(handle: str) -> Dict[str, Any]:
@@ -142,15 +264,13 @@ def build_rehydration_prompt(role: str) -> str:
     clean_role = role.lower().replace("-", "_").replace(" ", "_")
     
     # 1. Tra cứu file profile
+    if clean_role in ("peer1", "peer2", "peer3", "peer4", "peer_2", "peer_3", "peer_4", "design", "peer_design", "peer_dev"):
+        clean_role = "peer"
     profile_map = {
         "supervisor": "profiles/supervisor.md",
         "pm": "profiles/pm.md",
         "lead": "profiles/lead.md",
         "peer": "profiles/peer.md",
-        "peer2": "profiles/peer_2.md",
-        "peer3": "profiles/peer_3.md",
-        "peer4": "profiles/peer_4.md",
-        "design": "profiles/peer_design.md",
         "qc": "profiles/qc.md"
     }
     profile_file = PROJECT_ROOT / profile_map.get(clean_role, f"profiles/{clean_role}.md")
@@ -234,14 +354,11 @@ def rehydrate_agent(role: str, handle: str) -> bool:
 def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) -> bool:
     """Gửi thông điệp an toàn cho agent: Có ping check, có kiểm tra context để compact, chống đè lệnh."""
     live_map = get_live_terminals()
-    clean_role = role.lower().strip().replace("-", "_").replace(" ", "_")
-    handle = live_map.get(clean_role)
+    canonical_role = _normalize_room_role(role)
+    handle = live_map.get(canonical_role)
     if not handle:
-        for k, h in live_map.items():
-            if clean_role in k or k in clean_role:
-                handle = h
-                break
-
+        clean_role = role.lower().strip().replace("-", "_").replace(" ", "_")
+        handle = live_map.get(clean_role)
     if not handle:
         return False
 

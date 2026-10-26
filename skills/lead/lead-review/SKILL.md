@@ -98,7 +98,7 @@ Trước khi cho phép Task chuyển sang bước kiểm định độc lập c�
   * Với dự án Angular/TS: Chạy lint và typecheck (`tsc --noEmit`) trước khi bàn giao.
 
 ### I. Chuẩn Hóa Định Danh Kiểm Thử Bất Biến (TDS Test ID & Testing Contract Gate)
-- **Quy tắc bắt buộc**: 100% component FE có tương tác (button, input, select, form, modal, table row) phải gắn directive `tdsTestId` từ `@wicx/core`.
+- **Quy tắc bắt buộc**: 100% component FE có tương tác (button, input, select, form, modal, table row) phải gắn directive `tdsTestId` từ `@demo/core`.
 - **Cú pháp định danh**: `<domain>-<component>-<element>-<state?>` (100% tiếng Anh, kebab-case).
 - **Quy định Zero-Search Task**: Mọi Task giao cho Peer bắt buộc trường `--ac` và `--description` phải chỉ định rõ danh sách `tdsTestId` cụ thể.
 - **Quyền VETO / REJECT NGAY LẬP TỨC**:
@@ -114,7 +114,7 @@ Trước khi cho phép Task chuyển sang bước kiểm định độc lập c�
 ### Bước 1: Quét Tự Động Bằng Tool
 Lead Dev chạy công cụ thẩm định tự động:
 ```bash
-python3 tools/lead_code_review.py --repo-dir projects/wicx-crm-fe --task-id <id>
+python3 tools/lead_code_review.py --repo-dir projects/demo-crm-fe --task-id <id>
 ```
 - Công cụ tự động quét Git Diff (cả staged và unstaged).
 - Kiểm tra mã màu hex, OnPush, single-ownership.

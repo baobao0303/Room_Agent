@@ -14,7 +14,7 @@
 
 Framework quản trị phát triển phần mềm **Harness** (`baobao0303/harness`) vừa chính thức phát hành phiên bản **v0.1.14** với các đột phá kiến trúc quan trọng:
 1. **Động cơ Rust CLI Đơn Nhất (`harness-cli`)**: Binary native siêu nhẹ (~7.1MB trên Linux x64), khởi động tức thì, tối ưu hóa triệt để tài nguyên so với các runtime script Python.
-2. **Kev System One Decision Engine (`harness supervise`)**: Tích hợp mô hình quyết định nhỏ gọn Kev (prefill-only, non-autoregressive) qua giao thức TypeSafe System One (`http://100.124.36.46:8008/v1/systemone`, model `kev-latest`), phân luồng rủi ro siêu tốc **sub-50ms**.
+2. **Kev System One Decision Engine (`harness supervise`)**: Tích hợp mô hình quyết định nhỏ gọn Kev (prefill-only, non-autoregressive) qua giao thức TypeSafe System One (`http://127.0.0.1:8008/v1/systemone`, model `kev-latest`), phân luồng rủi ro siêu tốc **sub-50ms**.
 3. **Thư viện Tự Học & Chuyển Giao Thích Ứng (`harness learn`)**: Kế thừa kiến trúc Recursive Harnessing của Google Research Harness² (`harness2`), tự động tích lũy kinh nghiệm, bài học và tự động kích hoạt checklist phòng ngừa lỗi khi chuyển giao trạng thái FSM (`New -> Active -> Resolved -> Closed`).
 4. **Cơ sở Dữ liệu Bền Vững SQLite (Schema Migration 007)**: Bổ sung bảng `harness_experience` quản lý kinh nghiệm tự học với chỉ mục phân vùng tối ưu.
 5. **Zero-Config Mặc Định**: Đã gỡ bỏ file `.env` rườm rà, nhúng trực tiếp cấu hình endpoint nội bộ Tailscale.
@@ -36,9 +36,9 @@ HIỆN TẠI (Legacy Python Architecture)            MỤC TIÊU NÂNG CẤP (Hy
 │                 │                    │                 ┌──────────────────┴──────────────────┐
 │                 ▼                    │                 ▼                                     ▼
 │  Floci Cloud DynamoDB & S3           │     ┌───────────────────────┐             ┌─────────────────────┐
-│  (100.124.36.46:14566)               │     │ Native Rust CLI       │             │ Floci Cloud Storage │
+│  (127.0.0.1:14566)               │     │ Native Rust CLI       │             │ Floci Cloud Storage │
 │                                      │     │ (scripts/bin/         │             │ (DynamoDB & S3)     │
-│  - Không có module tự học            │     │  harness-cli v0.1.14) │             │ (100.124.36.46:     │
+│  - Không có module tự học            │     │  harness-cli v0.1.14) │             │ (127.0.0.1:     │
 │  - Không có mô hình quyết định Kev   │     │                       │             │  14566)             │
 │  - State machine chạy thủ công       │     │ • harness supervise   │             │                     │
 │  - Tốn thời gian duyệt task nhỏ      │     │   (Kev System One)    │             │ • Global Backlog    │
@@ -72,7 +72,7 @@ HIỆN TẠI (Legacy Python Architecture)            MỤC TIÊU NÂNG CẤP (Hy
 
 ### 3.2. Khối 2: PM Agent - Cố Vấn Quyết Định Ngầm Đánh Giá Khả Thi & Phù Hợp
 
-PM Agent đóng vai trò là "bộ não cố vấn định lượng" cho Supervisor và Lead Dev, sử dụng động cơ Kev System One (`http://100.124.36.46:8008/v1/systemone`) để đánh giá 2 trụ cột sống còn trước khi công việc bắt đầu:
+PM Agent đóng vai trò là "bộ não cố vấn định lượng" cho Supervisor và Lead Dev, sử dụng động cơ Kev System One (`http://127.0.0.1:8008/v1/systemone`) để đánh giá 2 trụ cột sống còn trước khi công việc bắt đầu:
 
 #### A. Trụ Cột 1: Đánh Giá Mức Độ Khả Thi Kỹ Thuật (Feasibility Assessment)
 - **Câu hỏi Kev**: `feasibility_rating` (`score` 0..3)
@@ -208,7 +208,7 @@ Hệ thống thiết lập **Vòng lặp học tập khép kín 2 chiều** đ�
 ### 3.5. Khối 5: Khảo Sát & Thiết Kế Bảng Lưu Trữ Học Tập (Learning Database Architecture)
 
 #### A. Kết Quả Khảo Sát Thực Tế Các Bảng Hiện Hữu
-Đã thực thi truy vấn trực tiếp trên endpoint Floci DynamoDB (`http://100.124.36.46:14566`):
+Đã thực thi truy vấn trực tiếp trên endpoint Floci DynamoDB (`http://127.0.0.1:14566`):
 ```text
 === FLOCI DYNAMODB TABLES SURVEY ===
 1. harness_work_items   : 4044 items (Keys: ['id'])
@@ -362,13 +362,13 @@ User định hướng sẽ **mở mã nguồn công khai (Open-Source / Public R
 
 #### A. Các Vùng Dữ Liệu Cấm Tuyệt Đối (Zero-Leak Boundary)
 1. **API Specs Tính Năng Của Dự Án Đang Dev**:
-   - Nghiêm cấm đưa vào commit/push bất kỳ file spec nào chứa API endpoints nội bộ của các dự án con đang phát triển (`projects/wicx-crm-fe`, WiOnPOS customer API, multi-tenant shop APIs, CRM gateway endpoints).
+   - Nghiêm cấm đưa vào commit/push bất kỳ file spec nào chứa API endpoints nội bộ của các dự án con đang phát triển (`projects/demo-crm-fe`, Demo-POS customer API, multi-tenant shop APIs, CRM gateway endpoints).
 2. **Nghiệp Vụ & Luồng Frontend (Frontend Business Flows)**:
    - Nghiêm cấm lộ các tài liệu mô tả chi tiết logic thanh toán khách hàng, sơ đồ luồng dữ liệu nghiệp vụ (Customer 360 flows, thẻ thành viên, chương trình khuyến mãi riêng tư của khách hàng).
 3. **Danh Tính Doanh Nghiệp & Địa Chỉ Thực Tế**:
    - Zero địa chỉ thực tế (tên đường, quận huyện, lô khu công nghiệp), zero mã số thuế, email nhân sự, domain nội bộ (`*.dev.example.com`, `tfs.*`).
 4. **Mã Nguồn Các Dự Án Con (Sub-Projects Isolation)**:
-   - Thư mục `projects/` (`wicx-crm-fe`, `Aevum`, `harness2`, `harness`) là các repo độc lập, BẮT BUỘC duy trì trong `.gitignore`, cấm `git add` vào `Room_Agent`.
+   - Thư mục `projects/` (`demo-crm-fe`, `Aevum`, `harness2`, `harness`) là các repo độc lập, BẮT BUỘC duy trì trong `.gitignore`, cấm `git add` vào `Room_Agent`.
 
 #### B. Cơ Chế Hoạt Động Của Security Sentinel Agent (`profiles/security_sentinel.md`)
 - **Vai trò**: Cảnh vệ an ninh độc lập có quyền **VETO tuyệt đối** (chặn đứng mọi hành vi commit/push).
@@ -462,7 +462,7 @@ Nâng cấp chính thức mô hình điều hành từ **SLPC** lên **SLPPC** (
 #### B. Cơ Chế Watchdog Giám Sát Tự Động (`tools/slppc_flow_guard.py`)
 Tự động kích hoạt qua Heartbeat hoặc Cron định kỳ nhằm ngăn chặn tình trạng sai lệch quy trình:
 1. **Chặn Lead ôm code (`role_trespass`)**:
-   - Khi Lead Dev tự ý gõ code sửa mã nguồn sản phẩm (`projects/wicx-crm-fe`, `crates/harness-cli/src`) thay vì phân rã giao cho Peer:
+   - Khi Lead Dev tự ý gõ code sửa mã nguồn sản phẩm (`projects/demo-crm-fe`, `crates/harness-cli/src`) thay vì phân rã giao cho Peer:
    - Hệ thống lập tức tự động lập biên bản kỷ luật trong `bmad/rooms/violations/` và gửi cảnh báo tới Supervisor.
 2. **Chặn bỏ qua cổng PM (`pm_bypass`)**:
    - Phát hiện task được kích hoạt mà chưa qua đánh giá Feasibility / Alignment của PM Agent.
@@ -539,7 +539,7 @@ Giai đoạn 1: Decommission UI & Binary  Giai đoạn 2: Cloud DB & Bridge     
 ## 5. Tiêu Chuẩn Nghiệm Thu Định Lượng (Acceptance Criteria)
 
 1. **AC-1 (Binary Integrity)**: Binary `scripts/bin/harness-cli` thực thi thành công trên môi trường Linux Ubuntu x64, trả về version `0.1.14`.
-2. **AC-2 (Sub-50ms Supervision)**: Lệnh `supervise evaluate` qua Tailscale tới `http://100.124.36.46:8008/v1/systemone` trả về kết quả traffic-light hợp lệ với model `kev-latest`.
+2. **AC-2 (Sub-50ms Supervision)**: Lệnh `supervise evaluate` qua Tailscale tới `http://127.0.0.1:8008/v1/systemone` trả về kết quả traffic-light hợp lệ với model `kev-latest`.
 3. **AC-3 (Closed-Loop Learning)**: Bản ghi bài học được lưu thành công vào SQLite `harness_experience` và đồng bộ lên Floci DynamoDB `harness_experience`, truy vấn $O(1)$ qua domain.
 4. **AC-4 (Complete Decommissioning of `harness-ui`)**: Thư mục `harness-ui/`, workflow `.github/workflows/docker-harness-ui.yml` được xóa bỏ sạch sẽ 100%, Jenkinsfile và `harness_doctor.py` không còn code thừa.
 5. **AC-5 (Zero Regression)**: Toàn bộ hệ thống quản trị hiện tại (Floci DynamoDB, 8 agent terminals trên Orca, Aevum Kanban) hoạt động ổn định, không bị đứt gãy kết nối.

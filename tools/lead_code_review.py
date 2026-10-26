@@ -94,7 +94,7 @@ def analyze_code_quality(diff_text: str) -> dict[str, Any]:
                     "file": current_file,
                     "severity": "ERROR",
                     "category": "TDS_TEST_ID_VIOLATION",
-                    "detail": "Phát hiện hardcode attribute `tds-test-id` hoặc `data-testid`. Bắt buộc dùng directive `tdsTestId` từ `@wicx/core`.",
+                    "detail": "Phát hiện hardcode attribute `tds-test-id` hoặc `data-testid`. Bắt buộc dùng directive `tdsTestId` từ `@demo/core`.",
                 })
             m_index = array_index_testid_regex.search(line)
             if m_index:
@@ -117,7 +117,7 @@ def analyze_code_quality(diff_text: str) -> dict[str, Any]:
 
 def main():
     parser = argparse.ArgumentParser(description="Lead Dev Continuous Code Review Tool")
-    parser.add_argument("--repo-dir", default=str(BASE_DIR / "projects" / "wicx-crm-fe"), help="Target repository directory to review")
+    parser.add_argument("--repo-dir", default=str(BASE_DIR / "projects" / "demo-crm-fe"), help="Target repository directory to review")
     parser.add_argument("--task-id", type=int, help="Optional Harness Work Item ID")
     parser.add_argument("--json", action="store_true", help="Print verdict as JSON")
     args = parser.parse_args()

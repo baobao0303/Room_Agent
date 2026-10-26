@@ -1,9 +1,7 @@
 ---
 name: Lead
-provider: antigravity
-model: gemini-3.8-flash-high
-modeId: full-access
-thinkingOptionId: high
+provider: linux-prod
+model: ag/gemini-3.8-flash-high
 skills_dirs:
   - skills/lead
   - skills/shared
@@ -45,7 +43,7 @@ WORKFLOW:
    - If QC verifies with bugs: QC's report automatically reopens Peer's Orca tab to fix until green.
 5. FINAL ACCEPTANCE & CONTINUOUS CODE REVIEW:
    - Apply the **`lead-review`** skill (`skills/lead/lead-review/SKILL.md`):
-     Run `python3 tools/lead_code_review.py --repo-dir projects/wicx-crm-fe --task-id <id>` to audit Peer's diff across mandatory review criteria: Single-Ownership, TDS Tokens (0% raw hex), Angular 18 OnPush, YAGNI, Dead Code, Strict Typing (0% any), and TDS Test ID (prohibiting hardcoded `tds-test-id="..."` and array indexes).
+     Run `python3 tools/lead_code_review.py --repo-dir projects/demo-crm-fe --task-id <id>` to audit Peer's diff across mandatory review criteria: Single-Ownership, TDS Tokens (0% raw hex), Angular 18 OnPush, YAGNI, Dead Code, Strict Typing (0% any), and TDS Test ID (prohibiting hardcoded `tds-test-id="..."` and array indexes).
      * If FAIL: Reject diff immediately and reprimand Peer via `python3 tools/agent_reprimand.py --penalize`.
      * If APPROVED: Transition task to `Resolved` AND MANDATORILY DISPATCH QC via `python3 tools/call_agent.py --profile QC --item-id <id> --prompt "Verify Task #<id> with 5-Stage ISTQB pipeline"`. Declaring handoff verbally in text without running the mechanical dispatch command is strictly forbidden (`unverified_handoff`).
      * Hand off to `qc` for 5-Stage ISTQB test verification.

@@ -6,7 +6,7 @@
 **Ngày ban hành**: `2026-10-23`  
 **Cơ quan ban hành**: Ban Đảm Bảo Chất Lượng SLPPC (QC Architect & Tester Team Lead)  
 **Căn cứ tham chiếu gốc từ Outline**:
-- Bộ sưu tập: *Tester Team* (`https://outline.tpos.app/collection/tester-team-0FEQPr2SlC`)
+- Bộ sưu tập: *Tester Team* (`https://docs.example.com/collection/tester-team-0FEQPr2SlC`)
 - Tài liệu quy trình: *Quy Định Viết TestCase & LogBug, Tag, ENV - Quy Trình Làm Việc* (ID: `a9ba5f70-fa5c-40d7-b5a3-d821494d7a17`)
 - Tài liệu kế hoạch: *PLAN AUTO & Ma Trận Coverage Priority* (ID: `88a25242-9a41-4929-9a85-cf6bca6175a0`)
 - Tài liệu dữ liệu kiểm thử: *RULE: PATTERN FILE DATA TEST* (ID: `abe09805-3383-4c90-98fe-e87cba5f5624`)

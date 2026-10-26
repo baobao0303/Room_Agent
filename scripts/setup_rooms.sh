@@ -72,9 +72,10 @@ if [ "$MODE" = "--clean" ] || [ "$MODE" = "--recreate" ] || [ "$MODE" = "--teard
             for h in $HANDLES; do
                 if [ -n "$h" ]; then
                     echo "   🛑 Đóng terminal $h trong room-$role..."
-                    orca terminal close --terminal "$h" --json >/dev/null 2>&1 || true
+                    orca terminal close --terminal "$h" --tab --json >/dev/null 2>&1 || true
                 fi
             done
+            orca terminal close --worktree "room-$role" --all --json >/dev/null 2>&1 || true
         done
 
         # Xoá worktrees trên Orca
@@ -169,6 +170,12 @@ for i in "${!ROLES[@]}"; do
 - Status: Ready for Task.
 EOF
         echo "   ✓ Tạo memo khởi tạo: bmad/rooms/$role/latest_handoff.md"
+    fi
+
+    # Liên kết symlink .agents sang child worktree
+    if [ -d "$target_path" ]; then
+        [ ! -e "$target_path/.agents" ] && ln -s "$ROOT_DIR/.agents" "$target_path/.agents" 2>/dev/null || true
+        echo "   ✓ Đồng bộ symlink: .agents/ vào $room_name"
     fi
     echo ""
 done

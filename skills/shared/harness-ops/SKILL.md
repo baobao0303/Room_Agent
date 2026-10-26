@@ -27,7 +27,7 @@ Kích hoạt skill này khi:
 
 ## 2. Thống kê hệ thống hiện tại (Floci DynamoDB & Local Fallback DB)
 
-- **Cơ chế Lưu trữ Kép (Dual-Mode Resilient Storage)**: `tools/floci_client.py` tự động kiểm tra kết nối TCP (`0.4s`) tới Floci (`100.124.36.46:14566`) và tự động chuyển sang cơ sở dữ liệu dự phòng `.harness_local_db.json` nếu Floci offline, đảm bảo tốc độ phản hồi tức thì.
+- **Cơ chế Lưu trữ Kép (Dual-Mode Resilient Storage)**: `tools/floci_client.py` tự động kiểm tra kết nối TCP (`0.4s`) tới Floci (`127.0.0.1:14566`) và tự động chuyển sang cơ sở dữ liệu dự phòng `.harness_local_db.json` nếu Floci offline, đảm bảo tốc độ phản hồi tức thì.
 - **Dashboard Trực quan (Stitch Obsidian Cyber-Matrix)**: `http://127.0.0.1:8765/harness_dashboard.html` (xem chi tiết tại skill `skills/supervisor/slpc-control-center/SKILL.md`).
 
 ```text

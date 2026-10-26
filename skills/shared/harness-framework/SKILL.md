@@ -119,7 +119,7 @@ projects/harness/crates/harness-cli/src/
 
 ### 3.1. Cấu hình Mặc định (Zero-Config Defaults)
 Mã nguồn Rust trong `infrastructure/jev.rs` đã tích hợp sẵn giá trị mặc định qua mạng Tailscale nội bộ:
-- **Endpoint**: `http://100.124.36.46:8008/v1/systemone`
+- **Endpoint**: `http://127.0.0.1:8008/v1/systemone`
 - **Model**: `kev-latest`
 - Chạy trực tiếp out-of-the-box mà **không cần file `.env`**.
 

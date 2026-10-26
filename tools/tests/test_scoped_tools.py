@@ -13,12 +13,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 PROFILES_DIR = BASE_DIR / "profiles"
 
 ROLE_SCOPED_TOOLS = {
-    "supervisor": ["tools/harness_manager.py", "tools/agent_progress.py", "tools/call_agent.py", "tools/bmad_promote.py"],
+    "supervisor": ["tools/harness_manager.py", "tools/agent_progress.py", "tools/call_agent.py", "tools/bmad_promote.py", "scripts/anti_leak_sentinel.py"],
     "pm": ["skills/pm/systemone/systemone.py", "tools/harness_manager.py", "tools/agent_progress.py"],
     "lead": ["tools/harness_learning_search.py", "tools/lead_code_review.py", "tools/bmad_promote.py", "tools/harness_manager.py"],
     "peer": ["patch", "write_file", "terminal", "tools/agent_progress.py"],
     "qc": ["tools/qc_test_generator.py", "tools/slppc_flow_guard.py", "tools/strict_typing_scanner.py", "tools/bmad_promote.py", "tools/harness_manager.py"],
-    "security_sentinel": ["scripts/anti_leak_sentinel.py", "tools/slppc_flow_guard.py"],
 }
 
 
@@ -59,7 +58,7 @@ class TestScopedTools(unittest.TestCase):
     """Test Per-Role Scoped Tool Surfaces and strict role boundaries."""
 
     def test_all_profiles_exist(self):
-        for role_file in ["supervisor.md", "pm.md", "lead.md", "peer.md", "qc.md", "security_sentinel.md"]:
+        for role_file in ["supervisor.md", "pm.md", "lead.md", "peer.md", "qc.md"]:
             p = PROFILES_DIR / role_file
             self.assertTrue(p.is_file(), f"Profile {role_file} must exist")
 

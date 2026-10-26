@@ -3,11 +3,11 @@
 scripts/agent_start.py - All-in-One CLI để quản lý, khởi chạy và giám sát các Agent SLPPC.
 
 Sử dụng:
-  ./agent-start                 Khởi chạy toàn bộ phòng multi-agent (idempotent, không mở trùng)
-  ./agent-start <role>          Khởi chạy một agent cụ thể (pm, lead, peer, peer2, peer3, peer4, design, qc)
-  ./agent-start status          Xem trạng thái chi tiết của tất cả các Agent và nhịp tim
-  ./agent-start restart         Khởi động lại toàn bộ các Agent
-  ./agent-start stop [role]     Đóng tab của agent (hoặc tất cả nếu dùng --all)
+  ./cli/agent-start                 Khởi chạy toàn bộ phòng multi-agent (idempotent, không mở trùng)
+  ./cli/agent-start <role>          Khởi chạy một agent cụ thể (pm, lead, peer, peer2, peer3, peer4, design, qc)
+  ./cli/agent-start status          Xem trạng thái chi tiết của tất cả các Agent và nhịp tim
+  ./cli/agent-start restart         Khởi động lại toàn bộ các Agent
+  ./cli/agent-start stop [role]     Đóng tab của agent (hoặc tất cả nếu dùng --all)
 """
 from __future__ import annotations
 
@@ -36,28 +36,12 @@ AGENTS = {
         "kiểm soát AC và kiểm tra bẫy lỗi cũ từ Harness Learn."
     ),
     "lead": (
-        "[Lead Dev] Architect & PM. "
-        "Chuyên trách kiến trúc, phân rã task và review code qua 5 tiêu chí."
+        "[Lead Dev] Technical Architect. "
+        "Chuyên trách kiến trúc, phân rã task chuẩn Zero-Search và review code qua 7 tiêu chí."
     ),
     "peer": (
-        "[Peer Dev 1] Code Executor. "
-        "Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ),
-    "peer2": (
-        "[Peer Dev 2] Code Executor. "
-        "Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ),
-    "peer3": (
-        "[Peer Dev 3] Code Executor. "
-        "Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ),
-    "peer4": (
-        "[Peer Dev 4] Code Executor. "
-        "Chuyên trách thực thi task mã nguồn theo điều phối của Lead."
-    ),
-    "design": (
-        "[Peer Design] UI/UX & Tokens. "
-        "Chuyên trách tra cứu token TDS, Figma node mapping, SCSS/CSS design tokens."
+        "[Peer Dev] Code & UI Executor. "
+        "Chuyên trách thực thi mã nguồn Full-Stack, ánh xạ Figma/TDS UI tokens và nộp Resolved theo điều phối của Lead."
     ),
     "qc": (
         "[QC] 5-Stage ISTQB Verifier. "
@@ -68,12 +52,8 @@ AGENTS = {
 TITLES = {
     "supervisor": "[Supervisor] Scope & Intent Guard",
     "pm": "[PM] Feasibility & Alignment",
-    "lead": "[Lead Dev] Architect & PM",
-    "peer": "[Peer Dev 1] Code Executor",
-    "peer2": "[Peer Dev 2] Code Executor",
-    "peer3": "[Peer Dev 3] Code Executor",
-    "peer4": "[Peer Dev 4] Code Executor",
-    "design": "[Peer Design] UI/UX & Tokens",
+    "lead": "[Lead Dev] Technical Architect",
+    "peer": "[Peer Dev] Code & UI Executor",
     "qc": "[QC] 5-Stage ISTQB Verifier",
 }
 
@@ -81,11 +61,7 @@ MODELS = {
     "supervisor": "ag/gemini-3.8-flash-high",
     "pm": "ag/gemini-3.8-flash-high",
     "lead": "ag/gemini-3.8-flash-high",
-    "peer": "ag/gemini-3.8-flash-medium",
-    "peer2": "ag/gemini-3.8-flash-low",
-    "peer3": "ag/gemini-3.8-flash-high",
-    "peer4": "ag/gemini-4-argon-high",
-    "design": "ag/gemini-3.8-flash-high",
+    "peer": "ag/gemini-3.8-flash-high",
     "qc": "ag/gemini-3.8-flash-high",
 }
 
@@ -93,16 +69,20 @@ REASONINGS = {
     "supervisor": "high",
     "pm": "high",
     "lead": "high",
-    "peer": "medium",
-    "peer2": "low",
-    "peer3": "high",
-    "peer4": "high",
-    "design": "high",
+    "peer": "high",
     "qc": "high",
 }
 
-PERSISTENT_ROLES = ["supervisor", "pm", "lead"]
-ALL_ROLES = ["supervisor", "pm", "lead", "peer", "peer2", "peer3", "peer4", "design", "qc"]
+PERSISTENT_ROLES = ["supervisor"]
+EPHEMERAL_ROLES = ["pm", "lead", "peer", "qc"]
+ALL_ROLES = ["supervisor", "pm", "lead", "peer", "qc"]
+
+
+def normalize_role(role: str) -> str:
+    r = role.strip().lower()
+    if r in ("peer1", "peer2", "peer3", "peer4", "peer_2", "peer_3", "peer_4", "design", "peer_design", "peer-dev"):
+        return "peer"
+    return r
 
 
 def run_cmd(args: list[str]) -> tuple[int, str]:
@@ -152,21 +132,53 @@ def ensure_orca_ready() -> bool:
     return True
 
 
+def _is_term_in_role_room(t_val: dict, role: str) -> bool:
+    wt_path = (t_val.get("worktreePath") or "").rstrip("/")
+    branch = (t_val.get("branch") or "").rstrip("/")
+    target_room = normalize_role(role)
+    if target_room == "supervisor":
+        return branch in ("main", "refs/heads/main") and "/room-" not in wt_path
+    return wt_path.endswith(f"/room-{target_room}") or branch.endswith(f"room-{target_room}")
+
+
 def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, dict]) -> str:
-    """Khởi chạy 1 role nếu chưa có tab sống."""
+    """Khởi chạy 1 role nếu chưa có tab sống (đảm bảo tối đa 1 agent/room, tự động đóng tab trùng)."""
+    role = normalize_role(role)
+    title = TITLES.get(role, role)
     existing_handle = registry.get(role, {}).get("handle")
-    if existing_handle and existing_handle in live_terms:
-        title = TITLES.get(role, role)
-        print(f"  ⚡ {title} ({role}) đã sẵn sàng (Handle: {existing_handle}).")
-        return existing_handle
+
+    room_matches = [
+        t_val for t_h, t_val in live_terms.items()
+        if _is_term_in_role_room(t_val, role)
+    ]
+    if existing_handle and existing_handle in live_terms and _is_term_in_role_room(live_terms[existing_handle], role):
+        primary_h = existing_handle
+        primary_tab = live_terms[existing_handle].get("tabId") or ""
+    elif room_matches:
+        room_matches.sort(key=lambda x: x.get("lastOutputAt") or 0, reverse=True)
+        primary_h = room_matches[0].get("handle") or ""
+        primary_tab = room_matches[0].get("tabId") or ""
+    else:
+        primary_h = ""
+        primary_tab = ""
+
+    if primary_h:
+        # Đóng mọi terminal dư thừa trong cùng room (--tab)
+        for m in room_matches:
+            mh = m.get("handle")
+            if mh and mh != primary_h:
+                run_cmd(["orca", "terminal", "close", "--terminal", mh, "--tab", "--json"])
+                live_terms.pop(mh, None)
+        registry[role] = {"handle": primary_h, "tabId": primary_tab}
+        save_registry(registry)
+        print(f"  ⚡ {title} ({role}) đã sẵn sàng (Handle: {primary_h}).")
+        return primary_h
 
     prompt = AGENTS[role]
-    title = TITLES.get(role, role)
     print(f"--- 🚀 Đang khởi chạy: {title} ({role}) ---")
 
-    wt_target = "name:main" if role == "supervisor" else (f"name:room-{role}" if role in ("pm", "lead", "peer", "qc") else "active")
-    model = MODELS.get(role)
-    effort = REASONINGS.get(role)
+    target_room = normalize_role(role)
+    wt_target = "name:main" if target_room == "supervisor" else (f"name:room-{target_room}" if target_room in ("pm", "lead", "peer", "qc") else "active")
 
     launch_cmd = [
         "orca", "agent", "launch",
@@ -200,14 +212,11 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         registry[role] = {"handle": handle, "tabId": tab_id}
         save_registry(registry)
 
-        # Dọn dẹp terminal shell mặc định trong worktree nếu có tab thừa
+        # Dọn dẹp terminal shell mặc định hoặc dư thừa trong worktree (--tab)
         current_terms = get_live_terminals()
         for t_h, t_val in current_terms.items():
-            if t_h != handle:
-                wt_path = t_val.get("worktreePath", "").rstrip("/")
-                is_target_wt = (wt_path == str(SCRIPT_DIR).rstrip("/")) if role == "supervisor" else wt_path.endswith(f"/room-{role}")
-                if is_target_wt and not any(v.get("handle") == t_h for k, v in registry.items() if k != role):
-                    run_cmd(["orca", "terminal", "close", "--terminal", t_h, "--json"])
+            if t_h != handle and _is_term_in_role_room(t_val, role):
+                run_cmd(["orca", "terminal", "close", "--terminal", t_h, "--tab", "--json"])
     else:
         print(f"  ⚠️  Không nhận được handle từ Orca cho agent {role}.")
 
@@ -223,17 +232,21 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
     live_terms = get_live_terminals()
 
     print("======================================================================")
-    print("⚡ [SLPPC MULTI-AGENT ROOM - AGENT START CONTROLLER] ⚡")
+    print("⚡ [SLPPC 5-ROOM MULTI-AGENT - AGENT START CONTROLLER] ⚡")
     print("======================================================================")
 
     if target_roles:
-        roles_to_run = [r.lower() for r in target_roles]
+        roles_to_run = []
+        for r in target_roles:
+            nr = normalize_role(r)
+            if nr not in roles_to_run:
+                roles_to_run.append(nr)
     elif launch_all:
         roles_to_run = ALL_ROLES
     else:
         roles_to_run = PERSISTENT_ROLES
-        print("💡 [SLPPC Architecture]: Mặc định khởi chạy các tab thường trực (Supervisor, PM, Lead Dev).")
-        print("   Các vai trò Peer 1..4, Design, QC kích hoạt tự động theo task on-demand (hoặc dùng --all).")
+        print("💡 [SLPPC Architecture]: Mặc định khởi chạy 3 Persistent Agents (Supervisor, PM, Lead).")
+        print("   Các vai trò Ephemeral (Peer, QC) kích hoạt tự động theo task on-demand (hoặc dùng --all).")
 
     for role in roles_to_run:
         if role not in AGENTS:
@@ -257,25 +270,35 @@ def cmd_status() -> int:
         except Exception:
             pass
 
-    print("\n📋 TRẠNG THÁI HIỆN TẠI CỦA CÁC AGENT:")
+    print("\n📋 TRẠNG THÁI HIỆN TẠI CỦA 5 PHÒNG AGENT SLPPC:")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
-    print(f"{'VAI TRÒ (ROLE)':<22} | {'HANDLE':<24} | {'STATUS':<12} | {'MODEL':<24} | {'HEARTBEAT':<12}")
+    print(f"{'VAI TRÒ (ROLE)':<34} | {'HANDLE':<24} | {'STATUS':<12} | {'MODEL':<24} | {'HEARTBEAT':<12}")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
 
-    all_check = ALL_ROLES
-    for role in all_check:
+    for role in ALL_ROLES:
         title = TITLES.get(role, role)
         reg_info = registry.get(role, {})
         handle = reg_info.get("handle", "N/A")
-        is_alive = handle in live_terms
+        is_alive = handle in live_terms and _is_term_in_role_room(live_terms[handle], role)
+        if not is_alive:
+            # Quét trực tiếp theo worktree để không bao giờ bỏ sót terminal đang mở trong room
+            room_matches = [t_val for t_val in live_terms.values() if _is_term_in_role_room(t_val, role)]
+            if room_matches:
+                room_matches.sort(key=lambda x: x.get("lastOutputAt") or 0, reverse=True)
+                handle = room_matches[0].get("handle", "N/A")
+                is_alive = True
+                registry[role] = {"handle": handle, "tabId": room_matches[0].get("tabId") or ""}
+            else:
+                handle = "N/A"
 
         status_str = "🟢 ALIVE" if is_alive else "🔴 STOPPED"
         model = MODELS.get(role, "default")
         hb = hb_data.get(role, {}).get("status", "idle")
         hb_str = f"💓 {hb.upper()}" if is_alive else "—"
 
-        print(f"{title:<22} | {handle:<24} | {status_str:<12} | {model:<24} | {hb_str:<12}")
+        print(f"{title:<34} | {handle:<24} | {status_str:<12} | {model:<24} | {hb_str:<12}")
 
+    save_registry(registry)
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
     return 0
 
@@ -287,21 +310,32 @@ def cmd_stop(target_roles: list[str], stop_all: bool = False) -> int:
     if stop_all:
         roles_to_stop = ALL_ROLES
     elif target_roles:
-        roles_to_stop = [r.lower() for r in target_roles]
+        roles_to_stop = [normalize_role(r) for r in target_roles]
     else:
         print("⚠️ Vui lòng chỉ định vai trò cần dừng, hoặc dùng --all để dừng toàn bộ.")
         return 1
 
     for role in roles_to_stop:
+        title = TITLES.get(role, role)
+        closed_handles = set()
         reg_info = registry.get(role)
-        if not reg_info:
-            continue
-        handle = reg_info.get("handle")
-        if handle and handle in live_terms:
-            title = TITLES.get(role, role)
-            print(f"🛑 Đang đóng {title} ({handle})...")
-            run_cmd(["orca", "terminal", "close", "--terminal", handle, "--json"])
+        if reg_info:
+            handle = reg_info.get("handle")
+            if handle and handle in live_terms:
+                print(f"🛑 Đang đóng {title} ({handle})...")
+                run_cmd(["orca", "terminal", "close", "--terminal", handle, "--tab", "--json"])
+                closed_handles.add(handle)
             registry.pop(role, None)
+
+        # Đóng mọi terminal còn sót trong worktree của role
+        for t_h, t_val in live_terms.items():
+            if t_h not in closed_handles and _is_term_in_role_room(t_val, role):
+                print(f"🛑 Đang đóng {title} ({t_h})...")
+                run_cmd(["orca", "terminal", "close", "--terminal", t_h, "--tab", "--json"])
+                closed_handles.add(t_h)
+
+        if role in ("pm", "lead", "peer", "qc"):
+            run_cmd(["orca", "terminal", "close", "--worktree", f"name:room-{role}", "--all", "--json"])
 
     save_registry(registry)
     print("✅ Đã hoàn tất đóng các tab được chỉ định.")
@@ -309,16 +343,15 @@ def cmd_stop(target_roles: list[str], stop_all: bool = False) -> int:
 
 
 def cmd_clear_ephemerals() -> int:
-    """Đóng tất cả các sub-agent tạm thời (Peer, Design, QC) để chống phình to Context."""
-    ephemeral_roles = ["peer", "peer2", "peer3", "peer4", "design", "qc"]
-    print("🧹 [CONTEXT HYGIENE]: Đang dọn dẹp và đóng tất cả Sub-Agent tạm thời để chống phình to context...")
-    res = cmd_stop(ephemeral_roles)
+    """Đóng tất cả các sub-agent tạm thời (Peer, QC) để chống phình to Context."""
+    print("🧹 [CONTEXT HYGIENE]: Đang dọn dẹp và đóng tất cả Sub-Agent tạm thời (Peer, QC)...")
+    res = cmd_stop(EPHEMERAL_ROLES)
     if shutil.which("orca"):
         try:
             subprocess.run(["python3", str(SCRIPT_DIR / "tools" / "zombie_reaper.py")], capture_output=True, text=True, timeout=5)
         except Exception:
             pass
-    print("✨ Toàn bộ sub-agent tạm thời đã được đóng. Context đưa về trạng thái sạch sẽ, RAM đưa về 0.")
+    print("✨ Toàn bộ sub-agent tạm thời (Peer, QC) đã được đóng. Context đưa về trạng thái sạch sẽ, RAM đưa về 0.")
     return res
 
 
@@ -331,20 +364,20 @@ def cmd_restart(target_roles: list[str]) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Agent Start & Manager CLI cho phòng Multi-Agent SLPPC.",
+        description="Agent Start & Manager CLI cho hệ thống 5-Room SLPPC (Supervisor, PM, Lead, Peer, QC).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ví dụ:
-  ./agent-start                  Khởi chạy toàn bộ phòng multi-agent (PM, Lead thường trực)
-  ./agent-start clear            Đóng toàn bộ Sub-Agent (Peer, QC) để chống phình to Context
-  ./agent-start pm               Khởi chạy riêng PM Agent
-  ./agent-start lead peer qc     Khởi chạy Lead, Peer 1 và QC
-  ./agent-start status           Xem bảng trạng thái chi tiết
-  ./agent-start restart          Khởi động lại toàn bộ
-  ./agent-start stop --all       Đóng tất cả agent
+  ./cli/agent-start                  Khởi chạy 3 Persistent Agents (Supervisor, PM, Lead)
+  ./cli/agent-start clear            Đóng toàn bộ Sub-Agent tạm thời (Peer, QC)
+  ./cli/agent-start pm               Khởi chạy riêng PM Agent
+  ./cli/agent-start lead peer qc     Khởi chạy Lead, Peer và QC
+  ./cli/agent-start status           Xem bảng trạng thái chi tiết 5 phòng
+  ./cli/agent-start restart          Khởi động lại toàn bộ
+  ./cli/agent-start stop --all       Đóng tất cả agent
 """
     )
-    parser.add_argument("roles", nargs="*", help="Tên vai trò (pm, lead, peer, peer2, peer3, peer4, design, qc, status, restart, stop, clear)")
+    parser.add_argument("roles", nargs="*", help="Tên vai trò (supervisor, pm, lead, peer, qc, status, restart, stop, clear)")
     parser.add_argument("--status", action="store_true", help="Xem bảng trạng thái")
     parser.add_argument("--stop", action="store_true", help="Dừng agent")
     parser.add_argument("--all", action="store_true", help="Áp dụng cho tất cả agent")

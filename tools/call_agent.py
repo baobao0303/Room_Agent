@@ -196,7 +196,7 @@ def main():
 
     pre_gen_block = ""
     # Chống nghẽn: Bỏ qua pre-gen 35s nếu là task thi công cụ thể (đã có item_id hoặc role là Peer/QC)
-    should_pre_gen = (not args.skip_pre_gen) and (not args.item_id) and (profile_name.lower() not in ("peer", "peer2", "peer3", "peer4", "qc"))
+    should_pre_gen = (not args.skip_pre_gen) and (not args.item_id) and (profile_name.lower() not in ("peer", "qc"))
     if should_pre_gen:
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -261,7 +261,7 @@ def main():
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parent))
             from orca_slpc_bridge import find_live_terminal_for_role  # type: ignore
-            target_term = find_live_terminal_for_role(profile_name)
+            target_term = find_live_terminal_for_role(profile_name) or find_live_terminal_for_role(target_room)
             if target_term:
                 print_hook_banner("ORCA DIRECT DISPATCH", profile_name, args.item_id, f"{provider}/{model}", sender_role, task_body, thinking_mode=thinking_mode)
                 print(f"🎯 [Orca Direct Dispatch]: Tìm thấy live terminal của {profile_name} ({target_term}). Bắn lệnh trực tiếp...")
@@ -303,10 +303,10 @@ def main():
                         "qc": "[QC] 5-Stage ISTQB Verifier",
                         "design": "[Peer Design] UI/UX & Tokens",
                         "pm": "[PM] Feasibility & Alignment",
-                        "lead": "[Lead Dev] Architect & PM",
+                        "lead": "[Lead Dev] Technical Architect",
                         "supervisor": "[Supervisor] Scope & Intent Guard",
                     }
-                    role_key = "peer" if any(k in clean_name for k in ("peer", "dev")) else ("qc" if "qc" in clean_name else ("design" if "design" in clean_name else clean_name))
+                    role_key = "peer" if any(k in clean_name for k in ("peer", "dev", "design")) else ("qc" if "qc" in clean_name else clean_name)
                     term_title = titles_map.get(role_key, f"[{profile_name}] Sub-Agent")
 
                     if handle:
@@ -324,7 +324,7 @@ def main():
                         reg_file.parent.mkdir(parents=True, exist_ok=True)
                         reg_file.write_text(json.dumps(reg, indent=2), encoding="utf-8")
 
-                        # Dọn dẹp terminal shell mặc định trong room này
+                        # Dọn dẹp terminal shell mặc định hoặc dư thừa trong room này (--tab)
                         try:
                             t_out = subprocess.run(["orca", "terminal", "list", "--json"], capture_output=True, text=True, check=False)
                             if t_out.returncode == 0 and t_out.stdout:
@@ -332,8 +332,8 @@ def main():
                                 for t_item in t_data:
                                     t_h = t_item.get("handle")
                                     is_room_term = t_item.get("worktreePath", "").rstrip("/").endswith(f"/room-{target_room}")
-                                    if t_h and t_h != handle and is_room_term and not any(v.get("handle") == t_h for k, v in reg.items() if k != role_key):
-                                        subprocess.run(["orca", "terminal", "close", "--terminal", t_h, "--json"], capture_output=True, check=False)
+                                    if t_h and t_h != handle and is_room_term:
+                                        subprocess.run(["orca", "terminal", "close", "--terminal", t_h, "--tab", "--json"], capture_output=True, check=False)
                         except Exception:
                             pass
 

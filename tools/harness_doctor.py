@@ -162,15 +162,17 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
 
     healed = None
     if not cfg_valid and auto_heal:
-        patch_script = BASE_DIR / "patch_paseo.py"
+        patch_script = BASE_DIR / "scripts" / "patch_paseo.py"
+        if not patch_script.is_file():
+            patch_script = BASE_DIR / "patch_paseo.py"
         if patch_script.is_file():
             try:
                 subprocess.run([sys.executable, str(patch_script)], check=False, timeout=10)
                 found_roles.update(required_roles)
                 cfg_valid = True
-                healed = _record_heal("paseo_daemon", "Đồng bộ lại 4 profile SLPC qua patch_paseo.py", True)
+                healed = _record_heal("paseo_daemon", "Đồng bộ lại 5 profile SLPPC qua scripts/patch_paseo.py", True)
             except Exception as e:
-                healed = _record_heal("paseo_daemon", "Chạy patch_paseo.py", False, str(e))
+                healed = _record_heal("paseo_daemon", "Chạy scripts/patch_paseo.py", False, str(e))
 
     status = "ok" if (daemon_up and cfg_valid) else ("warn" if cfg_valid else "error")
     summary_parts = [
@@ -189,16 +191,18 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
 
 def check_floci_and_local_db(auto_heal: bool = True) -> Dict[str, Any]:
     """3. Check Floci DynamoDB/S3 (:14566) & Local Store (.harness_local_db.json)."""
-    floci_url = os.environ.get("FLOCI_ENDPOINT", "http://100.124.36.46:14566")
+    floci_url = os.environ.get("FLOCI_ENDPOINT", "http://127.0.0.1:14566")
     parsed = urlparse(floci_url)
-    host = parsed.hostname or "100.124.36.46"
+    host = parsed.hostname or "127.0.0.1"
     port = parsed.port or 14566
 
     t0 = time.time()
     floci_up = _tcp_ping(host, port, timeout=1.0)
     latency_ms = int((time.time() - t0) * 1000)
 
-    local_db_path = BASE_DIR / ".harness_local_db.json"
+    local_db_path = BASE_DIR / ".harness" / "local_db.json"
+    if not local_db_path.is_file() and (BASE_DIR / ".harness_local_db.json").is_file():
+        local_db_path = BASE_DIR / ".harness_local_db.json"
     local_count = 0
     local_ok = False
     healed = None
@@ -296,7 +300,9 @@ def check_codex_room_runtimes(auto_heal: bool = True) -> Dict[str, Any]:
 
 def check_work_items_hygiene(auto_heal: bool = True) -> Dict[str, Any]:
     """5. Check Work Items data hygiene (role profile normalization, source normalization, ISTQB/BDD spec completeness)."""
-    local_db_path = BASE_DIR / ".harness_local_db.json"
+    local_db_path = BASE_DIR / ".harness" / "local_db.json"
+    if not local_db_path.is_file() and (BASE_DIR / ".harness_local_db.json").is_file():
+        local_db_path = BASE_DIR / ".harness_local_db.json"
     if not local_db_path.is_file():
         return {
             "id": "work_items_hygiene",

@@ -74,7 +74,7 @@ export class MyComponent {}
 ```
 
 **Mặc định:**
-- `baseUrl`: `https://static-tds-public-projects.tds.local/assets/empty-state`
+- `baseUrl`: `https://static.design-system.local/assets/empty-state`
 - `fallback`: `default`
 
 ## Service

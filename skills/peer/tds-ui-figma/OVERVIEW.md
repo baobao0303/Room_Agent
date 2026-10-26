@@ -138,9 +138,9 @@ Bao gồm:
 
 | Nguồn | URL |
 |---|---|
-| `themeTokens` | `https://tds.tds.local/assets/tds-design-token/theme.json` |
-| `globalTokens` | `https://tds.tds.local/assets/tds-design-token/global.json` |
-| `aliasTokens` | `https://tds.tds.local/assets/tds-design-token/alias.json` |
+| `themeTokens` | `https://design-system.local/assets/tds-design-token/theme.json` |
+| `globalTokens` | `https://design-system.local/assets/tds-design-token/global.json` |
+| `aliasTokens` | `https://design-system.local/assets/tds-design-token/alias.json` |
 
 Khi muốn cập nhật token mới nhất:
 

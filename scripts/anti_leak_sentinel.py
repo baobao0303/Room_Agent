@@ -40,6 +40,16 @@ FORBIDDEN_CONTENT_PATTERNS = [
         r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----",
         "Private encryption key"
     ),
+    # Tailscale / Private Mesh IPs
+    (
+        r"\b100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b",
+        "Private Tailscale / Carrier-Grade NAT IP address"
+    ),
+    # Hardcoded secret keys
+    (
+        r"\bhermes_secret_key_[a-zA-Z0-9_]+\b",
+        "Hardcoded Hermes secret key"
+    ),
 ]
 
 EXCLUDED_PATHS = {
@@ -50,6 +60,7 @@ EXCLUDED_PATHS = {
     "__pycache__",
     "tools/research", # auto-generated research briefs (gitignored)
     "scripts/anti_leak_sentinel.py", # skip self
+    "bin", # compiled binary tools
 }
 
 def check_git_tracked_memos() -> list[str]:

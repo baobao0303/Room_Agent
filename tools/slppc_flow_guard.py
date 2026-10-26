@@ -121,7 +121,7 @@ def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, 
             content = memo_file.read_text(encoding="utf-8")
             lower = content.lower()
             if ("modified files" in lower or "đã sửa" in lower) and "peer" not in lower:
-                if "crates/harness-cli/src" in content or "apps/app-shell/src" in content or "projects/wicx-crm-fe" in content:
+                if "crates/harness-cli/src" in content or "apps/app-shell/src" in content or "projects/demo-crm-fe" in content:
                     tid_match = re.search(r"#(\d+)", content)
                     violations.append({
                         "file": str(memo_file.relative_to(PROJECT_ROOT)) if memo_file.is_relative_to(PROJECT_ROOT) else memo_file.name,
@@ -361,6 +361,242 @@ def audit_vague_specs(tasks_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     return violations
 
 
+def audit_settlement_verification_gate(
+    ledger_path: Optional[Path] = None,
+    tasks_dir: Optional[Path] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Kiểm tra tính tuân thủ của Dual-Verification Settlement Gate:
+    Bắt buộc mọi task chuyển sang trạng thái Resolved phải có biên bản kiểm định / verification record
+    hợp lệ từ Settlement Gate (git diff audit, execution log exit code 0, ISTQB pass).
+    Chặn đứng hành vi tự khai / bypass settlement gate khi nộp Resolved.
+    """
+    violations: List[Dict[str, Any]] = []
+    l_path = ledger_path if ledger_path is not None else (PROJECT_ROOT / "bmad" / "rooms" / "room_ledger.json")
+    t_dir = tasks_dir if tasks_dir is not None else (l_path.parent / "tasks" if l_path.parent.name == "rooms" else PROJECT_ROOT / "bmad" / "rooms" / "tasks")
+
+    verified_task_ids: set[str] = set()
+
+    # 1. Thu thập danh sách task đã được Settlement Gate kiểm định từ ledger
+    if l_path.is_file():
+        try:
+            data = json.loads(l_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                # Check root-level settlement records / verifications
+                records = data.get("settlement_records") or data.get("settlement_verifications") or data.get("settlements")
+                if isinstance(records, dict):
+                    for tid, rec in records.items():
+                        if isinstance(rec, dict):
+                            if rec.get("verified") is True or str(rec.get("status", "")).upper() in ("VERIFIED", "APPROVED", "PASS", "SUCCESS"):
+                                verified_task_ids.add(str(tid))
+                        elif rec is True or str(rec).upper() in ("VERIFIED", "PASS"):
+                            verified_task_ids.add(str(tid))
+                elif isinstance(records, list):
+                    for rec in records:
+                        if isinstance(rec, dict):
+                            tid = rec.get("task_id") or rec.get("id")
+                            if tid is not None and (rec.get("verified") is True or str(rec.get("status", "")).upper() in ("VERIFIED", "APPROVED", "PASS", "SUCCESS")):
+                                verified_task_ids.add(str(tid))
+
+                # Check recent_events or history for settlement verification records
+                events = data.get("history", []) + data.get("recent_events", [])
+                for ev in events:
+                    if isinstance(ev, dict):
+                        action_str = f"{ev.get('action', '')} {ev.get('event', '')} {ev.get('summary', '')}".lower()
+                        if "settlement" in action_str and ("verif" in action_str or "pass" in action_str or "approved" in action_str or ev.get("settlement_verified") is True):
+                            tid = ev.get("task_id")
+                            if tid is not None:
+                                verified_task_ids.add(str(tid))
+                            else:
+                                m = re.search(r"#(\d+)", action_str)
+                                if m:
+                                    verified_task_ids.add(m.group(1))
+                        elif ev.get("settlement_verified") is True:
+                            tid = ev.get("task_id")
+                            if tid is not None:
+                                verified_task_ids.add(str(tid))
+        except Exception:
+            pass
+
+    # 2. Thu thập danh sách task đã kiểm định từ disk (nếu có settlement.json hoặc settlement_verification.json)
+    if t_dir.is_dir():
+        for t_folder in t_dir.iterdir():
+            if not t_folder.is_dir():
+                continue
+            tid = t_folder.name
+            for s_name in ("settlement_verification.json", "settlement.json", "settlement_gate.json"):
+                s_file = t_folder / s_name
+                if s_file.is_file():
+                    try:
+                        s_data = json.loads(s_file.read_text(encoding="utf-8"))
+                        if isinstance(s_data, dict) and (s_data.get("verified") is True or str(s_data.get("status", "")).upper() in ("VERIFIED", "APPROVED", "PASS", "SUCCESS")):
+                            verified_task_ids.add(str(tid))
+                    except Exception:
+                        pass
+
+    # 3. Quét kiểm tra các task chuyển sang Resolved trong ledger_path
+    if l_path.is_file():
+        try:
+            data = json.loads(l_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                # 3a. Quét trong history
+                for ev in data.get("history", []):
+                    if not isinstance(ev, dict):
+                        continue
+                    summary = str(ev.get("summary", ""))
+                    summary_lower = summary.lower()
+                    action = str(ev.get("action", "")).lower()
+                    state = str(ev.get("state", "")).lower()
+                    to_state = str(ev.get("to_state", "")).lower()
+                    status = str(ev.get("status", "")).lower()
+
+                    is_resolved = (
+                        state == "resolved"
+                        or to_state == "resolved"
+                        or status == "resolved"
+                        or action in ("resolve", "resolved", "submit_resolved")
+                        or bool(re.search(r"\b(?:trạng thái|state|status|chuyển sang|nộp|mark(?:ed)?)\s*:?\s*resolved\b", summary_lower))
+                    )
+
+                    if is_resolved:
+                        tid = ev.get("task_id")
+                        if not tid:
+                            m = re.search(r"#(\d+)", summary)
+                            if m:
+                                tid = m.group(1)
+                        if tid is not None:
+                            str_tid = str(tid)
+                            # Kiểm tra xem bản thân event này có settlement_verified không
+                            ev_verified = (
+                                ev.get("settlement_verified") is True
+                                or str(ev.get("settlement_gate", "")).upper() in ("VERIFIED", "APPROVED", "PASS")
+                            )
+                            if not ev_verified and str_tid not in verified_task_ids:
+                                violations.append({
+                                    "file": str(l_path.relative_to(PROJECT_ROOT)) if l_path.is_relative_to(PROJECT_ROOT) else str(l_path),
+                                    "evidence": f"Task #{str_tid} chuyển trạng thái Resolved trong history nhưng thiếu biên bản xác thực của Settlement Gate (Dual-Verification Gate bypass)",
+                                    "task_id": str_tid,
+                                    "type": "settlement_gate_bypass",
+                                })
+
+                # 3b. Quét trong tasks dict (nếu có)
+                tasks_dict = data.get("tasks", {})
+                if isinstance(tasks_dict, dict):
+                    for tid, tinfo in tasks_dict.items():
+                        if isinstance(tinfo, dict) and str(tinfo.get("state", "")).lower() == "resolved":
+                            t_verified = (
+                                tinfo.get("settlement_verified") is True
+                                or str(tinfo.get("settlement_gate", "")).upper() in ("VERIFIED", "APPROVED", "PASS")
+                            )
+                            if not t_verified and str(tid) not in verified_task_ids:
+                                violations.append({
+                                    "file": str(l_path.relative_to(PROJECT_ROOT)) if l_path.is_relative_to(PROJECT_ROOT) else str(l_path),
+                                    "evidence": f"Task #{tid} trong bảng tasks có trạng thái Resolved nhưng thiếu biên bản xác thực của Settlement Gate",
+                                    "task_id": str(tid),
+                                    "type": "settlement_gate_bypass",
+                                })
+        except Exception:
+            pass
+
+    # 4. Quét kiểm tra các task folders trên disk
+    if t_dir.is_dir():
+        for task_folder in t_dir.iterdir():
+            if not task_folder.is_dir():
+                continue
+            tid = task_folder.name
+            candidates = list(task_folder.glob("handoff_*.md"))
+            latest = task_folder / "latest_handoff.md"
+            if latest.is_file():
+                candidates.append(latest)
+
+            for memo in candidates:
+                try:
+                    content = memo.read_text(encoding="utf-8")
+                    lower = content.lower()
+                    if ("trạng thái: resolved" in lower or "state: resolved" in lower or "status: resolved" in lower) and "chờ qc" in lower:
+                        is_doc_verified = (
+                            "settlement gate: verified" in lower
+                            or "settlement gate: approved" in lower
+                            or "settlement: pass" in lower
+                            or "settlement_verified: true" in lower
+                        )
+                        if not is_doc_verified and str(tid) not in verified_task_ids:
+                            violations.append({
+                                "file": str(memo.relative_to(PROJECT_ROOT)) if memo.is_relative_to(PROJECT_ROOT) else memo.name,
+                                "evidence": f"Task #{tid} tại {memo.name} nộp trạng thái Resolved nhưng thiếu biên bản kiểm định Settlement Gate",
+                                "task_id": str(tid),
+                                "type": "settlement_gate_bypass",
+                            })
+                except Exception:
+                    pass
+
+    # Deduplicate theo (type, task_id, file)
+    seen = set()
+    deduped = []
+    for v in violations:
+        key = (v.get("type"), str(v.get("task_id")), v.get("file"))
+        if key not in seen:
+            seen.add(key)
+            deduped.append(v)
+
+    return deduped
+
+
+def audit_circuit_breaker(
+    ledger_path: Optional[Path] = None,
+    rooms_dir: Optional[Path] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Kiểm tra trạng thái Supervisor Circuit Breaker:
+    Nếu Circuit Breaker đang ở trạng thái TRIPPED hoặc OPEN (>= 6 lỗi/15m),
+    cảnh báo vi phạm để ngăn sub-agent tiếp tục spawn gây lãng phí tài nguyên và cascade failure.
+    """
+    violations: List[Dict[str, Any]] = []
+    l_path = ledger_path if ledger_path is not None else (PROJECT_ROOT / "bmad" / "rooms" / "room_ledger.json")
+    r_dir = rooms_dir if rooms_dir is not None else (l_path.parent if l_path.is_file() else PROJECT_ROOT / "bmad" / "rooms")
+
+    # 1. Check in ledger
+    if l_path.is_file():
+        try:
+            data = json.loads(l_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                cb = data.get("circuit_breaker")
+                if isinstance(cb, dict):
+                    state = str(cb.get("state", "")).upper()
+                    tripped = cb.get("tripped") is True
+                    fail_count = cb.get("failure_count", 0)
+                    if state in ("TRIPPED", "OPEN") or tripped or (isinstance(fail_count, int) and fail_count >= 6):
+                        violations.append({
+                            "file": str(l_path.relative_to(PROJECT_ROOT)) if l_path.is_relative_to(PROJECT_ROOT) else str(l_path),
+                            "evidence": f"Supervisor Circuit Breaker đang ở trạng thái {state or 'TRIPPED'} (failures: {fail_count}/6, backoff: {cb.get('backoff_seconds', 'N/A')}s)",
+                            "task_id": cb.get("task_id"),
+                            "type": "circuit_breaker_tripped",
+                        })
+        except Exception:
+            pass
+
+    # 2. Check in circuit_breaker.json
+    cb_file = r_dir / "circuit_breaker.json"
+    if cb_file.is_file():
+        try:
+            cb_data = json.loads(cb_file.read_text(encoding="utf-8"))
+            if isinstance(cb_data, dict):
+                state = str(cb_data.get("state", "")).upper()
+                tripped = cb_data.get("tripped") is True
+                fail_count = cb_data.get("failure_count", 0)
+                if state in ("TRIPPED", "OPEN") or tripped or (isinstance(fail_count, int) and fail_count >= 6):
+                    violations.append({
+                        "file": str(cb_file.relative_to(PROJECT_ROOT)) if cb_file.is_relative_to(PROJECT_ROOT) else str(cb_file),
+                        "evidence": f"Supervisor Circuit Breaker tại {cb_file.name} đang ở trạng thái {state or 'TRIPPED'} (failures: {fail_count}/6, backoff: {cb_data.get('backoff_seconds', 'N/A')}s)",
+                        "task_id": cb_data.get("task_id"),
+                        "type": "circuit_breaker_tripped",
+                    })
+        except Exception:
+            pass
+
+    return violations
+
+
 def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
     """Chạy toàn bộ các chốt chặn kiểm tra quy trình SLPPC."""
     results = {
@@ -490,15 +726,67 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
+    # 6. Kiểm tra Settlement Verification Gate (Task Resolved bắt buộc có record verification của Settlement Gate)
+    settlement_bypasses = audit_settlement_verification_gate()
+    for v in settlement_bypasses:
+        results["violations_detected"] += 1
+        v_info = {
+            "from": "QC",
+            "to": "Peer",
+            "type": "settlement_gate_bypass",
+            "evidence": v["evidence"],
+            "task_id": v.get("task_id"),
+            "message": "Task chuyển trạng thái Resolved mà thiếu biên bản xác thực kiểm định 2 chiều của Settlement Gate.",
+        }
+        results["violations_list"].append(v_info)
+        if auto_record:
+            path = record_violation_minute(
+                from_role="QC",
+                to_role="Peer",
+                violation_type="settlement_gate_bypass",
+                task_id=v.get("task_id"),
+                evidence=v["evidence"],
+                message=v_info["message"],
+            )
+            results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
+
+    # 7. Kiểm tra Circuit Breaker State
+    cb_trips = audit_circuit_breaker()
+    for v in cb_trips:
+        results["violations_detected"] += 1
+        v_info = {
+            "from": "Supervisor",
+            "to": "Supervisor",
+            "type": "circuit_breaker_tripped",
+            "evidence": v["evidence"],
+            "task_id": v.get("task_id"),
+            "message": "Supervisor Circuit Breaker ở trạng thái TRIPPED/OPEN do tỷ lệ lỗi vượt ngưỡng (>=6 lỗi/15m).",
+        }
+        results["violations_list"].append(v_info)
+        if auto_record:
+            path = record_violation_minute(
+                from_role="Supervisor",
+                to_role="Supervisor",
+                violation_type="circuit_breaker_tripped",
+                task_id=v.get("task_id"),
+                evidence=v["evidence"],
+                message=v_info["message"],
+            )
+            results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
+
     if results["violations_detected"] > 0:
         results["status"] = "violations_found"
 
     return results
 
 
+# Alias for run_slppc_audit
+run_audit = run_slppc_audit
+
+
 def main():
     parser = argparse.ArgumentParser(description="SLPPC Flow Guard & Violation Auditor")
-    parser.add_argument("command", nargs="?", default="audit", choices=["audit", "hygiene"], help="Action to run: 'audit' (default) or 'hygiene'")
+    parser.add_argument("command", nargs="?", default="audit", choices=["audit", "hygiene", "settlement"], help="Action to run: 'audit' (default), 'hygiene', or 'settlement'")
     parser.add_argument("--record", action="store_true", default=True, help="Tự động ghi biên bản vi phạm vào bmad/rooms/violations/")
     parser.add_argument("--json", action="store_true", help="Xuất kết quả JSON")
     args = parser.parse_args()
@@ -516,6 +804,22 @@ def main():
             print(f"  {idx}. [{iss.get('type')}] {iss.get('evidence')}")
         if not issues:
             print("✅ PASS: 100% đạt chuẩn Ephemeral Room Hygiene (Zero-Leak, FIFO <= 50, Single-Pointer).")
+        print("=" * 75)
+        sys.exit(0 if not issues else 1)
+
+    if args.command == "settlement":
+        issues = audit_settlement_verification_gate()
+        if args.json:
+            print(json.dumps({"settlement_violations": issues, "count": len(issues)}, indent=2, ensure_ascii=False))
+            sys.exit(0 if not issues else 1)
+        print("=" * 75)
+        print("⚖️ SETTLEMENT VERIFICATION GATE AUDIT")
+        print("=" * 75)
+        print(f"• Số lượng vi phạm: {len(issues)}")
+        for idx, iss in enumerate(issues, 1):
+            print(f"  {idx}. [{iss.get('type')}] Task #{iss.get('task_id')}: {iss.get('evidence')}")
+        if not issues:
+            print("✅ PASS: 100% các task Resolved đều có xác thực hợp lệ từ Settlement Gate.")
         print("=" * 75)
         sys.exit(0 if not issues else 1)
 

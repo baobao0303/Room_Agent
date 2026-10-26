@@ -179,8 +179,8 @@ def mark_ready_for_user_review(task_id: int | str, qc_verdict: str = "PASS 100%"
         )
         print(f"\n🔔 [USER REVIEW REQUIRED]: Task #{task_id} đã được QC chứng nhận {qc_verdict}.")
         print(f"👉 Mời bạn click vào thẻ '{wt.get('displayName')}' trên Orca Desktop để xem Git Diff.")
-        print(f"👉 Chạy lệnh duyệt: ./orca-review approve {task_id}")
-        print(f"👉 Chạy lệnh trả về: ./orca-review reject {task_id} --reason '<lý do>'\n")
+        print(f"👉 Chạy lệnh duyệt: ./cli/orca-review approve {task_id}")
+        print(f"👉 Chạy lệnh trả về: ./cli/orca-review reject {task_id} --reason '<lý do>'\n")
         return True
     return False
 

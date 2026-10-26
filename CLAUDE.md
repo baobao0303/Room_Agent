@@ -97,7 +97,7 @@
     <description>Kích hoạt toàn bộ vòng đời SLPPC 5 cổng (PM -> Lead -> Peer -> QC) tự hành bằng 1 lệnh.</description>
     <instructions>
       Kích hoạt pipeline tự động kép (Kev Dual-Anchor):
-      Chạy `./trigger-flow "<Nhiệm vụ>"` hoặc `python3 scripts/run_pipeline.py "<Nhiệm vụ>"`.
+      Chạy `./cli/trigger-flow "<Nhiệm vụ>"` hoặc `python3 scripts/run_pipeline.py "<Nhiệm vụ>"`.
       Pipeline sẽ tự động: (1) PM thẩm định Feasibility qua Kev System One (<50ms), (2) Lead bóc tách Zero-Search Task, (3) Spawn Ephemeral Peer Dev tab và thi công, (4) Ephemeral Auto-Close Peer và spawn QC chạy test ISTQB 5-Stage, (5) Auto-Close QC và báo cáo hoàn tất cho Supervisor.
     </instructions>
   </command>
@@ -106,9 +106,9 @@
     <description>Quản trị Orca Worktree cô lập và Phê duyệt/Từ chối Merge sau khi xem Git Diff.</description>
     <instructions>
       Quản lý Human-in-the-Loop Review Gate:
-      - Xem danh sách worktree: `./orca-review list`
-      - Duyệt và merge vào branch chính: `./orca-review approve <task_id>`
-      - Từ chối kèm góp ý sửa: `./orca-review reject <task_id> --reason "<nội_dung>"`
+      - Xem danh sách worktree: `./cli/orca-review list`
+      - Duyệt và merge vào branch chính: `./cli/orca-review approve <task_id>`
+      - Từ chối kèm góp ý sửa: `./cli/orca-review reject <task_id> --reason "<nội_dung>"`
     </instructions>
   </command>
   <command>
@@ -136,7 +136,7 @@
   - Khi Lead Dev phân rã xong Zero-Search Task, plugin tự động spawn Ephemeral Peer Sub-Agent tab gắn `profiles/peer.md`.
   - Khi Peer nộp `Resolved`, plugin tự động đóng tab Peer (đưa RAM về 0) và spawn Ephemeral QC tab gắn `profiles/qc.md`.
   - Khi QC nghiệm thu đạt chuẩn và chuyển task sang `Closed`, plugin tự động đóng tab QC, nén dọn artifacts vào `bmad/rooms/archive/`, và bắn thông báo hoàn tất về Supervisor.
-- Quản trị Agent qua All-in-One CLI: `./agent-start` (mặc định mở 3 tab thường trực: Supervisor, PM, Lead; Peer 1..4, Design, QC là Ephemeral Sub-Agents on-demand).
+- Quản trị Agent qua All-in-One CLI: `./cli/agent-start` (mặc định mở 3 tab thường trực: Supervisor, PM, Lead; Peer 1..4, Design, QC là Ephemeral Sub-Agents on-demand).
 
 # Phân Bổ Model & Reasoning Tier Theo Room
 | Room / Worktree | Role / Tab | Model | Effort | Nhiệm vụ chính |

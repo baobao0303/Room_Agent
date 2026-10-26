@@ -8,9 +8,9 @@ The canonical token files are configured in `references/config/tds-token-sources
 
 | Source | URL | Purpose |
 |---|---|---|
-| `themeTokens` | `https://tds.tds.local/assets/tds-design-token/theme.json` | Theme preset array used to resolve primary/secondary swapping. Supported preset names must be read from this file after sync. |
-| `globalTokens` | `https://tds.tds.local/assets/tds-design-token/global.json` | Primitive/global tokens such as neutral, red, spacing, radius, font size. |
-| `aliasTokens` | `https://tds.tds.local/assets/tds-design-token/alias.json` | Semantic aliases such as `tds-color-text-primary`, `tds-color-surface-low`, typography, icon size. |
+| `themeTokens` | `https://design-system.local/assets/tds-design-token/theme.json` | Theme preset array used to resolve primary/secondary swapping. Supported preset names must be read from this file after sync. |
+| `globalTokens` | `https://design-system.local/assets/tds-design-token/global.json` | Primitive/global tokens such as neutral, red, spacing, radius, font size. |
+| `aliasTokens` | `https://design-system.local/assets/tds-design-token/alias.json` | Semantic aliases such as `tds-color-text-primary`, `tds-color-surface-low`, typography, icon size. |
 
 Run `node scripts/sync-tds-tokens.js` to prefetch them. `node scripts/tds-token-lookup.js` also syncs automatically when the cache is missing.
 

@@ -48,7 +48,7 @@ Tài liệu này cung cấp 2 kịch bản hoàn chỉnh:
 
 # 3. KỊCH BẢN A: QUY TRÌNH CHUYỂN ĐỔI TỪ NX WEBPACK SANG RSBUILD
 
-Quy trình chuyển đổi gồm 5 bước chuẩn hóa (áp dụng thành công trên WiCX CRM Monorepo):
+Quy trình chuyển đổi gồm 5 bước chuẩn hóa (áp dụng thành công trên Demo CRM Monorepo):
 
 ```text
 [Bước 1: Cài đặt Dependencies]
@@ -476,6 +476,6 @@ Khi hoàn thành di chuyển hoặc thiết lập mới, bắt buộc vượt qu
 
 # 9. TÀI LIỆU THAM KHẢO & LIÊN KẾT LIÊN QUAN
 
-* 📖 **Hướng Dẫn Sử Dụng Chi Tiết (Outline Workspace)**: [Huong Dan Su Dung Thu Vien Rsbuild](https://outline.tpos.app/doc/huong-dan-nang-cap-su-dung-thu-vien-rsbuild-chuan-wicx-crm-G3VZIZa7Hh)
-* 📊 **Báo Cáo Benchmark Đo Kiểm Thực Tế CI/CD**: [Gioi Thieu Rsbuild & He Sinh Thai Rstack](https://outline.tpos.app/doc/gioi-thieu-ve-thu-vien-rsbuild-he-sinh-thai-rstack-cho-angular-rbHdDQJfTw)
+* 📖 **Hướng Dẫn Sử Dụng Chi Tiết**: [Huong Dan Su Dung Thu Vien Rsbuild](https://example.com/doc/huong-dan-nang-cap-su-dung-thu-vien-rsbuild-chuan-demo-crm)
+* 📊 **Báo Cáo Benchmark Đo Kiểm Thực Tế CI/CD**: [Gioi Thieu Rsbuild & He Sinh Thai Rstack](https://example.com/doc/gioi-thieu-ve-thu-vien-rsbuild-he-sinh-thai-rstack-cho-angular)
 * 🛠 **Repository Mẫu MFE Hoàn Chỉnh**: [https://github.com/baobao0303/project_base_rsbuild](https://github.com/baobao0303/project_base_rsbuild)

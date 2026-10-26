@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# setup.sh - SCRIPT CÀI ĐẶT 1 BƯỚC CHO PHÒNG MULTI-AGENT SLPC (ROOM AGENT)
-# Chạy 1 lệnh duy nhất khi clone repo về máy nhà:
-#   ./setup.sh
-# Hoặc vừa setup vừa mở toàn bộ 8 Agent tabs trên Orca:
-#   ./setup.sh --launch
+# setup.sh - SCRIPT CÀI ĐẶT 1 BƯỚC CHO HỆ THỐNG 5-ROOM SLPPC (ROOM_AGENT)
+# Kiến trúc 5 Phòng: Supervisor (main) | PM (room-pm) | Lead (room-lead) | Peer (room-peer) | QC (room-qc)
+#
+# Cách sử dụng:
+#   ./setup.sh                Cài đặt & đồng bộ toàn bộ cấu trúc thư mục, worktree, skills, profiles, DB
+#   ./setup.sh --init-db      Khởi tạo mới bảng DynamoDB/S3 & seed dữ liệu mẫu trên Floci
+#   ./setup.sh --launch       Cài đặt xong và tự động bật 3 Persistent Agents (Supervisor, PM, Lead)
 # ==============================================================================
 set -e
 
@@ -12,9 +14,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "======================================================================"
-echo "⚡ [SLPC MULTI-AGENT ROOM SETUP - ONE-COMMAND ALL-IN-ONE] ⚡"
+echo "⚡ [SLPPC 5-ROOM MULTI-AGENT SETUP - ONE-COMMAND ALL-IN-ONE] ⚡"
 echo "======================================================================"
-echo "📍 Thư mục làm việc: $SCRIPT_DIR"
+echo "📍 Thư mục gốc: $SCRIPT_DIR"
 
 # 1. Tự động thêm đường dẫn công cụ vào PATH nếu có
 for extra_path in \
@@ -40,7 +42,7 @@ done
 if command -v orca &> /dev/null; then
     echo "  ✅ Tìm thấy Orca CLI: $(which orca)"
 else
-    echo "  ⚠️  Chưa tìm thấy 'orca' trong PATH (nếu dùng Orca, hãy kiểm tra ~/.config/orca/linux-orca-cli-shim)."
+    echo "  ⚠️  Chưa tìm thấy 'orca' trong PATH."
 fi
 
 if command -v hermes &> /dev/null; then
@@ -53,7 +55,7 @@ if command -v rtk &> /dev/null || [ -f "$HOME/.local/bin/rtk" ]; then
     export PATH="$HOME/.local/bin:$PATH"
     echo "  ✅ Tìm thấy Rust Token Killer (RTK): $(rtk --version 2>/dev/null || echo 'v1.0.1')"
 else
-    echo "  ⚠️  Chưa cài đặt RTK (khuyến nghị: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh)."
+    echo "  ⚠️  Chưa cài đặt RTK."
 fi
 
 # 3. Khởi tạo file môi trường .env
@@ -79,42 +81,40 @@ else
     echo "  ✅ File .env đã tồn tại."
 fi
 
-# 4. Khởi tạo cấu trúc thư mục & Symlink Skills / Sub-Agents
-echo "📂 [3/6] Cấu hình thư mục, Skills & Sub-Agents..."
-mkdir -p ~/.hermes/skills ~/.hermes/profiles
-mkdir -p ~/.claude/agents ~/.paseo/claude-config/agents ~/.codex/skills/claude-code-sub-agents
-mkdir -p "$SCRIPT_DIR/bmad/rooms/supervisor" "$SCRIPT_DIR/bmad/rooms/pm" \
-         "$SCRIPT_DIR/bmad/rooms/lead" "$SCRIPT_DIR/bmad/rooms/peer" \
-         "$SCRIPT_DIR/bmad/rooms/qc" "$SCRIPT_DIR/bmad/rooms/tasks" \
-         "$SCRIPT_DIR/bmad/rooms/archive" "$SCRIPT_DIR/bmad/rooms/violations"
+# 4. Chuẩn hóa Format Folder 5-Room SLPPC & Khởi tạo Orca/Git Worktrees
+echo "📂 [3/6] Chuẩn hóa cấu trúc thư mục 5-Room SLPPC (supervisor, pm, lead, peer, qc)..."
+mkdir -p ~/.hermes/skills ~/.hermes/profiles ~/.paseo/skills
+mkdir -p "$SCRIPT_DIR/bmad/rooms/supervisor" \
+         "$SCRIPT_DIR/bmad/rooms/pm" \
+         "$SCRIPT_DIR/bmad/rooms/lead" \
+         "$SCRIPT_DIR/bmad/rooms/peer" \
+         "$SCRIPT_DIR/bmad/rooms/qc" \
+         "$SCRIPT_DIR/bmad/rooms/tasks" \
+         "$SCRIPT_DIR/bmad/rooms/discussions" \
+         "$SCRIPT_DIR/bmad/rooms/violations" \
+         "$SCRIPT_DIR/bmad/rooms/archive" \
+         "$SCRIPT_DIR/bmad/adrs" \
+         "$SCRIPT_DIR/bmad/wiki"
 
-# Liên kết toàn bộ 80+ skills từ thư mục skills/
-if [ -d "$SCRIPT_DIR/skills" ]; then
-    for skill_path in "$SCRIPT_DIR/skills"/*; do
-        if [ -d "$skill_path" ]; then
-            skill_name="$(basename "$skill_path")"
-            ln -sfn "$skill_path" "$HOME/.hermes/skills/$skill_name"
-        fi
-    done
-    echo "  ✅ Đã liên kết $(ls -1 "$SCRIPT_DIR/skills" | wc -l) Skills vào ~/.hermes/skills/"
+if [ -f "$SCRIPT_DIR/scripts/setup_rooms.sh" ]; then
+    bash "$SCRIPT_DIR/scripts/setup_rooms.sh" >/dev/null 2>&1 || true
+    echo "  ✅ Đã đồng bộ 4 phòng Worktree độc lập (room-pm, room-lead, room-peer, room-qc)."
 fi
 
-# Đồng bộ 3 Sub-Agents vào Claude, Paseo, Codex
-if [ -d "$SCRIPT_DIR/.claude/agents" ]; then
-    cp -f "$SCRIPT_DIR/.claude/agents"/*.md ~/.claude/agents/ 2>/dev/null || true
-    cp -f "$SCRIPT_DIR/.claude/agents"/*.md ~/.paseo/claude-config/agents/ 2>/dev/null || true
-    cp -f "$SCRIPT_DIR/.claude/agents"/*.md ~/.codex/skills/claude-code-sub-agents/ 2>/dev/null || true
-    if [ -f "$SCRIPT_DIR/.agents/skills/claude-code-sub-agents/SKILL.md" ]; then
-        cp -f "$SCRIPT_DIR/.agents/skills/claude-code-sub-agents/SKILL.md" ~/.codex/skills/claude-code-sub-agents/SKILL.md 2>/dev/null || true
-    fi
-    echo "  ✅ Đã đồng bộ 3 Sub-Agents vào Claude, Paseo và Codex."
-fi
+# 5. Đồng bộ Skills phân quyền theo 5 vai trò + shared
+echo "🧩 [4/6] Đồng bộ hệ thống Skills RBAC (supervisor, pm, lead, peer, qc, shared)..."
+python3 -c "
+import sys
+sys.path.insert(0, '$SCRIPT_DIR')
+from tools.skill_manager import sync_skills
+res = sync_skills()
+print(f'  ✅ Đã đồng bộ {res.get(\"synced_count\", 0)} Skills chuẩn vào {res.get(\"target_rooms_count\", 0)} đích.')
+"
 
-# 5. Cập nhật Profiles & Paseo Daemon
-echo "🤖 [4/6] Đồng bộ Profiles SLPPC (Supervisor, PM, Lead, Peer 1..4, Peer Design, QC, Security)..."
-python3 "$SCRIPT_DIR/patch_paseo.py"
+# 6. Đồng bộ 5 Profiles SLPPC & Git Pre-commit Guard
+echo "🤖 [5/6] Đồng bộ 5 Profiles SLPPC (Supervisor, PM, Lead, Peer, QC)..."
+python3 "$SCRIPT_DIR/scripts/patch_paseo.py"
 
-# Cài đặt Git Pre-commit Guard (Chặn hardcoded hex & vượt quyền)
 if [ -d "$SCRIPT_DIR/.git" ]; then
     mkdir -p "$SCRIPT_DIR/.git/hooks"
     cp -f "$SCRIPT_DIR/scripts/git_pre_commit_guard.py" "$SCRIPT_DIR/.git/hooks/pre-commit"
@@ -122,8 +122,14 @@ if [ -d "$SCRIPT_DIR/.git" ]; then
     echo "  ✅ Đã cài đặt Git Pre-Commit Guard vào .git/hooks/pre-commit"
 fi
 
-# 6. Khởi tạo & Đồng bộ Harness Database + Aevum Kanban
-echo "📊 [5/6] Đồng bộ Harness Database & Aevum Real-Time Kanban..."
+# 7. Khởi tạo & Đồng bộ Harness Database
+echo "📊 [6/6] Kiểm tra & Đồng bộ Harness Database..."
+if [[ "$*" == *"--init-db"* ]]; then
+    echo "  📦 Đang khởi tạo bảng DynamoDB/S3 & nạp dữ liệu mẫu trên Floci..."
+    python3 "$SCRIPT_DIR/scripts/harness_init_db.py" || true
+    python3 "$SCRIPT_DIR/scripts/harness_seed.py" || true
+fi
+
 python3 -c "
 import sys
 sys.path.insert(0, '$SCRIPT_DIR/tools')
@@ -136,21 +142,21 @@ except Exception as e:
     print(f'  ⚠️  Floci offline ({e}), tự động kích hoạt cơ chế Local DB fallback (.harness_local_db.json).')
 "
 
-# Đồng bộ BlockSuite Database schema
-python3 "$SCRIPT_DIR/tools/aevum_harness_bridge.py" &>/dev/null || true
-echo "  ✅ Đồng bộ Aevum Kanban snapshot thành công."
-
-# 7. Tuỳ chọn Khởi chạy Agent Tabs thường trực (PM, Lead)
-echo "🎯 [6/6] Sẵn sàng vận hành hệ thống!"
 echo "======================================================================"
-echo "✨ SETUP HOÀN TẤT 100%! CÁC LỆNH HỮU ÍCH KHI SỬ DỤNG:"
-echo "  1. Quản lý / Khởi chạy Agent:                    ./agent-start (hoặc ./agent-start status)"
-echo "  2. Ephemeral Sub-Agents (Peer, QC):              Spawn tự động on-demand khi giao việc"
-echo "  3. Tra cứu Kanban / Backlog:                     ./scripts/harness query backlog"
-echo "  4. Quét Zombie Sub-Agents & Watchdog:            python3 tools/zombie_reaper.py --dry-run"
+echo "✨ SETUP HOÀN TẤT 100%! CẤU TRÚC THƯ MỤC CHUẨN 5-ROOM SLPPC:"
+echo "  • cli/        : agent-start | orca-review | trigger-flow"
+echo "  • profiles/   : supervisor.md | pm.md | lead.md | peer.md | qc.md"
+echo "  • skills/     : supervisor/ | pm/ | lead/ | peer/ | qc/ | shared/"
+echo "  • bmad/rooms/ : supervisor/ | pm/ | lead/ | peer/ | qc/ (+ tasks, archive, violations)"
+echo "  • worktrees   : main (Supervisor) | room-pm | room-lead | room-peer | room-qc"
+echo "──────────────────────────────────────────────────────────────────────"
+echo "  1. Khởi chạy / Xem trạng thái 5 Phòng Agent:     ./cli/agent-start (hoặc ./cli/agent-start status)"
+echo "  2. Kích hoạt luồng tự động 4 Pha (SLPPC):        ./cli/trigger-flow \"<Epic>\" \"<Mô tả>\""
+echo "  3. Duyệt & Merge code từ nhánh Room về main:     ./cli/orca-review status"
+echo "  4. Kiểm toán kỷ luật quy trình SLPPC:            python3 tools/slppc_flow_guard.py audit"
 echo "======================================================================"
 
-if [[ "$1" == "--launch" || "$1" == "-l" ]]; then
-    echo "🚀 Tự động kích hoạt Persistent Agent tabs (PM, Lead) qua scripts/launch_room.sh..."
-    bash "$SCRIPT_DIR/scripts/launch_room.sh"
+if [[ "$*" == *"--launch"* || "$*" == *"-l"* ]]; then
+    echo "🚀 Tự động kích hoạt Persistent Agent tabs (Supervisor, PM, Lead) qua ./cli/agent-start..."
+    bash "$SCRIPT_DIR/cli/agent-start" start
 fi

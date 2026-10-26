@@ -135,7 +135,7 @@ Before initiating any autonomous pipeline run (`./trigger-flow` or `scripts/run_
 | # | Check Item | Target | Failure Policy |
 |---|---|---|---|
 | **D-01** | **Git Working Tree Cleanliness** | `git status --porcelain` returns 0 dirty files (excluding ignore) | **ABORT**: Warn user to commit or stash before running autonomous agent. |
-| **D-02** | **Kev System One Connectivity** | HTTP GET `http://100.124.36.46:8008/v1/systemone` responds `< 150ms` | **FALLBACK**: Use deterministic heuristic fallback without hanging CLI. |
+| **D-02** | **Kev System One Connectivity** | HTTP GET `http://127.0.0.1:8008/v1/systemone` responds `< 150ms` | **FALLBACK**: Use deterministic heuristic fallback without hanging CLI. |
 | **D-03** | **RTK Proxy Integrity** | `rtk verify` passes 151/151 tests; `PreToolUse` hook active | **AUTO-REPAIR**: Execute `rtk trust --yes && rtk init -g --auto-patch`. |
 | **D-04** | **Orca Desktop Runtime** | If Orca in PATH: `orca status --json` verifies reachable runtime | **AUTO-LAUNCH**: Run `orca open` if stopped; else fallback to Paseo CLI. |
 | **D-05** | **Room Ledger Hygiene** | Verify single `latest_handoff.md` per role, `room_ledger.json` size `< 50KB` | **AUTO-CLEAN**: Run `python3 tools/room_cleanup.py`. |

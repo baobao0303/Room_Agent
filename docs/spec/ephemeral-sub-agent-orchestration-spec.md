@@ -536,7 +536,7 @@ Trong quá trình vận hành tự động hóa với Sub-Agents, các lỗi ph�
 
 ### 13.2. Cơ Chế Dự Phòng Cho PM Agent (Technical PM & Orchestrator)
 - **Sự cố 1: Kev System One Engine Ngoại Vi Bị Offline / Timeout (>50ms)**:
-  * *Hệ quả*: Gọi `http://100.124.36.46:8008/v1/systemone` trả về `ConnectionRefused` hoặc `TimeoutError`.
+  * *Hệ quả*: Gọi `http://127.0.0.1:8008/v1/systemone` trả về `ConnectionRefused` hoặc `TimeoutError`.
   * *Cơ chế Fallback*: PM **tự động chuyển sang chế độ Thẩm Định Ngoại Tuyến (Offline Heuristics Evaluation)**:
     1. Đọc trực tiếp cấu trúc file mã nguồn bằng `search_files` và `read_file` để kiểm tra sự tồn tại của DTO/Model.
     2. Truy vấn kho bài học kinh nghiệm cục bộ qua SQLite:
@@ -786,15 +786,15 @@ Qua đợt rà soát thực tế kho lưu trữ `https://github.com/baobao0303/R
 │ KHU VỰC BỊ LỘ                 │ SỐ LƯỢNG   │ NỘI DUNG NHẠY CẢM BỊ LỘ        │
 ├───────────────────────────────┼────────────┼────────────────────────────────┤
 │ 1. bmad/rooms/                │ 269 files  │ • 150+ biên bản handoff/review │
-│    (lead, peer, qc, pm,       │            │ • Lộ đường dẫn: projects/wicx- │
-│     supervisor, violations)   │            │   crm-fe, wion_pos_fe, Aevum   │
+│    (lead, peer, qc, pm,       │            │ • Lộ đường dẫn: projects/demo- │
+│     supervisor, violations)   │            │   crm-fe, demo_pos_fe, Aevum   │
 │                               │            │ • Lộ Bug IDs, code diff, DTOs  │
 ├───────────────────────────────┼────────────┼────────────────────────────────┤
 │ 2. docs/AGENT_PROGRESS.md     │ 1 file     │ • Nhật ký chi tiết toàn bộ các │
 │                               │            │   bước sửa code trên các dự án │
 ├───────────────────────────────┼────────────┼────────────────────────────────┤
 │ 3. docs/spec/                 │ 31 files   │ • Lộ các bản đặc tả nghiệp vụ: │
-│    (wion-pos, wicx-crm, cdp)  │            │   wion-pos-header, cdp-mapping,│
+│    (demo-pos, demo-crm, cdp)  │            │   demo-pos-header, cdp-mapping,│
 │                               │            │   customer-drawer, shop-user   │
 ├───────────────────────────────┼────────────┼────────────────────────────────┤
 │ 4. .claude/                   │ 90 files   │ • Thư mục rác .claude/skills/  │

@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-_default_doc = next((p for p in [BASE_DIR / "projects/crm-doc", BASE_DIR.parent / "wicx-crm-doc", BASE_DIR.parent / "crm-doc"] if p.exists()), BASE_DIR.parent / "wicx-crm-doc")
-_default_fe = next((p for p in [BASE_DIR / "projects/wicx-crm-fe", BASE_DIR / "projects/crm-fe", BASE_DIR.parent / "crm-fe"] if p.exists()), BASE_DIR / "projects/wicx-crm-fe")
+_default_doc = next((p for p in [BASE_DIR / "projects/demo-crm-doc", BASE_DIR.parent / "demo-crm-doc", BASE_DIR.parent / "crm-doc"] if p.exists()), BASE_DIR.parent / "demo-crm-doc")
+_default_fe = next((p for p in [BASE_DIR / "projects/demo-crm-fe", BASE_DIR / "projects/crm-fe", BASE_DIR.parent / "crm-fe"] if p.exists()), BASE_DIR / "projects/demo-crm-fe")
 DOC_REPO_PATH = Path(os.getenv("DOC_REPO_PATH") or os.getenv("CRM_DOC_PATH") or str(_default_doc))
 FE_REPO_PATH = Path(os.getenv("FE_REPO_PATH") or os.getenv("CRM_FE_PATH") or str(_default_fe))
 CRM_DOC_READER = BASE_DIR / "tools/crm_doc_reader.py"

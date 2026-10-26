@@ -28,8 +28,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 
-KEV_ENDPOINT = os.environ.get("KEV_SYSTEMONE_URL", "http://100.124.36.46:8008/v1/systemone")
-PROGRESS_JSON = PROJECT_ROOT / ".harness_progress.json"
+KEV_ENDPOINT = os.environ.get("KEV_SYSTEMONE_URL", "http://127.0.0.1:8008/v1/systemone")
+(PROJECT_ROOT / ".harness").mkdir(parents=True, exist_ok=True)
+PROGRESS_JSON = PROJECT_ROOT / ".harness" / "progress.json"
 
 
 # ==============================================================================
@@ -123,7 +124,7 @@ def run_pm_head_gate(prompt: str, thinking_mode: str = "LƯỠNG DIỆN", thinki
         "questions": {
             "feasibility": {
                 "type": "score",
-                "instructions": "Đánh giá mức độ khả thi kỹ thuật của yêu cầu trong monorepo wicx/wionpos.",
+                "instructions": "Đánh giá mức độ khả thi kỹ thuật của yêu cầu trong dự án.",
                 "criteria": ["Không khả thi", "Khả thi thấp", "Khả thi trung bình", "Khả thi cao"]
             },
             "alignment": {
@@ -241,6 +242,17 @@ def run_lead_architect_gate(prompt: str, pm_memo: str, thinking_mode: str = "LƯ
         }
 
     # 2. Tạo Task cho Peer
+    lessons_prompt = ""
+    try:
+        from harness_rust import query_lessons  # type: ignore
+        lessons = query_lessons(domain="engineering", limit=3)
+        if lessons:
+            lines = [f"- [Cue: {l.cue}] {l.lesson}" for l in lessons if getattr(l, "lesson", None)]
+            if lines:
+                lessons_prompt = "\n\n[BẪY QUÁ KHỨ & BÀI HỌC KINH NGHIỆM TỰ HỌC - HARNESS²]:\n" + "\n".join(lines)
+    except Exception:
+        pass
+
     task = mgr.add_work_item(
         wi_type="Task",
         title=f"[Exec] - {prompt[:50]}",
@@ -252,6 +264,7 @@ def run_lead_architect_gate(prompt: str, pm_memo: str, thinking_mode: str = "LƯ
             "3. Concrete Changes: Enforce role fences, live hook banner, test verification\n"
             "4. Acceptance Criteria: Pass test suites, exit code 0\n"
             "5. Test Command: python3 -m unittest discover -s tools/tests"
+            f"{lessons_prompt}"
         ),
         assigned_to="peer",
         assigned_to_profile="peer",
@@ -308,6 +321,20 @@ def run_peer_maker_gate(task_id: int, test_cmd: str = DEFAULT_TEST_CMD) -> bool:
 
     if res.returncode == 0:
         mgr.update_state(task_id, "Resolved", assigned_to_profile="peer")
+        # Harness² Closed-Loop Post-Flight Lesson Extraction (Peer)
+        try:
+            from harness_rust import record_lesson  # type: ignore
+            record_lesson(
+                domain="peer_implementation",
+                cue=f"task_{task_id}_pipeline_resolved",
+                lesson=f"Thực thi thành công Task #{task_id}: 100% tests pass (exit code 0). Bắt buộc tuân thủ YAGNI, Strict Typing và Zero Regression.",
+                evidence=f"Local unit tests pass exit code 0 under {test_cmd}",
+                confidence="high",
+                work_item_id=task_id
+            )
+        except Exception:
+            pass
+
         print_banner("MAKER", "Peer Implementation Done", [
             ("Task ID", f"#{task_id}"),
             ("Local Test Status", "100% PASS (Exit Code 0)"),
@@ -399,6 +426,20 @@ def run_qc_tail_gate(task_id: int, epic_id: int, test_cmd: str = DEFAULT_TEST_CM
     mgr = HarnessManager(engine="auto")
     mgr.update_state(task_id, "Closed", assigned_to_profile="qc")
     mgr.update_state(epic_id, "Closed", assigned_to_profile="qc")
+
+    # Harness² Closed-Loop Post-Flight Lesson Extraction (QC)
+    try:
+        from harness_rust import record_lesson  # type: ignore
+        record_lesson(
+            domain="qc_verification",
+            cue=f"task_{task_id}_pipeline_qc_verified",
+            lesson=f"Nghiệm thu thành công Task #{task_id}: Mechanical tests pass 100%, 0 anti-leak violation, Kev sign-off: {qc_decision}.",
+            evidence=f"QC Tail Gate exit code 0, anti-leak exit code 0, Kev: {qc_decision}",
+            confidence="high",
+            work_item_id=task_id
+        )
+    except Exception:
+        pass
 
     print_banner("TAIL", "QC Verification Passed & Closed", [
         ("Task ID", f"#{task_id} (CLOSED)"),

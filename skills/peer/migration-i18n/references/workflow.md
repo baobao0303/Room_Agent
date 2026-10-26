@@ -12,9 +12,9 @@ Phải có `docs/spec_*.md` chứa:
 - `component_inventory` — Page components, Filter Drawers, Sub-components, Modal động
 
 ### 1.2 Dependencies
-- `@wi-mfes/i18n` — cung cấp `TranslatePipe`, `TranslateService`, loader, `mergeDeep()`
-- `@wion-pos/shared/util` — cung cấp `provideWII18n` (nếu module có lib UI)
-- `@wi-mfes/config` — cung cấp môi trường build
+- `@demo/i18n` — cung cấp `TranslatePipe`, `TranslateService`, loader, `mergeDeep()`
+- `@demo/shared/util` — cung cấp `provideDemoI18n` (nếu module có lib UI)
+- `@demo/config` — cung cấp môi trường build
 
 ### 1.3 Cross-module dependencies
 Rà soát modal/drawer được gọi từ module khác (ví dụ: `customer` mở modal từ `tags`). Khi đó translation key cần nằm trong namespace của module chứa component, không phải module gọi.
@@ -117,11 +117,11 @@ console.log('OK: Root key hợp lệ:', viKeys[0]);
 ### 4.2 TypeScript — Standalone Component
 
 ```typescript
-import { TranslatePipe } from '@wi-mfes/i18n';
+import { TranslatePipe } from '@demo/i18n';
 
 @Component({
   standalone: true,
-  selector: 'wion-pos-feature-list',
+  selector: 'demo-pos-feature-list',
   imports: [CommonModule, TranslatePipe /* ... TDS Modules */],
 })
 export class FeatureListComponent {}
@@ -131,7 +131,7 @@ export class FeatureListComponent {}
 
 ```typescript
 import { inject } from '@angular/core';
-import { TranslateService } from '@wi-mfes/i18n';
+import { TranslateService } from '@demo/i18n';
 
 export class FeatureListComponent {
   private readonly translate = inject(TranslateService);
@@ -165,11 +165,11 @@ openModal(item?: ItemType) {
 ### 4.5 Provider trong `app.config.ts` hoặc `remote-entry/entry.component.ts`
 
 ```typescript
-import { provideWII18n } from '@wion-pos/shared/util';
+import { provideDemoI18n } from '@demo/shared/util';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideWII18n({ module: '<module>' }), // nếu có lib UI riêng
+    provideDemoI18n({ module: '<module>' }), // nếu có lib UI riêng
     // ...
   ],
 };
