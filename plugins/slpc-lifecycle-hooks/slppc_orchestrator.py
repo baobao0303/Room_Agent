@@ -85,32 +85,231 @@ try:
     from harness2.core.recursion import ModeResult as Harness2ModeResult, Stage as Harness2Stage  # type: ignore
     from harness2.core.tree import SurfaceSpec as Harness2SurfaceSpec  # type: ignore
 except ImportError:
-    Harness2BudgetError = AssertionError  # type: ignore
-    Harness2Ledger = None  # type: ignore
-    Harness2Library = None  # type: ignore
-    Harness2Scored = None  # type: ignore
-    harness2_judge_write = None  # type: ignore
-    Harness2ModeResult = None  # type: ignore
-    Harness2Stage = None  # type: ignore
-    Harness2SurfaceSpec = None  # type: ignore
+    from dataclasses import dataclass, field as dc_field
 
-SLPPC_HARNESS2_SURFACE = (
-    Harness2SurfaceSpec(
-        name="slppc_orca",
-        always_on=("AGENTS.md",),
-        always_on_max=120_000,
-        always_on_cap_reason="Keep SLPPC global directives compact inside Orca context window",
-        skill_dir="skills",
-        skill_name_rule="kebab-case",
-        trigger_hint="Use when task matches domain",
-        autotrigger_file="AGENTS.md",
-        trigger_line="Available skills:",
-        subagent_requires_mode=False,
-        plugin_dir="plugins",
-        hooks_file="Hooks.json",
-    )
-    if Harness2SurfaceSpec is not None
-    else None
+    class Harness2BudgetError(AssertionError):  # type: ignore
+        """The ledger did not land on the budget identity (R=4k, P=3k)."""
+
+    @dataclass(frozen=True)
+    class Harness2SurfaceSpec:  # type: ignore
+        name: str
+        always_on: tuple[str, ...]
+        always_on_max: int
+        always_on_cap_reason: str
+        skill_dir: str
+        skill_name_rule: str
+        trigger_hint: str
+        autotrigger_file: str
+        trigger_line: str
+        subagent_requires_mode: bool
+        plugin_dir: Optional[str]
+        hooks_file: Optional[str]
+
+    @dataclass
+    class _H2Entry:
+        kind: str
+        label: str
+        usd: float = 0.0
+        cached: bool = False
+        attempts: int = 1
+
+    @dataclass
+    class Harness2Ledger:  # type: ignore
+        mode: str
+        task_id: str
+        k: int
+        entries: List[_H2Entry] = dc_field(default_factory=list)
+
+        def rollout(self, label: str, usd: float = 0.0, *, cached: bool = False) -> None:
+            self.entries.append(_H2Entry("rollout", label, usd, cached))
+
+        def session(self, label: str, usd: float = 0.0, *, cached: bool = False, attempts: int = 1) -> None:
+            self.entries.append(_H2Entry("session", label, usd, cached, attempts=attempts))
+
+        @property
+        def R(self) -> int:
+            return sum(1 for e in self.entries if e.kind == "rollout")
+
+        @property
+        def P(self) -> int:
+            return sum(1 for e in self.entries if e.kind == "session")
+
+        def labels(self, kind: str) -> List[str]:
+            return [e.label for e in self.entries if e.kind == kind]
+
+        def assert_identity(self) -> None:
+            want_r, want_p = 4 * int(self.k), 3 * int(self.k)
+            rl, sl = self.labels("rollout"), self.labels("session")
+            dupes = sorted({l for l in rl if rl.count(l) > 1} | {l for l in sl if sl.count(l) > 1})
+            if not dupes and self.R == want_r and self.P == want_p:
+                return
+            raise Harness2BudgetError(f"R={self.R} (want {want_r}), P={self.P} (want {want_p}), dupes={dupes}")
+
+        def to_dict(self) -> Dict[str, Any]:
+            return {
+                "mode": self.mode,
+                "task_id": self.task_id,
+                "k": self.k,
+                "R": self.R,
+                "expected_R": 4 * int(self.k),
+                "P": self.P,
+                "expected_P": 3 * int(self.k),
+                "rollouts": self.labels("rollout"),
+                "sessions": self.labels("session"),
+            }
+
+    @dataclass
+    class Harness2Stage:  # type: ignore
+        label: str
+        dim: str
+        tree: Dict[str, str]
+        kept_base: bool = False
+        fell_back: bool = False
+        error: str = ""
+        usd: float = 0.0
+        attempts: int = 0
+        cached: bool = False
+        notes: str = ""
+
+    @dataclass
+    class Harness2ModeResult:  # type: ignore
+        mode: str
+        task_id: str
+        k: int
+        stages: List[Harness2Stage] = dc_field(default_factory=list)
+        trees: Dict[str, Dict[str, str]] = dc_field(default_factory=dict)
+        finals: List[str] = dc_field(default_factory=list)
+        ledger: Optional[Harness2Ledger] = None
+        errors: List[str] = dc_field(default_factory=list)
+
+        @property
+        def ok(self) -> bool:
+            return bool(self.finals) and not self.errors
+
+        def to_dict(self) -> Dict[str, Any]:
+            return {
+                "mode": self.mode,
+                "task_id": self.task_id,
+                "k": self.k,
+                "finals": self.finals,
+                "ok": self.ok,
+                "stages": [
+                    {
+                        "label": s.label,
+                        "dim": s.dim,
+                        "fell_back": s.fell_back,
+                        "kept_base": s.kept_base,
+                        "attempts": s.attempts,
+                        "notes": s.notes,
+                    }
+                    for s in self.stages
+                ],
+                "ledger": self.ledger.to_dict() if self.ledger else None,
+                "errors": self.errors,
+            }
+
+    @dataclass
+    class Harness2Library:  # type: ignore
+        root: Path
+        domain: str
+        surface: Harness2SurfaceSpec
+
+        @property
+        def dir(self) -> Path:
+            clean = re.sub(r"\s*[/\\]\s*", "__", self.domain).strip() or "unknown"
+            return Path(self.root) / clean
+
+        @property
+        def index(self) -> Path:
+            return self.dir / "INDEX.md"
+
+        def exists(self) -> bool:
+            return self.index.is_file()
+
+        def entries(self) -> List[str]:
+            d = self.dir / "harnesses"
+            return sorted(p.name for p in d.iterdir() if p.is_dir()) if d.is_dir() else []
+
+        def add(
+            self,
+            task_id: str,
+            harness: Dict[str, str],
+            *,
+            why: str = "",
+            label: str = "",
+            run_id: str = "",
+            experience: Optional[Dict[str, str]] = None,
+        ) -> Optional[Path]:
+            if not isinstance(experience, dict) or not all(experience.get(k) for k in ("cue", "lesson", "evidence")):
+                return None
+            slug = str(task_id).replace("/", "__")
+            d = self.dir / "harnesses" / slug
+            (d / "harness").mkdir(parents=True, exist_ok=True)
+            for rel, content in harness.items():
+                p = d / "harness" / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(content, encoding="utf-8")
+            lines = [
+                f"# {task_id}",
+                "",
+                f"- adopted: `{label}`" + (f"  (run `{run_id}`)" if run_id else ""),
+                "",
+                "## Transferable lesson",
+                f"- **cue**: {experience['cue']}",
+                f"- **lesson**: {experience['lesson']}",
+                f"- **evidence**: {experience['evidence']}",
+                f"- **confidence**: {experience.get('confidence', 'high')}",
+                "",
+            ]
+            (d / "EXPERIENCE.md").write_text("\n".join(lines), encoding="utf-8")
+            self.dir.mkdir(parents=True, exist_ok=True)
+            self.index.write_text(f"# Library — {self.domain}\n\n## `harnesses/{slug}/`\n- cue: {experience['cue']}\n", encoding="utf-8")
+            return d
+
+    @dataclass
+    class Harness2Scored:  # type: ignore
+        task_id: str
+        mode: str
+        k: int
+        label: str
+        run_id: str
+        chosen_is_base: bool
+        n_passed: Optional[int] = None
+        n_criteria: Optional[int] = None
+        all_pass: bool = False
+        raw: Dict[str, Any] = dc_field(default_factory=dict)
+        error: str = ""
+
+        @property
+        def graded(self) -> bool:
+            return self.n_criteria is not None and self.n_criteria > 0
+
+        @property
+        def frac(self) -> Optional[float]:
+            return (self.n_passed / self.n_criteria) if (self.graded and self.n_passed is not None and self.n_criteria) else None
+
+    def harness2_judge_write(rows: List[Harness2Scored], path: Path | str) -> Path:  # type: ignore
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps([r.__dict__ | {"frac": r.frac, "graded": r.graded} for r in rows], indent=2, default=str),
+            encoding="utf-8",
+        )
+        return p
+
+SLPPC_HARNESS2_SURFACE = Harness2SurfaceSpec(
+    name="slppc_orca",
+    always_on=("AGENTS.md",),
+    always_on_max=120_000,
+    always_on_cap_reason="Keep SLPPC global directives compact inside Orca context window",
+    skill_dir="skills",
+    skill_name_rule="kebab-case",
+    trigger_hint="Use when task matches domain",
+    autotrigger_file="AGENTS.md",
+    trigger_line="Available skills:",
+    subagent_requires_mode=False,
+    plugin_dir="plugins",
+    hooks_file="Hooks.json",
 )
 
 
