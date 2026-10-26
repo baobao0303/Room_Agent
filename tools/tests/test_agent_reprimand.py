@@ -33,7 +33,9 @@ class TestAgentReprimand(unittest.TestCase):
                 ]
                 with patch.object(sys, "argv", test_args):
                     with patch("shutil.which", return_value=None):
-                        ar.main()
+                        with patch("harness_manager.HarnessManager") as mock_hm:
+                            mock_hm.return_value.add_work_item.return_value = {"id": 9999}
+                            ar.main()
 
                 violations_dir = tmp_root / "bmad" / "rooms" / "violations"
                 self.assertTrue(violations_dir.exists())
