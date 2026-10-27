@@ -174,9 +174,32 @@ def get_role_permissions(role: Optional[str], base_dir: Optional[Path] = None) -
     return perms
 
 
+def _get_orca_ide_bin() -> Optional[str]:
+    shim_dir = Path.home() / ".config" / "orca" / "linux-orca-cli-shim"
+    if shim_dir.is_dir():
+        cur_path = os.environ.get("PATH", "")
+        if str(shim_dir) not in cur_path.split(os.pathsep):
+            os.environ["PATH"] = f"{shim_dir}{os.pathsep}{cur_path}"
+    cand = shutil.which("orca")
+    if not cand:
+        return None
+    real_cand = os.path.realpath(cand)
+    if cand in ("/usr/bin/orca", "/bin/orca", "/usr/games/orca") or real_cand in ("/usr/bin/orca", "/bin/orca"):
+        return None
+    try:
+        p = Path(real_cand)
+        if p.is_file() and p.stat().st_size < 65536:
+            head = p.read_bytes()[:512].decode("utf-8", errors="ignore").lower()
+            if "screen reader" in head or "gnome" in head or "speech" in head or "import orca" in head:
+                return None
+    except Exception:
+        pass
+    return cand
+
+
 def close_ephemeral_subagent(role: str) -> bool:
     """Close an ephemeral sub-agent terminal (PM, Lead, Peer, or QC) to return RAM to 0."""
-    if os.environ.get("SLPPC_DRY_RUN") == "1" or not shutil.which("orca"):
+    if os.environ.get("SLPPC_DRY_RUN") == "1" or not _get_orca_ide_bin():
         return False
     clean_role = role.lower().strip()
     # Bảo vệ duy nhất Persistent Supervisor (main)
@@ -429,11 +452,11 @@ def auto_dispatch_agent(
             print(f"🔔 [Auto-Dispatch]: Đã tự động đánh thức {peer_role.upper()} thi công Work Item #{item_id}.")
 
     # CASE 3: QC đóng task (target_state == "Closed")
-    # -> Báo cho Supervisor và đóng toàn bộ các phòng Sub-Agents (Lead, Peer, QC) để chỉ giữ lại Supervisor
+    # -> Báo cho Supervisor và đóng các phòng Sub-Agents (Lead, Peer, QC) để chỉ giữ lại Supervisor
     elif state_lower == "closed":
         msg_done = f"📢 [NGHIỆM THU ĐÃ ĐÓNG]: {wi_type} #{item_id}: '{title}' đã được nghiệm thu và CLOSED thành công."
         send_orca_notification("supervisor", msg_done)
-        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng Task #{item_id} tới Supervisor.")
+        print(f"🔔 [Auto-Dispatch]: Đã tự động báo cáo đóng {wi_type} #{item_id} tới Supervisor.")
         for ep_role in ("qc", "peer", "lead"):
             close_ephemeral_subagent(ep_role)
 
