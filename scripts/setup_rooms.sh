@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # scripts/setup_rooms.sh - Idempotent Multi-Machine Room Worktree Provisioner
-# Khởi tạo 4 phòng làm việc độc lập (Worktree) cho mô hình SLPPC:
-# 1. room-pm    (Nhánh: room-pm)    - PM Agent (Feasibility & Alignment)
+# Khởi tạo kiến trúc 4 phòng làm việc độc lập (Supervisor on main, room-lead, room-peer, room-qc):
+# 1. Supervisor (Nhánh: main)       - Scope & Intent Guard
 # 2. room-lead  (Nhánh: room-lead)  - Lead Dev (Technical Architecture & Tasks)
 # 3. room-peer  (Nhánh: room-peer)  - Peer Dev (Code Execution & TDD)
 # 4. room-qc    (Nhánh: room-qc)    - QC Gate (5-Stage ISTQB Testing)
-# Branch chính `main`: Không gian của Supervisor (Scope & Intent Guard)
 #
 # Sử dụng:
 #   ./scripts/setup_rooms.sh            # Khởi tạo / cập nhật idempotent (không mở trùng)
@@ -50,11 +49,10 @@ else
 fi
 
 mkdir -p "$WT_DIR"
-mkdir -p "$ROOT_DIR/bmad/rooms"/{supervisor,pm,lead,peer,qc,archive}
+mkdir -p "$ROOT_DIR/bmad/rooms/supervisor" "$ROOT_DIR/bmad/rooms/lead" "$ROOT_DIR/bmad/rooms/peer" "$ROOT_DIR/bmad/rooms/qc" "$ROOT_DIR/bmad/rooms/archive"
 
-ROLES=("pm" "lead" "peer" "qc")
+ROLES=("lead" "peer" "qc")
 DESCRIPTIONS=(
-    "PM Agent: Thẩm định Feasibility, Alignment Kev System One, Acceptance Criteria"
     "Lead Dev: Technical Architect, Phân rã Zero-Search Task, Code Review 5 tiêu chí"
     "Peer Dev: Thực thi mã nguồn, Single-Ownership Diff, Clean Code"
     "QC Verifier: 5-Stage ISTQB Unit Tests, Anti-leak Scan, Independent Gate"
@@ -117,7 +115,7 @@ for i in "${!ROLES[@]}"; do
 
     if [ "$ORCA_AVAILABLE" = true ]; then
         ORCA_WTS=$(orca worktree list --json 2>/dev/null || echo "{}")
-        if ! echo "$ORCA_WTS" | grep -q "\"displayName\":\"$room_name\""; then
+        if ! echo "$ORCA_WTS" | grep -qE "\"displayName\":\s*\"$room_name\""; then
             echo "   🐬 Khởi tạo Orca Worktree: $room_name..."
             orca worktree create \
                 --name "$room_name" \
@@ -199,7 +197,6 @@ echo "🎉 [HOÀN TẤT THIẾT LẬP 4 ROOMS]:"
 git worktree list
 echo "======================================================================"
 echo "👉 Supervisor: Quản trị tại thư mục gốc (branch 'main')"
-echo "👉 PM Room   : $WT_DIR/room-pm   (branch 'room-pm')"
 echo "👉 Lead Room : $WT_DIR/room-lead (branch 'room-lead')"
 echo "👉 Peer Room : $WT_DIR/room-peer (branch 'room-peer')"
 echo "👉 QC Room   : $WT_DIR/room-qc   (branch 'room-qc')"

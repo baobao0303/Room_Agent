@@ -88,6 +88,8 @@ Mọi tác vụ kỹ thuật trong workspace tuân thủ quy trình chuyển gia
 │   ├── anti_leak_sentinel.py  # Script kiểm tra an ninh chống rò rỉ dữ liệu trước commit
 │   ├── git_pre_commit_guard.py# Hook Git tự động bảo vệ token màu và rào cản vai trò
 │   ├── start_aevum.sh         # Khởi động ứng dụng Aevum Workspace (:8080 :3010)
+│   ├── push_graph             # Đẩy đồ thị tri thức AST (.ua/) lên Floci S3
+│   ├── pull_graph             # Kéo đồ thị tri thức AST (.ua/) từ Floci S3
 │   ├── bin/harness-cli        # Native Rust CLI v0.1.14 (supervise, learn, work-item)
 │   └── schema/                # Các migrations SQL SQLite (001-init đến 007-experience)
 ├── tools/                     # Bộ công cụ điều hành hệ thống
@@ -98,6 +100,7 @@ Mọi tác vụ kỹ thuật trong workspace tuân thủ quy trình chuyển gia
 │   ├── agent_heartbeat.py     # Theo dõi nhịp tim 9 agent & cảnh báo sức khỏe tri thức realtime
 │   ├── agent_progress.py      # Ghi nhận và truy vấn sổ cái tiến độ bàn giao
 │   ├── floci_client.py        # Client DynamoDB & S3 kết nối Floci Cloud (:14566)
+│   ├── graph_sync.py          # Đồng bộ đồ thị tri thức AST qua Floci S3 (chống phình to Git)
 │   ├── query_reader.py        # Tool đọc file/thư mục thông minh theo query (BM25 + chống EISDIR)
 │   ├── qc_test_generator.py   # Máy sinh Testcase & Unit Test 5-Stage ISTQB Pipeline
 │   ├── skill_manager.py       # Quản trị Master Skills Registry & Inverted Index DB Search
@@ -279,6 +282,23 @@ python3 tools/research/research_agent.py "Phân tích kiến trúc Microservices
 
 # Chạy Research Agent (TypeScript / Node)
 npx tsx tools/research/research_agent.ts "Đánh giá Redis Cache Pattern"
+```
+
+### K. Đồng Bộ Đồ Thị Tri Thức Đa Máy (Floci S3 Graph Sync)
+Cơ chế đồng bộ đồ thị tri thức AST (`.ua/`) qua Floci S3 (bucket `harness-data`) thay vì commit vào Git, giúp tránh làm phình to repository và tiết kiệm 85%–90% input tokens:
+
+```bash
+# Đẩy đồ thị tri thức AST lên Floci S3
+./scripts/push_graph projects/demo-crm-fe
+
+# Kéo đồ thị tri thức AST mới nhất từ Floci S3
+./scripts/pull_graph projects/demo-crm-fe
+
+# Kéo đồ thị tri thức tương ứng với một Git commit cụ thể
+./scripts/pull_graph projects/demo-crm-fe --commit COMMIT_SHA
+
+# Mở Visual Dashboard Viewer trực quan hóa đồ thị tri thức
+npx https://github.com/Egonex-AI/Understand-Anything/releases/latest/download/understand-anything-viewer.tgz projects/demo-crm-fe
 ```
 
 ---
