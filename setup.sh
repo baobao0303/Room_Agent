@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# setup.sh - SCRIPT CÀI ĐẶT 1 BƯỚC CHO HỆ THỐNG 5-ROOM SLPPC (ROOM_AGENT)
-# Kiến trúc 5 Phòng: Supervisor (main) | PM (room-pm) | Lead (room-lead) | Peer (room-peer) | QC (room-qc)
+# setup.sh - SCRIPT CÀI ĐẶT 1 BƯỚC CHO HỆ THỐNG 4-ROOM SLPC (ROOM_AGENT)
+# Kiến trúc 4 Phòng: Supervisor (main) | Lead (room-lead) | Peer (room-peer) | QC (room-qc)
 #
 # Cách sử dụng:
 #   ./setup.sh                Cài đặt & đồng bộ toàn bộ cấu trúc thư mục, worktree, skills, profiles, DB
 #   ./setup.sh --init-db      Khởi tạo mới bảng DynamoDB/S3 & seed dữ liệu mẫu trên Floci
-#   ./setup.sh --launch       Cài đặt xong và tự động bật 3 Persistent Agents (Supervisor, PM, Lead)
+#   ./setup.sh --launch       Cài đặt xong và tự động bật 2 Persistent Agents (Supervisor, Lead)
 # ==============================================================================
 set -e
 
@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "======================================================================"
-echo "⚡ [SLPPC 5-ROOM MULTI-AGENT SETUP - ONE-COMMAND ALL-IN-ONE] ⚡"
+echo "⚡ [SLPC 4-ROOM MULTI-AGENT SETUP - ONE-COMMAND ALL-IN-ONE] ⚡"
 echo "======================================================================"
 echo "📍 Thư mục gốc: $SCRIPT_DIR"
 
@@ -89,11 +89,10 @@ else
     echo "  ✅ File .env đã tồn tại."
 fi
 
-# 4. Chuẩn hóa Format Folder 5-Room SLPPC & Khởi tạo Orca/Git Worktrees
-echo "📂 [3/6] Chuẩn hóa cấu trúc thư mục 5-Room SLPPC (supervisor, pm, lead, peer, qc)..."
+# 4. Chuẩn hóa Format Folder 4-Room SLPC & Khởi tạo Orca/Git Worktrees
+echo "📂 [3/6] Chuẩn hóa cấu trúc thư mục 4-Room SLPC (supervisor, lead, peer, qc)..."
 mkdir -p ~/.hermes/skills ~/.hermes/profiles ~/.paseo/skills
 mkdir -p "$SCRIPT_DIR/bmad/rooms/supervisor" \
-         "$SCRIPT_DIR/bmad/rooms/pm" \
          "$SCRIPT_DIR/bmad/rooms/lead" \
          "$SCRIPT_DIR/bmad/rooms/peer" \
          "$SCRIPT_DIR/bmad/rooms/qc" \
@@ -106,11 +105,11 @@ mkdir -p "$SCRIPT_DIR/bmad/rooms/supervisor" \
 
 if [ -f "$SCRIPT_DIR/scripts/setup_rooms.sh" ]; then
     bash "$SCRIPT_DIR/scripts/setup_rooms.sh" >/dev/null 2>&1 || true
-    echo "  ✅ Đã đồng bộ 4 phòng Worktree độc lập (room-pm, room-lead, room-peer, room-qc)."
+    echo "  ✅ Đã đồng bộ các phòng Worktree độc lập (room-lead, room-peer, room-qc)."
 fi
 
-# 5. Đồng bộ Skills phân quyền theo 5 vai trò + shared
-echo "🧩 [4/6] Đồng bộ hệ thống Skills RBAC (supervisor, pm, lead, peer, qc, shared)..."
+# 5. Đồng bộ Skills phân quyền theo 4 vai trò + shared
+echo "🧩 [4/6] Đồng bộ hệ thống Skills RBAC (supervisor, lead, peer, qc, shared)..."
 python3 -c "
 import sys
 sys.path.insert(0, '$SCRIPT_DIR')
@@ -119,8 +118,8 @@ res = sync_skills()
 print(f'  ✅ Đã đồng bộ {res.get(\"synced_count\", 0)} Skills chuẩn vào {res.get(\"target_rooms_count\", 0)} đích.')
 "
 
-# 6. Đồng bộ 5 Profiles SLPPC & Git Pre-commit Guard
-echo "🤖 [5/6] Đồng bộ 5 Profiles SLPPC (Supervisor, PM, Lead, Peer, QC)..."
+# 6. Đồng bộ 4 Profiles SLPC & Git Pre-commit Guard
+echo "🤖 [5/6] Đồng bộ 4 Profiles SLPC (Supervisor, Lead, Peer, QC)..."
 python3 "$SCRIPT_DIR/scripts/patch_paseo.py"
 
 if [ -d "$SCRIPT_DIR/.git" ]; then
@@ -151,20 +150,19 @@ except Exception as e:
 "
 
 echo "======================================================================"
-echo "✨ SETUP HOÀN TẤT 100%! CẤU TRÚC THƯ MỤC CHUẨN 5-ROOM SLPPC:"
+echo "✨ SETUP HOÀN TẤT 100%! CẤU TRÚC THƯ MỤC CHUẨN 4-ROOM SLPC:"
 echo "  • cli/        : agent-start | orca-review | trigger-flow"
-echo "  • profiles/   : supervisor.md | pm.md | lead.md | peer.md | qc.md"
-echo "  • skills/     : supervisor/ | pm/ | lead/ | peer/ | qc/ | shared/"
-echo "  • bmad/rooms/ : supervisor/ | pm/ | lead/ | peer/ | qc/ (+ tasks, archive, violations)"
-echo "  • worktrees   : main (Supervisor) | room-pm | room-lead | room-peer | room-qc"
+echo "  • profiles/   : supervisor/ | lead/ | peer/ | qc/ (Self-contained PROFILE.md & skills)"
+echo "  • bmad/rooms/ : supervisor/ | lead/ | peer/ | qc/ (+ tasks, archive, violations)"
+echo "  • worktrees   : main (Supervisor) | room-lead | room-peer | room-qc"
 echo "──────────────────────────────────────────────────────────────────────"
-echo "  1. Khởi chạy / Xem trạng thái 5 Phòng Agent:     ./cli/agent-start (hoặc ./cli/agent-start status)"
-echo "  2. Kích hoạt luồng tự động 4 Pha (SLPPC):        ./cli/trigger-flow \"<Epic>\" \"<Mô tả>\""
+echo "  1. Khởi chạy / Xem trạng thái 4 Phòng Agent:     ./cli/agent-start (hoặc ./cli/agent-start status)"
+echo "  2. Kích hoạt luồng tự động (SLPC):               ./cli/trigger-flow \"<Epic>\" \"<Mô tả>\""
 echo "  3. Duyệt & Merge code từ nhánh Room về main:     ./cli/orca-review status"
-echo "  4. Kiểm toán kỷ luật quy trình SLPPC:            python3 tools/slppc_flow_guard.py audit"
+echo "  4. Kiểm toán kỷ luật quy trình SLPC:             python3 tools/slppc_flow_guard.py audit"
 echo "======================================================================"
 
 if [[ "$*" == *"--launch"* || "$*" == *"-l"* ]]; then
-    echo "🚀 Tự động kích hoạt Persistent Agent tabs (Supervisor, PM, Lead) qua ./cli/agent-start..."
+    echo "🚀 Tự động kích hoạt Persistent Agent tabs (Supervisor, Lead) qua ./cli/agent-start..."
     bash "$SCRIPT_DIR/cli/agent-start" start
 fi

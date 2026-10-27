@@ -72,6 +72,46 @@ class TestHarnessDoctor(unittest.TestCase):
             if tmp_path.exists():
                 tmp_path.unlink()
 
+    @patch("shutil.which", return_value=None)
+    @patch("os.path.isfile", return_value=False)
+    @patch("os.access", return_value=False)
+    def test_check_rtk_binary_missing(self, mock_access, mock_isfile, mock_which):
+        res = hd.check_rtk_binary(auto_heal=False)
+        self.assertEqual(res["id"], "rtk_binary")
+        self.assertEqual(res["status"], "warn")
+        self.assertIn("không tìm thấy trên PATH", res["summary"])
+        self.assertIsNotNone(res.get("remediation"))
+        self.assertIn("install.sh", res["remediation"])
+
+    @patch("shutil.which", return_value="/usr/local/bin/rtk")
+    @patch("os.path.isfile", return_value=True)
+    @patch("os.access", return_value=True)
+    @patch("subprocess.run")
+    def test_check_rtk_binary_present(self, mock_run, mock_access, mock_isfile, mock_which):
+        mock_run.return_value = MagicMock(returncode=0, stdout="rtk 1.0.1\n")
+        res = hd.check_rtk_binary(auto_heal=False)
+        self.assertEqual(res["id"], "rtk_binary")
+        self.assertEqual(res["status"], "ok")
+        self.assertIn("rtk 1.0.1", res["summary"])
+        self.assertIsNone(res.get("remediation"))
+
+    @patch("tools.harness_doctor.check_rtk_binary", return_value={"id": "rtk_binary", "name": "RTK", "status": "warn", "summary": "RTK missing", "remediation": "curl ...", "healed": None})
+    def test_run_doctor_includes_rtk_check(self, mock_rtk):
+        rep = hd.run_doctor(auto_heal=False)
+        check_ids = [c["id"] for c in rep["checks"]]
+        self.assertIn("rtk_binary", check_ids)
+        self.assertEqual(rep["total_checks"], 9)
+
+    @patch("tools.harness_doctor._tcp_ping", return_value=False)
+    def test_check_paseo_daemon_canonical_4_roles(self, mock_ping):
+        """Verify check_paseo_daemon validates canonical 4 roles and repo profiles."""
+        res = hd.check_paseo_daemon(auto_heal=False)
+        self.assertEqual(res["id"], "paseo_daemon")
+        # In standby, valid profiles yields status "warn" (not "error")
+        self.assertIn(res["status"], ("ok", "warn"))
+        self.assertIn("SLPC Profiles: 4/4", res["summary"])
+
 
 if __name__ == "__main__":
     unittest.main()
+

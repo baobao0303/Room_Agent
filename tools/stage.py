@@ -27,6 +27,12 @@ def stage(target_dir: str | Path) -> Path:
         skills_src = PROJECT_ROOT / "skills"
         if skills_src.is_dir():
             shutil.copytree(skills_src, skills_dest)
+        elif (PROJECT_ROOT / "profiles").is_dir():
+            skills_dest.mkdir(parents=True, exist_ok=True)
+            for role_dir in (PROJECT_ROOT / "profiles").iterdir():
+                role_skills = role_dir / "skills"
+                if role_skills.is_dir():
+                    shutil.copytree(role_skills, skills_dest / role_dir.name)
 
         # 2. Stage profiles
         profiles_dest = target / "profiles"

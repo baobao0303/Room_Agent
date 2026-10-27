@@ -19,7 +19,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -52,7 +52,47 @@ SHARED_ROOT = resolve_shared_root(PROJECT_ROOT)
 BASE_DIR = str(SHARED_ROOT)
 REGISTRY_FILE = SHARED_ROOT / "bmad" / "rooms" / "agent_terminals.json"
 
-COMPACT_THRESHOLD_K = 200.0  # Ngưỡng token (k) để kích hoạt tự động /compact
+# Ngưỡng compact theo vai trò (G-MEM-1, CTX-02):
+# Peer <= 30k, QC <= 30k, Lead <= 60k, Supervisor <= 100k
+ROLE_COMPACT_THRESHOLDS_K: Dict[str, float] = {
+    "peer": 30.0,
+    "peer1": 30.0,
+    "peer2": 30.0,
+    "peer3": 30.0,
+    "peer4": 30.0,
+    "peer_design": 30.0,
+    "design": 30.0,
+    "dev": 30.0,
+    "coder": 30.0,
+    "qc": 30.0,
+    "qc_tester": 30.0,
+    "tester": 30.0,
+    "lead": 60.0,
+    "lead_architect": 60.0,
+    "supervisor": 100.0,
+    "pm": 100.0,  # PM được sáp nhập vào Supervisor
+}
+DEFAULT_COMPACT_THRESHOLD_K: float = 30.0  # Ngưỡng an toàn cho sub-agent ephemeral / role chưa xác định
+COMPACT_THRESHOLD_K: float = 30.0  # Alias tương thích ngược
+
+
+def get_compact_threshold_k(role: Optional[str] = None) -> float:
+    """
+    Trả về ngưỡng token (k) để kích hoạt tự động nén context (/compact) theo vai trò (G-MEM-1, CTX-02):
+    - peer / qc: 30.0 (<= 30k)
+    - lead: 60.0 (<= 60k)
+    - supervisor / pm: 100.0 (<= 100k)
+    - Mặc định: 30.0 cho role chưa xác định hoặc None.
+    Hỗ trợ alias: peer1..4, peer_design, dev, coder, qc_tester, lead_architect, pm.
+    """
+    if not role:
+        return DEFAULT_COMPACT_THRESHOLD_K
+    clean = str(role).lower().strip()
+    if clean in ROLE_COMPACT_THRESHOLDS_K:
+        return ROLE_COMPACT_THRESHOLDS_K[clean]
+    norm = _normalize_room_role(clean)
+    return ROLE_COMPACT_THRESHOLDS_K.get(norm, DEFAULT_COMPACT_THRESHOLD_K)
+
 
 
 def _normalize_room_role(role: str) -> str:
@@ -218,14 +258,29 @@ def has_live_terminal(role: str) -> Optional[str]:
     return live_map.get(canonical)
 
 
-def inspect_terminal(handle: str) -> Dict[str, Any]:
-    """Đọc màn hình terminal, trích xuất token usage, trạng thái bận/rảnh."""
-    info = {
+def inspect_terminal(handle: str, role: Optional[str] = None) -> Dict[str, Any]:
+    """Đọc màn hình terminal, trích xuất token usage, trạng thái bận/rảnh theo vai trò (G-MEM-1)."""
+    inferred_role = role
+    if not inferred_role and REGISTRY_FILE.exists():
+        try:
+            reg_data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
+            for r, v in reg_data.items():
+                if isinstance(v, dict) and v.get("handle") == handle:
+                    inferred_role = r
+                    break
+        except Exception:
+            pass
+
+    threshold_k = get_compact_threshold_k(inferred_role)
+
+    info: Dict[str, Any] = {
         "handle": handle,
+        "role": inferred_role,
         "is_live": False,
         "is_ready": False,
         "is_busy": True,
         "token_count_k": 0.0,
+        "compact_threshold_k": threshold_k,
         "needs_compact": False,
         "status_line": ""
     }
@@ -248,7 +303,7 @@ def inspect_terminal(handle: str) -> Dict[str, Any]:
         if match:
             tokens_k = float(match.group(1))
             info["token_count_k"] = tokens_k
-            info["needs_compact"] = tokens_k >= COMPACT_THRESHOLD_K
+            info["needs_compact"] = tokens_k >= threshold_k
 
         # Nhận diện xem terminal có đang chạy AI Agent thật hay ngồi ở raw shell (bash/zsh)
         screen_lower = screen.lower()
@@ -324,22 +379,122 @@ def compact_agent_terminal(handle: str, max_wait_sec: int = 25) -> bool:
     return False
 
 
-def build_rehydration_prompt(role: str) -> str:
-    """Tạo bản tin context nạp lại cho Agent khi phiên bị /new hoặc khởi động lại."""
+def compact_context_if_needed(
+    role: str,
+    handle: Optional[str] = None,
+    max_wait_sec: int = 20
+) -> bool:
+    """
+    Kiểm tra context window của role theo ngưỡng ngân sách vai trò (G-MEM-1):
+    - peer/qc <= 30k
+    - lead <= 60k
+    - supervisor <= 100k
+    Nếu vượt ngưỡng (needs_compact), tự động kích hoạt /compact trên terminal.
+    Trả về True nếu đã thực hiện nén thành công, False nếu không cần nén hoặc gặp lỗi.
+    """
+    if not handle:
+        live_map = get_live_terminals()
+        canonical_role = _normalize_room_role(role)
+        handle = live_map.get(canonical_role)
+        if not handle:
+            clean_role = role.lower().strip().replace("-", "_").replace(" ", "_")
+            handle = live_map.get(clean_role)
+    if not handle:
+        return False
+
+    state = inspect_terminal(handle, role=role)
+    if state.get("needs_compact"):
+        threshold_k = state.get("compact_threshold_k", get_compact_threshold_k(role))
+        tokens_k = state.get("token_count_k", 0.0)
+        print(
+            f"⚠️ [Context Warning]: {role.upper()} đạt {tokens_k}k tokens "
+            f"(vượt ngưỡng ngân sách vai trò {threshold_k}k). Đang tự động nén context..."
+        )
+        compacted = compact_agent_terminal(handle, max_wait_sec=max_wait_sec)
+        wait_for_terminal_ready(handle, max_wait_sec=5)
+        return compacted
+    return False
+
+
+def load_curated_memory(role_or_path: Union[str, Path]) -> str:
+    """
+    Nạp toàn bộ nội dung curated long-term memory (G-MEM-5) từ file MEMORY.md:
+    - Loại bỏ comment HTML <!-- ... -->
+    - Giữ trọn vẹn toàn bộ các khối Facts, Preferences, Commitments và quy chuẩn cốt lõi (không cắt ở 3 dòng đầu).
+    - Hỗ trợ truyền vào tên role (e.g. 'peer', 'lead', 'qc', 'supervisor') hoặc đường dẫn file Path.
+    """
+    if isinstance(role_or_path, (str, Path)) and not Path(role_or_path).is_file():
+        role_str = str(role_or_path).lower().strip().replace("-", "_")
+        if role_str in ("peer1", "peer2", "peer3", "peer4", "peer_2", "peer_3", "peer_4", "design", "peer_design", "peer_dev"):
+            role_str = "peer"
+        elif role_str == "pm":
+            role_str = "supervisor"
+        p = PROJECT_ROOT / "profiles" / role_str / "MEMORY.md"
+        if not p.exists():
+            p = PROJECT_ROOT / "bmad" / "rooms" / role_str / "MEMORY.md"
+    else:
+        p = Path(role_or_path)
+
+    if not p.exists():
+        return ""
+
+    raw = p.read_text(encoding="utf-8")
+    clean = re.sub(r"<!--.*?-->", "", raw, flags=re.DOTALL).strip()
+    if not clean:
+        return ""
+
+    sections: Dict[str, List[str]] = {}
+    current_sec = "Curated Memory"
+    for line in clean.splitlines():
+        sline = line.strip()
+        if not sline:
+            continue
+        if sline.startswith("## "):
+            current_sec = sline.lstrip("#").strip()
+            sections[current_sec] = []
+        elif sline.startswith("# "):
+            continue
+        else:
+            sections.setdefault(current_sec, []).append(sline)
+
+    sec_parts: List[str] = []
+    for sec_name, sec_lines in sections.items():
+        if not sec_lines:
+            continue
+        joined = " ".join(sec_lines)
+        sec_parts.append(f"{sec_name}: {joined}")
+
+    return " | ".join(sec_parts)
+
+
+
+def build_rehydration_prompt(
+    role: str,
+    user_id: str = "default_user",
+    project_id: str = "Room_Agent",
+    domain: Optional[str] = None,
+) -> str:
+    """
+    Tạo bản tin context nạp lại (3-Tier Dynamic Hydration) cho Agent khi phiên bị /new hoặc khởi động lại:
+    - Tầng 1 (Working Memory): Role profile & kỷ luật thực thi tức thời.
+    - Tầng 2 (Short-Term Memory): Task Active hiện hành & latest_handoff.md trong phiên.
+    - Tầng 3 (Long-Term Memory): Truy vấn Database (Harness Learn Store) theo User ID / Project ID để nạp top-3 quy chuẩn & bẫy lỗi lịch sử.
+    """
     clean_role = role.lower().replace("-", "_").replace(" ", "_")
     
-    # 1. Tra cứu file profile
+    # 1. Tra cứu file profile, IDENTITY.md và SOUL.md
     if clean_role in ("peer1", "peer2", "peer3", "peer4", "peer_2", "peer_3", "peer_4", "design", "peer_design", "peer_dev"):
         clean_role = "peer"
-    profile_map = {
-        "supervisor": "profiles/supervisor.md",
-        "pm": "profiles/pm.md",
-        "lead": "profiles/lead.md",
-        "peer": "profiles/peer.md",
-        "qc": "profiles/qc.md"
-    }
-    profile_file = PROJECT_ROOT / profile_map.get(clean_role, f"profiles/{clean_role}.md")
-    mission = f"Vai trò {role.upper()} trong mô hình điều hành 5 vai trò SLPPC."
+    if clean_role == "pm":
+        clean_role = "supervisor"
+    profile_file = PROJECT_ROOT / "profiles" / clean_role / "PROFILE.md"
+    if not profile_file.exists():
+        profile_file = PROJECT_ROOT / "profiles" / f"{clean_role}.md"
+    identity_file = PROJECT_ROOT / "profiles" / clean_role / "IDENTITY.md"
+    soul_file = PROJECT_ROOT / "profiles" / clean_role / "SOUL.md"
+    mission = f"Vai trò {role.upper()} trong mô hình điều hành SLPC."
+    identity_summary = f"Name: {role.upper()}"
+    soul_summary = "Direct, resourceful first, zero performative fluff."
     if profile_file.exists():
         try:
             lines = profile_file.read_text(encoding="utf-8").split("\n")
@@ -349,8 +504,26 @@ def build_rehydration_prompt(role: str) -> str:
                     break
         except Exception:
             pass
+    if identity_file.exists():
+        try:
+            id_lines = [
+                l.strip()
+                for l in identity_file.read_text(encoding="utf-8").splitlines()
+                if l.strip().startswith(("Name:", "Character:", "Vibe:", "Emoji:"))
+            ]
+            if id_lines:
+                identity_summary = " | ".join(id_lines)
+        except Exception:
+            pass
+    if soul_file.exists():
+        try:
+            s_lines = [l.strip() for l in soul_file.read_text(encoding="utf-8").splitlines() if l.strip().startswith("- ")]
+            if s_lines:
+                soul_summary = " ".join(s_lines[:2])
+        except Exception:
+            pass
 
-    # 2. Tra cứu task active trên Harness DB
+    # 2. Tra cứu task active trên Harness DB (Short-Term / Active Session State)
     active_tasks_info = "Không có task Active tồn đọng"
     try:
         sys.path.insert(0, str(PROJECT_ROOT / "tools"))
@@ -363,7 +536,7 @@ def build_rehydration_prompt(role: str) -> str:
     except Exception:
         pass
 
-    # 3. Tra cứu handoff gần nhất
+    # 3. Tra cứu handoff gần nhất & Session Buffer (Short-Term Memory: Bộ đệm phiên làm việc)
     handoff_info = "Không có biên bản handoff gần đây"
     role_dir = PROJECT_ROOT / "bmad" / "rooms" / clean_role
     if role_dir.exists():
@@ -376,13 +549,49 @@ def build_rehydration_prompt(role: str) -> str:
                     handoff_info = summary_match.group(1).strip()
             except Exception:
                 pass
+        session_buf = role_dir / "session_buffer.json"
+        if session_buf.exists():
+            try:
+                buf_obj = json.loads(session_buf.read_text(encoding="utf-8"))
+                loops = buf_obj.get("recent_loops", [])
+                if isinstance(loops, list) and loops:
+                    last_loop = loops[-1]
+                    if isinstance(last_loop, dict):
+                        handoff_info = f"{handoff_info} | Loop gần nhất: [{last_loop.get('stage')}] {last_loop.get('summary')}"
+            except Exception:
+                pass
+
+    # 4. Tra cứu Long-Term Memory (MEMORY.md + Database Learn Store) theo Project ID / Domain (Top-3 chunks)
+    curated_memory_summary = ""
+    try:
+        curated_memory_summary = load_curated_memory(clean_role)
+    except Exception as e:
+        sys.stderr.write(f"⚠️ [Rehydration Warning]: Lỗi nạp curated MEMORY.md cho {clean_role}: {e}\n")
+
+    long_term_lessons = "Chưa có bài học lịch sử đặc thù; áp dụng chuẩn mặc định của dự án."
+    try:
+        from tools.harness_learning_search import search_experiences  # type: ignore
+        experiences = search_experiences(domain=domain, limit=3)
+        if experiences:
+            lesson_snippets = [
+                f"[{exp.get('domain', 'general')}] {exp.get('cue', '')}: {exp.get('lesson', '')}"
+                for exp in experiences[:3]
+            ]
+            long_term_lessons = " | ".join(lesson_snippets)
+    except Exception as e:
+        sys.stderr.write(f"⚠️ [Rehydration Warning]: Lỗi truy vấn bài học từ Learn Store: {e}\n")
+
+    if curated_memory_summary:
+        long_term_lessons = f"[Curated MEMORY.md: {curated_memory_summary}] | [Learn Store: {long_term_lessons}]"
 
     prompt = (
-        f"=== [SLPPC AUTO-REHYDRATION BOOT] ===\n"
-        f"Vai trò: {role.upper()}\n"
-        f"Sứ mệnh: {mission}\n"
-        f"Nhiệm vụ Active hiện tại: {active_tasks_info}\n"
-        f"Biên bản bàn giao gần nhất: {handoff_info}\n"
+        f"=== [SLPPC AUTO-REHYDRATION BOOT | 3-TIER DYNAMIC HYDRATION] ===\n"
+        f"Identity: User={user_id} | Project={project_id} | Vai trò={role.upper()}\n"
+        f"Agent Identity (profiles/{clean_role}/IDENTITY.md): {identity_summary}\n"
+        f"Soul Persona (profiles/{clean_role}/SOUL.md): {soul_summary}\n"
+        f"Tầng 1 (Working Memory - Sứ mệnh): {mission}\n"
+        f"Tầng 2 (Short-Term Memory - Phiên hiện tại): Task={active_tasks_info} | Handoff={handoff_info}\n"
+        f"Tầng 3 (Long-Term Memory - Tri thức bền vững Top-3): {long_term_lessons}\n"
         f"Kỷ luật: 100% Strict Typing (0 any/unknown), Chuẩn Zero-Search 5 thành phần, Anti-Leak, cấm role_trespass.\n"
         f"Xác nhận đã nạp lại context đầy đủ và sẵn sàng làm việc."
     )
@@ -417,11 +626,55 @@ def rehydrate_agent(role: str, handle: str) -> bool:
         return False
 
 
-def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) -> bool:
-    """Gửi thông điệp an toàn cho agent: Có ping check, có kiểm tra context để compact, chống đè lệnh."""
-    orca_bin = _get_orca_ide_bin()
-    if not orca_bin:
-        return False
+def _extract_envelope_dict(message: Union[str, Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Helper to detect and extract an AgentHandoffEnvelope dict from dict or JSON string."""
+    if isinstance(message, dict):
+        if "schema_version" in message or ("spec" in message and "verification" in message) or ("from_role" in message and "to_role" in message and "task_id" in message):
+            return message
+    elif isinstance(message, str):
+        trimmed = message.strip()
+        if trimmed.startswith("{") and trimmed.endswith("}"):
+            try:
+                parsed = json.loads(trimmed)
+                if isinstance(parsed, dict) and (
+                    "schema_version" in parsed
+                    or ("spec" in parsed and "verification" in parsed)
+                    or ("from_role" in parsed and "to_role" in parsed and "task_id" in parsed)
+                ):
+                    return parsed
+            except Exception:
+                pass
+    return None
+
+
+def safe_send_agent_message(
+    role: str,
+    message: Union[str, Dict[str, Any]],
+    auto_compact: bool = True,
+    raise_on_invalid: bool = False
+) -> bool:
+    """Gửi thông điệp an toàn cho agent: Có validation envelope, ping check, context auto-compact, chống đè lệnh."""
+    # 0. Step 0: Validate AgentHandoffEnvelope immediately before terminal lookup
+    envelope_dict = _extract_envelope_dict(message)
+    if envelope_dict is not None:
+        try:
+            from tools.slppc_flow_guard import validate_agent_handoff_envelope
+        except ImportError:
+            try:
+                from slppc_flow_guard import validate_agent_handoff_envelope
+            except ImportError:
+                validate_agent_handoff_envelope = None
+
+        if validate_agent_handoff_envelope:
+            is_valid, errors = validate_agent_handoff_envelope(envelope_dict)
+            if not is_valid:
+                err_msg = f"Invalid AgentHandoffEnvelope: {'; '.join(errors)}"
+                print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+                if raise_on_invalid:
+                    raise ValueError(err_msg)
+                return False
+
+    orca_bin = _get_orca_ide_bin() or "orca"
     live_map = get_live_terminals()
     canonical_role = _normalize_room_role(role)
     handle = live_map.get(canonical_role)
@@ -431,16 +684,16 @@ def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) 
     if not handle:
         return False
 
-    # 1. Ping check: Kiểm tra terminal còn sống và trạng thái hiện tại
-    state = inspect_terminal(handle)
+    # 1. Ping check: Kiểm tra terminal còn sống và trạng thái hiện tại theo vai trò (G-MEM-1)
+    state = inspect_terminal(handle, role=role)
     if not state["is_live"]:
         print(f"⚠️ [Ping Check]: Terminal của {role.upper()} ({handle}) không phản hồi.")
         return False
 
     # 1.1 Khởi động Agent nếu terminal đang ở raw bash/zsh shell
-    if not state.get("is_agent", False):
+    if not state.get("is_agent", True):
         print(f"🚀 [Auto-Agent-Start]: Terminal {handle} đang ở raw shell (chưa bật Agent). Đang tự động khởi động Hermes cho {role.upper()}...")
-        profile_flag = f"--profile {canonical_role}" if canonical_role in ("pm", "lead", "peer", "qc") else ""
+        profile_flag = f"--profile {canonical_role}" if canonical_role in ("lead", "peer", "qc") else ""
         subprocess.run(
             [orca_bin, "terminal", "send", "--terminal", handle, "--text", f"source ~/.bashrc && hermes {profile_flag}".strip(), "--enter"],
             capture_output=True, timeout=5
@@ -448,7 +701,7 @@ def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) 
         if not wait_for_terminal_ready(handle, max_wait_sec=12):
             print(f"⚠️ [Auto-Agent-Start]: Không thể khởi động agent trên {handle} sau 12s. Chuyển sang fallback spawn.")
             return False
-        state = inspect_terminal(handle)
+        state = inspect_terminal(handle, role=role)
 
     # 2. Nếu agent đang bận, chờ tối đa 8s
     if state["is_busy"]:
@@ -457,22 +710,123 @@ def safe_send_agent_message(role: str, message: str, auto_compact: bool = True) 
             print(f"⚠️ [Ping Check]: {role.upper()} vẫn bận sau 8s. Hủy gửi để tránh gián đoạn tiến trình.")
             return False
 
-    # 3. Kiểm tra Context Window & Auto-Compact
+    # 3. Kiểm tra Context Window & Auto-Compact theo vai trò (G-MEM-1)
     if auto_compact and state["needs_compact"]:
-        print(f"⚠️ [Context Warning]: {role.upper()} đạt {state['token_count_k']}k tokens (> {COMPACT_THRESHOLD_K}k). Đang tự động nén context...")
+        threshold_k = state.get("compact_threshold_k", get_compact_threshold_k(role))
+        print(
+            f"⚠️ [Context Warning]: {role.upper()} đạt {state['token_count_k']}k tokens "
+            f"(vượt ngưỡng ngân sách vai trò {threshold_k}k). Đang tự động nén context..."
+        )
         compact_agent_terminal(handle, max_wait_sec=20)
         wait_for_terminal_ready(handle, max_wait_sec=5)
 
+
     # 4. Gửi lệnh
+    message_str = json.dumps(message, ensure_ascii=False, indent=2) if isinstance(message, dict) else str(message)
     try:
         subprocess.run(
-            [orca_bin, "terminal", "send", "--terminal", handle, "--text", message, "--enter"],
+            [orca_bin, "terminal", "send", "--terminal", handle, "--text", message_str, "--enter"],
             capture_output=True, timeout=10
         )
         return True
     except Exception as e:
         print(f"⚠️ [Send Error]: {e}")
         return False
+
+
+def send_handoff_envelope(
+    sender: str,
+    recipient: str,
+    envelope: Union[Dict[str, Any], str],
+    auto_compact: bool = True,
+    strict: bool = True,
+    persist_to_room: bool = True
+) -> bool:
+    """
+    Gửi thông điệp bàn giao có cấu trúc (AgentHandoffEnvelope) giữa 2 agent theo chuẩn MAG-02.
+    - Thẩm định schema và Zero-Search 5 thành phần trước khi gửi.
+    - Kiểm soát Feedback/Retry loop (FAILED_RETRY bắt buộc có stack trace, retry_count <= 3).
+    - Tùy chọn lưu trữ đồng bộ vào bmad/rooms/<recipient>/latest_handoff.md.
+    - Nếu strict=True và envelope không hợp lệ -> Ném ngoại lệ ValueError.
+    """
+    if isinstance(envelope, str):
+        try:
+            env_dict = json.loads(envelope)
+        except Exception as e:
+            err_msg = f"Envelope string is not valid JSON: {e}"
+            print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+            if strict:
+                raise ValueError(err_msg)
+            return False
+    elif isinstance(envelope, dict):
+        env_dict = dict(envelope)
+    else:
+        err_msg = f"Envelope must be a dict or JSON string, got {type(envelope).__name__}"
+        print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+        if strict:
+            raise ValueError(err_msg)
+        return False
+
+    norm_sender = _normalize_room_role(sender).upper()
+    norm_recipient = _normalize_room_role(recipient).upper()
+    if not env_dict.get("from_role"):
+        env_dict["from_role"] = norm_sender
+    if not env_dict.get("to_role"):
+        env_dict["to_role"] = norm_recipient
+
+    try:
+        from tools.slppc_flow_guard import validate_agent_handoff_envelope
+    except ImportError:
+        try:
+            from slppc_flow_guard import validate_agent_handoff_envelope
+        except ImportError:
+            validate_agent_handoff_envelope = None
+
+    if validate_agent_handoff_envelope:
+        is_valid, errors = validate_agent_handoff_envelope(env_dict)
+        if not is_valid:
+            err_msg = f"Invalid AgentHandoffEnvelope: {'; '.join(errors)}"
+            print(f"❌ [Handoff Validation Rejected]: {err_msg}")
+            if strict:
+                raise ValueError(err_msg)
+            return False
+
+    if persist_to_room:
+        try:
+            target_room = _normalize_room_role(recipient)
+            room_dir = PROJECT_ROOT / "bmad" / "rooms" / target_room
+            if room_dir.exists():
+                handoff_file = room_dir / "latest_handoff.md"
+                spec = env_dict.get("spec", {})
+                ver = env_dict.get("verification", {})
+                content = (
+                    f"# AGENT HANDOFF ENVELOPE: {env_dict.get('from_role')} ➔ {env_dict.get('to_role')}\n\n"
+                    f"- **Task ID**: #{env_dict.get('task_id')}\n"
+                    f"- **Status**: {env_dict.get('status')}\n"
+                    f"- **Schema**: {env_dict.get('schema_version')}\n\n"
+                    f"## 1. Zero-Search Specification\n"
+                    f"- **Target Files**: {', '.join(spec.get('target_files', []))}\n"
+                    f"- **Anchors**: {', '.join(spec.get('anchors', []))}\n"
+                    f"- **Concrete Changes**: {spec.get('concrete_changes', '')}\n"
+                    f"- **Acceptance Criteria**:\n"
+                    + "\n".join(f"  * {ac}" for ac in spec.get("acceptance_criteria", []))
+                    + f"\n- **Test Command**: `{spec.get('test_command', '')}`\n\n"
+                    f"## 2. Verification Context\n"
+                    f"- **Exit Code**: {ver.get('exit_code', 0)}\n"
+                    f"- **Retry Count**: {ver.get('retry_count', 0)}\n"
+                    f"- **Stack Trace**: {ver.get('error_stack_trace', '') or 'None'}\n"
+                )
+                handoff_file.write_text(content, encoding="utf-8")
+        except Exception as e:
+            print(f"⚠️ [Handoff Persist Warning]: {e}")
+
+    return safe_send_agent_message(
+        role=recipient,
+        message=env_dict,
+        auto_compact=auto_compact,
+        raise_on_invalid=strict
+    )
+
 
 
 def main():

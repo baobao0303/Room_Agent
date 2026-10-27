@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-scripts/patch_paseo.py - Đồng bộ 5 Hồ sơ Vai trò chuẩn SLPPC (Supervisor, PM, Lead, Peer, QC) vào ~/.paseo/config.json.
-Tự động dọn dẹp các profile phân mảnh cũ (Peer Dev 1..4, Peer Design, Lead BA, Peer BA...).
+scripts/patch_paseo.py - Đồng bộ 4 Hồ sơ Vai trò chuẩn SLPC (Supervisor, Lead, Peer, QC) vào ~/.paseo/config.json.
+Tự động dọn dẹp các profile phân mảnh cũ (PM, Peer Dev 1..4, Peer Design, Lead BA...).
 """
 from __future__ import annotations
 
@@ -16,24 +16,23 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = Path(os.environ.get("PASEO_CONFIG", Path.home() / ".paseo" / "config.json"))
 PROFILES_DIR = Path(os.environ.get("PASEO_PROFILES_DIR", PROJECT_ROOT / "profiles"))
 
-PROFILE_FILES = [
-    "supervisor.md",
-    "pm.md",
-    "lead.md",
-    "peer.md",
-    "qc.md",
+PROFILE_ROLES = [
+    "supervisor",
+    "lead",
+    "peer",
+    "qc",
 ]
 
 DEFAULT_IDS = {
     "Supervisor": "agent_profile_supervisor_slp",
-    "PM Agent": "agent_profile_pm_slp",
-    "PM": "agent_profile_pm_slp",
     "Lead": "agent_profile_lead_slp",
     "Peer": "agent_profile_peer_slp",
     "QC": "agent_profile_qc_slpc",
 }
 
 LEGACY_PROFILE_NAMES = {
+    "PM",
+    "PM Agent",
     "Peer Dev 1 (Low)",
     "Peer Dev 2",
     "Peer Dev 2 (Medium)",
@@ -94,20 +93,23 @@ def patch() -> dict:
         data = {"daemon": {"agentProfiles": []}}
 
     raw_profiles = data.setdefault("daemon", {}).setdefault("agentProfiles", [])
-    canonical_names = {"Supervisor", "PM", "PM Agent", "Lead", "Peer", "QC"}
-    # Chỉ giữ lại đúng 5 profile chuẩn SLPPC (loại bỏ mọi biến thể Peer Dev 1..4, Peer Design, Lead BA...)
+    canonical_names = {"Supervisor", "Lead", "Peer", "QC"}
+    # Chỉ giữ lại đúng 4 profile chuẩn SLPC (Supervisor kiêm PM, Lead, Peer, QC)
     profiles = [
         p for p in raw_profiles
         if isinstance(p, dict) and p.get("name") in canonical_names
     ]
     data["daemon"]["agentProfiles"] = profiles
 
-    for filename in PROFILE_FILES:
-        md_path = PROFILES_DIR / filename
+    for role in PROFILE_ROLES:
+        # Ưu tiên profiles/<role>/PROFILE.md, fallback profiles/<role>.md
+        md_path = PROFILES_DIR / role / "PROFILE.md"
+        if not md_path.exists():
+            md_path = PROFILES_DIR / f"{role}.md"
         if not md_path.exists():
             continue
         meta, body = parse_profile(md_path)
-        name = meta.get("name", md_path.stem.capitalize())
+        name = meta.get("name", role.capitalize())
         model = meta.get("model")
 
         found = False
@@ -137,7 +139,7 @@ def patch() -> dict:
     mandatory_gate_marker = "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT)"
     global_research_gen_directive = (
         "MANDATORY RESEARCH & GENERATION GATE (TOOL-FIRST ENFORCEMENT):\n"
-        "Whenever Paseo runs any SLPPC profile (Supervisor, PM, Lead, Peer, QC), "
+        "Whenever Paseo runs any SLPC profile (Supervisor, Lead, Peer, QC), "
         "you MUST execute the workspace Research and Generation tools:\n"
         "1. Unified Research & Gen Pipeline: `python3 tools/profile_research_gen.py --profile \"<Role>\" --topic \"<Task>\" [--source <file>] [--task-id <id>]`\n"
         "2. Research Tools: `python3 tools/research/research_agent.py \"<topic>\"`, "
@@ -164,7 +166,7 @@ def patch() -> dict:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"  ✅ Đã đồng bộ {len(profiles)} Profiles chuẩn SLPPC (Supervisor, PM, Lead, Peer, QC) vào {CONFIG_PATH}.")
+        print(f"  ✅ Đã đồng bộ {len(profiles)} Profiles chuẩn SLPC (Supervisor, Lead, Peer, QC) vào {CONFIG_PATH}.")
         paseo_bin = find_paseo_bin()
         if paseo_bin:
             res = subprocess.run([paseo_bin, "reload", "--json"], capture_output=True, text=True, check=False, timeout=15)

@@ -172,10 +172,19 @@ EOF
         echo "   ✓ Tạo memo khởi tạo: bmad/rooms/$role/latest_handoff.md"
     fi
 
-    # Liên kết symlink .agents sang child worktree
+    # Liên kết symlink .agents, IDENTITY.md, SOUL.md và MEMORY.md sang child worktree
     if [ -d "$target_path" ]; then
         [ ! -e "$target_path/.agents" ] && ln -s "$ROOT_DIR/.agents" "$target_path/.agents" 2>/dev/null || true
-        echo "   ✓ Đồng bộ symlink: .agents/ vào $room_name"
+        if [ -f "$ROOT_DIR/profiles/$role/IDENTITY.md" ]; then
+            cp "$ROOT_DIR/profiles/$role/IDENTITY.md" "$target_path/IDENTITY.md" 2>/dev/null || true
+        fi
+        if [ -f "$ROOT_DIR/profiles/$role/SOUL.md" ]; then
+            cp "$ROOT_DIR/profiles/$role/SOUL.md" "$target_path/SOUL.md" 2>/dev/null || true
+        fi
+        if [ -f "$ROOT_DIR/profiles/$role/MEMORY.md" ]; then
+            cp "$ROOT_DIR/profiles/$role/MEMORY.md" "$target_path/MEMORY.md" 2>/dev/null || true
+        fi
+        echo "   ✓ Đồng bộ symlink: .agents/, IDENTITY.md, SOUL.md và MEMORY.md vào $room_name"
     fi
     echo ""
 done

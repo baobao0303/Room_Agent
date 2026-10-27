@@ -2,13 +2,12 @@
 """
 tools/slppc_flow_guard.py - Bộ Canh Gác Tuân Thủ Quy Trình Điều Hành SLPPC & Tự Động Lập Biên Bản Vi Phạm (SLPPC Flow Guard & Automated Violation Auditor).
 
-Mô hình SLPPC (Supervisor - PM - Lead - Peer - QC):
+Mô hình SLPC (Supervisor - Lead - Peer - QC):
 Kiểm tra tự động và lập biên bản phạt khi:
 1. Lead Dev tự ý gõ code (role_trespass) thay vì bóc tách Zero-Search task giao cho Peers.
 2. Supervisor tự ý code tính năng hoặc duyệt task mơ hồ.
-3. Bỏ qua cổng thẩm định Khả thi & Phù hợp của PM Agent (pm_bypass).
-4. Peer tự tiện đóng task (premature_close) không qua nghiệm thu độc lập của QC.
-5. Giao task 1 dòng cẩu thả vi phạm Zero-Search Mandate (vague_specs).
+3. Peer tự tiện đóng task (premature_close) không qua nghiệm thu độc lập của QC.
+4. Giao task 1 dòng cẩu thả vi phạm Zero-Search Mandate (vague_specs).
 """
 
 from __future__ import annotations
@@ -97,6 +96,109 @@ def check_zero_search_compliance(description: str) -> Tuple[bool, List[str]]:
     return len(missing) == 0, missing
 
 
+def build_agent_handoff_envelope(
+    task_id: str | int,
+    from_role: str,
+    to_role: str,
+    status: str,
+    target_files: List[str],
+    anchors: List[str],
+    concrete_changes: str,
+    acceptance_criteria: List[str],
+    test_command: str,
+    exit_code: int = 0,
+    error_stack_trace: str = "",
+    retry_count: int = 0,
+) -> Dict[str, Any]:
+    """Khởi tạo JSON Schema AgentHandoffEnvelope chuẩn hóa giữa PM, Coder, Tester, Reviewer (Pillar 2)."""
+    return {
+        "schema_version": "ARCH-SPEC-ENTERPRISE-AI-4-PILLARS-2026-V1",
+        "task_id": str(task_id),
+        "from_role": from_role.upper().strip(),
+        "to_role": to_role.upper().strip(),
+        "status": status.upper().strip(),
+        "spec": {
+            "target_files": list(target_files),
+            "anchors": list(anchors),
+            "concrete_changes": str(concrete_changes),
+            "acceptance_criteria": list(acceptance_criteria),
+            "test_command": str(test_command),
+        },
+        "verification": {
+            "exit_code": int(exit_code) if exit_code is not None else 0,
+            "error_stack_trace": "" if error_stack_trace is None else str(error_stack_trace),
+            "retry_count": int(retry_count) if retry_count is not None else 0,
+        },
+    }
+
+
+def validate_agent_handoff_envelope(envelope: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    """
+    Kiểm định JSON Schema AgentHandoffEnvelope và Feedback/Retry Loop:
+    - Đầy đủ các trường bắt buộc: task_id, from_role, to_role, status, spec, verification.
+    - Spec đủ 5 thành phần Zero-Search (target_files, anchors, concrete_changes, acceptance_criteria, test_command).
+    - Khi status == FAILED_RETRY (Tester -> Coder), bắt buộc có error_stack_trace và retry_count <= 3.
+    """
+    errors: List[str] = []
+    if not isinstance(envelope, dict):
+        return False, ["Envelope phải là một JSON object (dict)."]
+
+    for req_field in ("task_id", "from_role", "to_role", "status", "spec", "verification"):
+        val = envelope.get(req_field)
+        if val is None or (isinstance(val, str) and not val.strip()):
+            errors.append(f"Thiếu trường bắt buộc hoặc rỗng: '{req_field}'")
+
+    spec = envelope.get("spec")
+    if not isinstance(spec, dict):
+        errors.append("Trường 'spec' phải là JSON object.")
+    else:
+        for s_key in ("target_files", "anchors", "concrete_changes", "acceptance_criteria", "test_command"):
+            val = spec.get(s_key)
+            if val is None:
+                errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+            elif isinstance(val, str):
+                if not val.strip():
+                    errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+            elif isinstance(val, (list, tuple)):
+                if len(val) == 0 or not [x for x in val if x is not None and str(x).strip()]:
+                    errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+            else:
+                errors.append(f"Spec thiếu hoặc rỗng thành phần Zero-Search: '{s_key}'")
+
+    ver = envelope.get("verification")
+    if not isinstance(ver, dict):
+        errors.append("Trường 'verification' phải là JSON object.")
+    else:
+        raw_retry = ver.get("retry_count", 0)
+        if isinstance(raw_retry, bool) or raw_retry is None:
+            errors.append("Trường 'retry_count' phải là số nguyên.")
+        else:
+            try:
+                val_float = float(raw_retry)
+                if not val_float.is_integer():
+                    errors.append("Trường 'retry_count' phải là số nguyên.")
+                else:
+                    rc = int(val_float)
+                    if rc > 3 or val_float > 3:
+                        errors.append(f"Vượt quá trần vòng lặp Turn Ceiling: retry_count={rc} > 3")
+                    elif rc < 0 or val_float < 0:
+                        errors.append(f"Trường 'retry_count' không hợp lệ: {rc} < 0")
+            except (ValueError, TypeError, OverflowError):
+                errors.append("Trường 'retry_count' phải là số nguyên.")
+
+        status_str = str(envelope.get("status", "")).upper().strip()
+        if status_str == "FAILED_RETRY":
+            raw_stack = ver.get("error_stack_trace")
+            if (
+                raw_stack is None
+                or not str(raw_stack).strip()
+                or str(raw_stack).strip().lower() in ("none", "null")
+            ):
+                errors.append("Luồng Feedback/Retry Loop (FAILED_RETRY) bắt buộc phải đính kèm 'error_stack_trace'.")
+
+    return len(errors) == 0, errors
+
+
 def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     Kiểm tra xem Lead Dev có vi phạm role_trespass:
@@ -127,54 +229,6 @@ def audit_lead_role_trespass(lead_dir: Optional[Path] = None) -> List[Dict[str, 
                         "file": str(memo_file.relative_to(PROJECT_ROOT)) if memo_file.is_relative_to(PROJECT_ROOT) else memo_file.name,
                         "evidence": "Lead Dev ghi nhận trực tiếp sửa mã nguồn sản phẩm thay vì giao cho Peer",
                         "task_id": tid_match.group(1) if tid_match else None,
-                    })
-        except Exception:
-            pass
-
-    return violations
-
-
-def audit_pm_bypass(supervisor_dir: Optional[Path] = None, pm_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
-    """
-    Kiểm tra xem có bỏ qua cổng PM (pm_bypass):
-    Tạo hoặc kích hoạt Epic mà chưa có Intake Memo từ PM Agent.
-    """
-    violations = []
-    sup_dir = supervisor_dir if supervisor_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "supervisor")
-    pm_d = pm_dir if pm_dir is not None else (PROJECT_ROOT / "bmad" / "rooms" / "pm")
-
-    if not sup_dir.is_dir():
-        return violations
-
-    now = time.time()
-    candidates = list(sup_dir.glob("handoff_*.md"))
-    latest_file = sup_dir / "latest_handoff.md"
-    if latest_file.is_file():
-        candidates.append(latest_file)
-
-    for handoff in candidates:
-        try:
-            # Chỉ quét các biên bản gần nhất trong vòng 2 giờ
-            if (now - handoff.stat().st_mtime) > 7200:
-                continue
-            content = handoff.read_text(encoding="utf-8")
-            epic_match = re.search(r"Epic\s*#(\d+)", content, re.IGNORECASE)
-            if epic_match:
-                epic_id = epic_match.group(1)
-                # Bỏ qua các Epic lịch sử trước khi áp dụng chuẩn SLPPC (ID < 4116)
-                if int(epic_id) < 4116:
-                    continue
-                has_pm_memo = False
-                if pm_d.is_dir():
-                    for pm_memo in pm_d.glob("*.md"):
-                        if epic_id in pm_memo.name or f"#{epic_id}" in pm_memo.read_text(encoding="utf-8"):
-                            has_pm_memo = True
-                            break
-                if not has_pm_memo:
-                    violations.append({
-                        "file": str(handoff.relative_to(PROJECT_ROOT)) if handoff.is_relative_to(PROJECT_ROOT) else handoff.name,
-                        "evidence": f"Epic #{epic_id} được khởi tạo/giao việc mà chưa qua cổng thẩm định Feasibility/Alignment của PM Agent",
-                        "task_id": epic_id,
                     })
         except Exception:
             pass
@@ -450,6 +504,23 @@ def audit_settlement_verification_gate(
                     to_state = str(ev.get("to_state", "")).lower()
                     status = str(ev.get("status", "")).lower()
 
+                    # Bỏ qua event nếu action là 'log' (nhật ký ghi chép tiến độ, không phải chuyển trạng thái)
+                    if action == "log":
+                        continue
+
+                    # Bỏ qua event nếu action hoặc trạng thái đích là closed hoặc blocked
+                    if (
+                        action in ("close", "closed", "block", "blocked")
+                        or state in ("closed", "blocked")
+                        or to_state in ("closed", "blocked")
+                        or status in ("closed", "blocked")
+                    ):
+                        continue
+
+                    # Bỏ qua nếu summary thể hiện task được đóng (Closed) hoặc bị chặn (Blocked)
+                    if bool(re.search(r"\b(?:closed|blocked|đóng|chặn|khoá|block)\b", summary_lower)):
+                        continue
+
                     is_resolved = (
                         state == "resolved"
                         or to_state == "resolved"
@@ -631,31 +702,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 2. Kiểm tra PM Bypass
-    pm_bypasses = audit_pm_bypass()
-    for v in pm_bypasses:
-        results["violations_detected"] += 1
-        v_info = {
-            "from": "PM",
-            "to": "Supervisor",
-            "type": "pm_bypass",
-            "evidence": v["evidence"],
-            "task_id": v.get("task_id"),
-            "message": "Bỏ qua cổng thẩm định Khả thi & Phù hợp của PM Agent trước khi tạo/kích hoạt Epic.",
-        }
-        results["violations_list"].append(v_info)
-        if auto_record:
-            path = record_violation_minute(
-                from_role="PM",
-                to_role="Supervisor",
-                violation_type="pm_bypass",
-                task_id=v.get("task_id"),
-                evidence=v["evidence"],
-                message=v_info["message"],
-            )
-            results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
-
-    # 3. Kiểm tra Premature Close
+    # 2. Kiểm tra Premature Close
     premature_closes = audit_premature_close()
     for v in premature_closes:
         results["violations_detected"] += 1
@@ -679,7 +726,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 4. Kiểm tra Vague Specs
+    # 3. Kiểm tra Vague Specs
     vague_specs = audit_vague_specs()
     for v in vague_specs:
         results["violations_detected"] += 1
@@ -703,7 +750,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 5. Kiểm tra Ephemeral Room Hygiene
+    # 4. Kiểm tra Ephemeral Room Hygiene
     hygiene_issues = audit_ephemeral_room_hygiene()
     for v in hygiene_issues:
         results["violations_detected"] += 1
@@ -726,7 +773,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 6. Kiểm tra Settlement Verification Gate (Task Resolved bắt buộc có record verification của Settlement Gate)
+    # 5. Kiểm tra Settlement Verification Gate (Task Resolved bắt buộc có record verification của Settlement Gate)
     settlement_bypasses = audit_settlement_verification_gate()
     for v in settlement_bypasses:
         results["violations_detected"] += 1
@@ -750,7 +797,7 @@ def run_slppc_audit(auto_record: bool = True) -> Dict[str, Any]:
             )
             results["minutes_created"].append(str(path.relative_to(PROJECT_ROOT)))
 
-    # 7. Kiểm tra Circuit Breaker State
+    # 6. Kiểm tra Circuit Breaker State
     cb_trips = audit_circuit_breaker()
     for v in cb_trips:
         results["violations_detected"] += 1

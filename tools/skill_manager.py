@@ -26,7 +26,7 @@ from typing import Dict, Any, List, Optional, Tuple
 
 # Workspace Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
-MASTER_REGISTRY = BASE_DIR / "skills"
+MASTER_REGISTRY = BASE_DIR / "profiles"
 WEB_DASHBOARD_FILE = BASE_DIR / "tools/web/skill_dashboard.html"
 
 # Default Sync Targets
@@ -104,16 +104,11 @@ def get_all_skills() -> List[Dict[str, Any]]:
                 "files_count": len(list(real_path.glob("**/*")))
             }
 
-    # 1. Primary: Master Registry
+    # 1. Primary: Master Registry in profiles/<role>/skills
     if MASTER_REGISTRY.is_dir():
-        for item in MASTER_REGISTRY.iterdir():
-            if item.is_dir():
-                if (item / "SKILL.md").exists():
-                    add_skill_entry(item, "Master Registry", "master", is_master=True)
-                else:
-                    for sub_item in item.iterdir():
-                        if sub_item.is_dir() and (sub_item / "SKILL.md").exists():
-                            add_skill_entry(sub_item, f"Master Registry ({item.name})", "master", is_master=True)
+        for skill_dir in [s for s in MASTER_REGISTRY.rglob("*") if s.is_dir() and (s / "SKILL.md").exists()]:
+            role_name = skill_dir.parent.parent.name if skill_dir.parent.name == "skills" else skill_dir.parent.name
+            add_skill_entry(skill_dir, f"Profile ({role_name})", "master", is_master=True)
 
     # 2. Existing in Paseo Project .agents/skills
     proj_skills = _paseo_project_skills
@@ -172,14 +167,9 @@ def get_all_skills() -> List[Dict[str, Any]]:
 
 def find_skill_in_master(skill_name: str) -> Optional[Path]:
     """Find skill directory in master registry across all profile subdirectories."""
-    top = MASTER_REGISTRY / skill_name
-    if top.is_dir() and (top / "SKILL.md").exists():
-        return top
-    for sub in MASTER_REGISTRY.iterdir():
-        if sub.is_dir():
-            nested = sub / skill_name
-            if nested.is_dir() and (nested / "SKILL.md").exists():
-                return nested
+    for s in MASTER_REGISTRY.rglob("*"):
+        if s.is_dir() and s.name == skill_name and (s / "SKILL.md").exists():
+            return s
     return None
 
 

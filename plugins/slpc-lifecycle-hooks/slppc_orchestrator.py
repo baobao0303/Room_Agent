@@ -1564,9 +1564,37 @@ class SlppcOrchestrator:
         title = target_task.get("title", f"Task #{task_id}")
         desc = target_task.get("description", "")
 
-        # 1. Harness² Pre-Flight Self-Learning Injection (Library + Rust Experience Store)
+        # 1. Harness² Pre-Flight Self-Learning Injection (Library + Context-Bounded RAG Prompt)
         domain = target_task.get("domain") or "engineering"
         lessons_context = self.query_harness2_library_context(domain=domain, limit=3)
+        if not lessons_context and query_lessons:
+            try:
+                lessons = query_lessons(domain=domain, limit=3)
+                if lessons:
+                    try:
+                        from tools.query_reader import build_context_bounded_prompt
+                    except ImportError:
+                        from query_reader import build_context_bounded_prompt
+                    chunks = [
+                        {
+                            "file": f"harness_experience:{getattr(l, 'domain', domain)}",
+                            "heading": getattr(l, "cue", f"Lesson #{idx}"),
+                            "content": getattr(l, "lesson", "")
+                        }
+                        for idx, l in enumerate(lessons, 1)
+                        if getattr(l, "lesson", None)
+                    ]
+                    if chunks:
+                        lessons_context = (
+                            "\n[BẪY QUÁ KHỨ & BÀI HỌC KINH NGHIỆM TỰ HỌC - HARNESS²]:\n"
+                            + build_context_bounded_prompt(
+                                query=f"Task #{task_id}: {title}",
+                                chunks=chunks,
+                                max_chunks=3
+                            )
+                        )
+            except Exception:
+                pass
 
         # 1b. Khởi tạo chu trình đệ quy Harness² Ledger (R=4k, P=3k) cho Task
         h2_mode = str(data.get("harness2_mode") or "agg")

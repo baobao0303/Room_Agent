@@ -39,7 +39,14 @@ FORBIDDEN_GARBAGE_PATTERNS = [
 
 def get_sqlite_conn() -> Optional[sqlite3.Connection]:
     """Find and connect to an active harness.db containing harness_experience table."""
-    for db_path in DB_CANDIDATES:
+    candidates = []
+    if os.environ.get("HARNESS_DB"):
+        candidates.append(Path(os.environ["HARNESS_DB"]))
+    for p in DB_CANDIDATES:
+        if p not in candidates:
+            candidates.append(p)
+
+    for db_path in candidates:
         if db_path.exists():
             try:
                 conn = sqlite3.connect(str(db_path))
@@ -52,6 +59,7 @@ def get_sqlite_conn() -> Optional[sqlite3.Connection]:
             except Exception:
                 pass
     return None
+
 
 def calculate_lesson_quality_score(cue: str, lesson: str, evidence: str) -> Tuple[float, List[str]]:
     """
@@ -97,7 +105,7 @@ def search_experiences(
     query_text: str = "",
     domain: Optional[str] = None,
     min_confidence: Optional[str] = None,
-    limit: int = 20,
+    limit: int = 3,
 ) -> List[Dict[str, Any]]:
     # 1. Cố gắng tra cứu từ Floci DynamoDB qua GSI O(1) nếu domain được chỉ định
     raw_items: List[Dict[str, Any]] = []
@@ -140,6 +148,20 @@ def search_experiences(
             raw_items = [dict(r) for r in rows]
             conn.close()
 
+    # 3. Nếu SQLite không có hoặc rỗng, fallback sang .harness/local_db.json (G-MEM-2)
+    if not raw_items:
+        try:
+            local_json = BASE_DIR / ".harness" / "local_db.json"
+            if local_json.exists():
+                with open(local_json, "r", encoding="utf-8") as f:
+                    store = json.load(f)
+                    exps = store.get("experiences", [])
+                    if domain and domain.lower() != "all":
+                        exps = [e for e in exps if (e.get("domain") == domain or e.get("category") == domain)]
+                    raw_items = exps
+        except Exception:
+            pass
+
     results = []
     for item in raw_items:
         if min_confidence and item.get("confidence", "").lower() != min_confidence.lower():
@@ -153,12 +175,22 @@ def search_experiences(
             str(item.get("cue", "")), str(item.get("lesson", "")), str(item.get("evidence", ""))
         )
         it = dict(item)
+        dom = it.get("domain") or it.get("category") or "general"
+        cu = it.get("cue") or it.get("trigger_pattern") or "unspecified_cue"
+        cf = str(it.get("confidence") or it.get("severity") or "medium").lower()
+        it["domain"] = dom
+        it["category"] = dom
+        it["cue"] = cu
+        it["trigger_pattern"] = cu
+        it["confidence"] = cf
+        it["severity"] = cf
         it["quality_score"] = round(q_score, 2)
         it["quality_issues"] = issues
         it["is_high_signal"] = q_score >= 0.70
         results.append(it)
 
     return results[:limit]
+
 
 def run_audit(prune_garbage: bool = False, min_score: float = 0.60) -> Dict[str, Any]:
     """Audit toàn bộ kho tri thức để Supervisor / PM kiểm tra."""
@@ -273,7 +305,7 @@ def main():
     search_p.add_argument("query", nargs="?", default="", help="Từ khóa tìm kiếm (trong cue, lesson, evidence)")
     search_p.add_argument("--domain", "-d", help="Lọc theo domain (angular_fe, media_video, rust_cli...)")
     search_p.add_argument("--confidence", "-c", choices=["low", "medium", "high"], help="Lọc độ tin cậy")
-    search_p.add_argument("--limit", "-n", type=int, default=20, help="Số lượng kết quả tối đa")
+    search_p.add_argument("--limit", "-n", type=int, default=3, help="Số lượng kết quả tối đa (mặc định: 3 context chunks chuẩn RAG)")
     search_p.add_argument("--json", action="store_true", help="Xuất định dạng JSON")
 
     # 2. Audit command
@@ -288,7 +320,7 @@ def main():
         query = getattr(args, "query", "")
         domain = getattr(args, "domain", None)
         conf = getattr(args, "confidence", None)
-        limit = getattr(args, "limit", 20)
+        limit = getattr(args, "limit", 3)
         is_json = getattr(args, "json", False)
         items = search_experiences(query_text=query, domain=domain, min_confidence=conf, limit=limit)
         print_search_results(items, json_output=is_json)

@@ -13,6 +13,9 @@ docs/spec/<tên-dự-án>/
 
 ---
 
-## Danh sách dự án hiện có:
+## Danh sách dự án & tài liệu kiến trúc hiện có:
+- [ai-agent-4-concepts-spec.md](file:///Users/bao312/Desktop/Room_Agent/docs/spec/ai-agent-4-concepts-spec.md): Đặc tả Kiến trúc Tổng thể 12 Khái niệm AI Agent & Đối soát Mã nguồn `Room_Agent` (`ARCH-SPEC-AI-AGENT-12-CONCEPTS-2026-V2`).
+- [spec-gap-hardening-execution-and-skills-spec.md](file:///Users/bao312/Desktop/Room_Agent/docs/spec/spec-gap-hardening-execution-and-skills-spec.md): Đặc tả Kỹ thuật Tổng kết Quy trình Reverse Engineering 12 Khái niệm AI Agent, Hardening Runtime 4-Role SLPC & Ma trận Skills Thực thi (`ARCH-SPEC-GAP-HARDENING-EXECUTION-SKILLS-2026-V1`).
+- [enterprise-ai-4-pillars-architecture-spec.md](file:///Users/bao312/Desktop/Room_Agent/docs/spec/enterprise-ai-4-pillars-architecture-spec.md): Bản đặc tả kỹ thuật Hệ thống AI Doanh nghiệp — 4 Trụ cột Kiến trúc Thực chiến (`ARCH-SPEC-ENTERPRISE-AI-4-PILLARS-2026-V1`: RAG, Multi-Agent, 3-Tier Memory, EVOS & Guardrails).
 - `crm/`: Hệ thống ACME Enterprise Customer Engagement & CDP Frontend Monorepo (`projects/crm-fe`).
 - `example-project/`: Dự án mẫu minh họa cấu trúc tài liệu.

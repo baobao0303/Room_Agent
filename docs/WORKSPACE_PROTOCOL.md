@@ -1,4 +1,4 @@
-# Workspace Protocol: SLPPC Multi-Agent Architecture
+# Workspace Protocol: SLPC Multi-Agent Architecture
 
 > **Mã quy chuẩn**: `WORKSPACE_PROTOCOL.md`  
 > **Tham chiếu**: `ARCH-SPEC-UNIFIED-ROOM-AGENT-SUPERVISION-2026-V1` | `codex-room-setup` | `paseo-supervision` | `pstack-codex`
@@ -10,8 +10,7 @@
 ## 1. Phân định Thẩm quyền (Authority & Governance)
 
 - **Human Operator (User)**: Chủ sở hữu tối cao về mục tiêu sản phẩm, độ ưu tiên, chi phí token/API, và các quyết định rủi ro không thể đảo ngược.
-- **Supervisor (Scope & Intent Guard)**: Trọng tài quản trị phạm vi, **Single Point of Contact (SPOC)** duy nhất với User. Quan sát, định tuyến ý định của Human, quản lý trần đồng thời (Concurrency Ceiling 3–5 workers). Nghiêm cấm trực tiếp can thiệp mã nguồn (`role_trespass`).
-- **PM Agent (Decision Arbiter & Loop Enforcer)**: Thẩm định Khả thi (Feasibility 0..3) và Phù hợp (Alignment) qua Kev System One (<50ms). Khống chế trần vòng lặp (Turn Ceiling $\le 3$ attempts). Chặn đứng lỗi `pm_bypass`.
+- **Supervisor (Scope & Intent Guard)**: Trọng tài quản trị phạm vi, **Single Point of Contact (SPOC)** duy nhất với User. Quan sát, định tuyến ý định của Human, thẩm định Khả thi (Feasibility 0..3) và Phù hợp (Alignment) qua Kev System One (<50ms), quản lý trần đồng thời (Concurrency Ceiling 3–5 workers). Nghiêm cấm trực tiếp can thiệp mã nguồn (`role_trespass`).
 - **Lead Dev (Technical Architect & Technical PM)**: Thiết kế giải pháp kỹ thuật, phân rã task chuẩn Zero-Search 5 thành phần, phê duyệt giải pháp và giao cho Peer. Nghiêm cấm tự ý code sản phẩm (`role_trespass`).
 - **Peer Devs (Ephemeral Code Executors 1..4)**: Nhận ủy quyền 1 đầu việc cụ thể từ Lead. Code theo spec, tuân thủ Strict Typing, tự chạy test cơ học cục bộ và nộp trạng thái `Resolved`. Tự hủy tab khi hoàn thành.
 - **QC (Quality Gate & Test Architect)**: Độc quyền thẩm quyền chuyển trạng thái task sang `Closed` sau khi xác thực 5-Stage ISTQB, kiểm tra Exit Code 0 cơ học, và xác nhận 100% không có lỗi hồi quy.
@@ -36,7 +35,7 @@
 ## 3. Quản trị Trạng thái & Cơ chế Tự Hủy (Ephemeral State Lifecycle)
 
 Hệ sinh thái vận hành theo nguyên lý **"Ephemeral by Default, Persistent by Exception"**:
-- **Persistent Tabs**: Duy trì thường trực tối đa 2–3 tabs điều phối (`Supervisor`, `PM`, `Lead Dev`).
+- **Persistent Tabs**: Duy trì thường trực tối đa 2 tabs điều phối (`Supervisor`, `Lead Dev`).
 - **Ephemeral Sub-Agents**: `Peer Dev` và `QC` chỉ được kích hoạt theo nhu cầu (on-demand) khi có task:
   - Khi Peer hoàn tất mã nguồn $\rightarrow$ nộp `Resolved` $\rightarrow$ **Cưỡng chế đóng tab Peer ngay lập tức** (đưa RAM nền về 0).
   - Khi QC hoàn tất kiểm thử $\rightarrow$ nộp `Closed` $\rightarrow$ **Cưỡng chế đóng tab QC ngay lập tức** $\rightarrow$ Nén dọn dẹp thư mục tạm `bmad/rooms/tasks/<id>/` vào `bmad/rooms/archive/task_<id>.tar.gz`.
@@ -56,6 +55,6 @@ Hệ sinh thái vận hành theo nguyên lý **"Ephemeral by Default, Persistent
 
 ## 5. Lưu trữ Biên bản Bàn giao (Room Hygiene Standard)
 
-1. Mỗi phòng ban (`bmad/rooms/{supervisor,pm,lead,peer,qc}`) chỉ duy trì duy nhất một file **`latest_handoff.md`** (atomic overwrite in-place, $\le 150$ dòng).
+1. Mỗi phòng ban (`bmad/rooms/{supervisor,lead,peer,qc}`) chỉ duy trì duy nhất một file **`latest_handoff.md`** (atomic overwrite in-place, $\le 150$ dòng).
 2. Toàn bộ lịch sử chuyển giao được lưu tập trung tại **`bmad/rooms/room_ledger.json`** theo cơ chế xoay vòng rolling FIFO 50 bản ghi, kích thước trần $< 50$ KB.
 3. Nghiêm cấm sinh file có hậu tố timestamp (`handoff_YYYYMMDD_HHMMSS.md`) gây bùng nổ file rác.

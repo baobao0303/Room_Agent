@@ -13,8 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 PROFILES_DIR = BASE_DIR / "profiles"
 
 ROLE_SCOPED_TOOLS = {
-    "supervisor": ["tools/harness_manager.py", "tools/agent_progress.py", "tools/call_agent.py", "tools/bmad_promote.py", "scripts/anti_leak_sentinel.py"],
-    "pm": ["skills/pm/systemone/systemone.py", "tools/harness_manager.py", "tools/agent_progress.py"],
+    "supervisor": ["tools/harness_manager.py", "tools/agent_progress.py", "tools/call_agent.py", "tools/bmad_promote.py", "profiles/supervisor/skills/intake-and-scope/systemone/systemone.py", "tools/harness_learning_search.py"],
     "lead": ["tools/harness_learning_search.py", "tools/lead_code_review.py", "tools/bmad_promote.py", "tools/harness_manager.py"],
     "peer": ["patch", "write_file", "terminal", "tools/agent_progress.py"],
     "qc": ["tools/qc_test_generator.py", "tools/slppc_flow_guard.py", "tools/strict_typing_scanner.py", "tools/bmad_promote.py", "tools/harness_manager.py"],
@@ -58,9 +57,11 @@ class TestScopedTools(unittest.TestCase):
     """Test Per-Role Scoped Tool Surfaces and strict role boundaries."""
 
     def test_all_profiles_exist(self):
-        for role_file in ["supervisor.md", "pm.md", "lead.md", "peer.md", "qc.md"]:
-            p = PROFILES_DIR / role_file
-            self.assertTrue(p.is_file(), f"Profile {role_file} must exist")
+        for role in ["supervisor", "lead", "peer", "qc"]:
+            p = PROFILES_DIR / role / "PROFILE.md"
+            if not p.is_file():
+                p = PROFILES_DIR / f"{role}.md"
+            self.assertTrue(p.is_file(), f"Profile {role} must exist")
 
     def test_role_scoped_tools_budget(self):
         """Each role must have a constrained tool surface of 2 to 6 tools."""
@@ -70,7 +71,7 @@ class TestScopedTools(unittest.TestCase):
 
     def test_supervisor_and_lead_cannot_have_code_mutation_tools(self):
         """Supervisor and Lead must not have patch or direct code modification tools."""
-        for role in ["supervisor", "pm", "lead"]:
+        for role in ["supervisor", "lead"]:
             tools = ROLE_SCOPED_TOOLS[role]
             self.assertNotIn("patch", tools)
             self.assertNotIn("write_file", tools)

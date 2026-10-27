@@ -13,6 +13,7 @@ Stages:
 
 import subprocess
 import sys
+import unittest
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -59,11 +60,19 @@ def test_stage2_dev_cannot_close_task():
         assert "DEV ONLY" in str(e) or "ROLE FENCE" in str(e)
         print("  [PASS] Stage 2 (TP): Dev closing task correctly blocked with PermissionError")
 
-    # 4. Lead closing task -> MUST SUCCEED (Zero False-Positive AC-2)
-    res_lead = mgr.update_state(tid, "Closed", assigned_to_profile="lead")
-    assert res_lead["success"] is True
-    assert res_lead["new_state"] == "Closed"
-    print("  [PASS] Stage 2 (TP): Lead successfully closed task (AC-2 Zero False-Positive)")
+    # 4. Attempt to close as Lead -> MUST FAIL (G-HRN-2: Lead can_close_task: false)
+    try:
+        mgr.update_state(tid, "Closed", assigned_to_profile="lead")
+        raise AssertionError("Lead was able to close task! G-HRN-2 role fence broken!")
+    except PermissionError as e:
+        assert "ROLE FENCE" in str(e) or "can_close_task" in str(e) or "QC" in str(e)
+        print("  [PASS] Stage 2 (TP): Lead closing task correctly blocked with PermissionError (G-HRN-2)")
+
+    # 5. QC closing task -> MUST SUCCEED (can_close_task: true)
+    res_qc = mgr.update_state(tid, "Closed", assigned_to_profile="qc")
+    assert res_qc["success"] is True
+    assert res_qc["new_state"] == "Closed"
+    print("  [PASS] Stage 2 (TP): QC successfully closed task")
 
 
 def test_stage3_qc_can_close_task():
@@ -111,15 +120,43 @@ def test_stage4_sqlite_parity():
     except PermissionError as e:
         assert "DEV ONLY" in str(e) or "ROLE FENCE" in str(e)
 
-    res_lead = mgr.update_state(tid, "Closed", assigned_to_profile="lead")
-    assert res_lead["success"] is True
-    assert res_lead["new_state"] == "Closed"
-    print("  [PASS] Stage 4 (Execution): SQLite parity verified 100%")
+    # Lead closing SQLite task -> MUST FAIL (G-HRN-2)
+    try:
+        mgr.update_state(tid, "Closed", assigned_to_profile="lead")
+        raise AssertionError("Lead was able to close SQLite task! G-HRN-2 role fence broken!")
+    except PermissionError as e:
+        assert "ROLE FENCE" in str(e) or "can_close_task" in str(e) or "QC" in str(e)
+        print("  [PASS] Stage 4 (Execution): Lead closing SQLite task correctly blocked (G-HRN-2)")
+
+    # QC closing SQLite task -> MUST SUCCEED
+    res_qc = mgr.update_state(tid, "Closed", assigned_to_profile="qc")
+    assert res_qc["success"] is True
+    assert res_qc["new_state"] == "Closed"
+    print("  [PASS] Stage 4 (Execution): SQLite parity verified 100% (QC closed task)")
 
 
 def test_stage5_coverage_gate():
     """Coverage Gate Summary."""
     print("  [PASS] Stage 5 (Coverage Gate): All AC-1, AC-2, AC-3 conditions verified 100%")
+
+
+class TestRoleFenceAudit(unittest.TestCase):
+    """5-Stage ISTQB Audit Suite for Role Fence & G-HRN-1/G-HRN-2."""
+
+    def test_stage1_bypass_lead_architect_blocked(self):
+        test_stage1_bypass_lead_architect_blocked()
+
+    def test_stage2_dev_and_lead_cannot_close_task(self):
+        test_stage2_dev_cannot_close_task()
+
+    def test_stage3_qc_can_close_task(self):
+        test_stage3_qc_can_close_task()
+
+    def test_stage4_sqlite_parity(self):
+        test_stage4_sqlite_parity()
+
+    def test_stage5_coverage_gate(self):
+        test_stage5_coverage_gate()
 
 
 if __name__ == "__main__":

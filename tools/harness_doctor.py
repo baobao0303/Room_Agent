@@ -144,9 +144,16 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
     latency_ms = int((time.time() - t0) * 1000)
 
     cfg_path = Path.home() / ".paseo" / "config.json"
-    required_roles = {"supervisor", "pm", "lead", "peer", "qc"}
+    required_roles = {"supervisor", "lead", "peer", "qc"}
     found_roles = set()
     cfg_valid = False
+
+    # Validate that canonical 4 roles exist in repository: profiles/<role>/PROFILE.md
+    repo_profiles_dir = BASE_DIR / "profiles"
+    repo_profiles_valid = all(
+        (repo_profiles_dir / r / "PROFILE.md").is_file() for r in required_roles
+    )
+
     if cfg_path.is_file():
         try:
             cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
@@ -156,9 +163,13 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
                     nm = p.get("name") or p.get("id") or ""
                     if nm:
                         found_roles.add(str(nm).strip().lower())
-            cfg_valid = required_roles.issubset(found_roles)
+            cfg_valid = required_roles.issubset(found_roles) and repo_profiles_valid
         except Exception:
             cfg_valid = False
+    else:
+        if repo_profiles_valid:
+            found_roles.update(required_roles)
+        cfg_valid = repo_profiles_valid
 
     healed = None
     if not cfg_valid and auto_heal:
@@ -169,8 +180,8 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
             try:
                 subprocess.run([sys.executable, str(patch_script)], check=False, timeout=10)
                 found_roles.update(required_roles)
-                cfg_valid = True
-                healed = _record_heal("paseo_daemon", "Đồng bộ lại 5 profile SLPPC qua scripts/patch_paseo.py", True)
+                cfg_valid = repo_profiles_valid
+                healed = _record_heal("paseo_daemon", "Đồng bộ lại 4 profile SLPC qua scripts/patch_paseo.py", True)
             except Exception as e:
                 healed = _record_heal("paseo_daemon", "Chạy scripts/patch_paseo.py", False, str(e))
 
@@ -426,6 +437,55 @@ def check_native_binary_and_learning(auto_heal: bool = True) -> Dict[str, Any]:
     }
 
 
+def check_rtk_binary(auto_heal: bool = True, strict: bool = False) -> Dict[str, Any]:
+    """Check RTK (Rust Token Killer) Context Proxy binary availability (G-CTX-1)."""
+    t0 = time.time()
+    local_bin = str(Path.home() / ".local" / "bin")
+    env_path = os.environ.get("PATH", "")
+    if local_bin not in env_path.split(os.pathsep) and Path(local_bin).is_dir():
+        env_path = f"{local_bin}{os.pathsep}{env_path}"
+
+    candidate_paths = [shutil.which("rtk", path=env_path)]
+    if (Path(local_bin) / "rtk").is_file():
+        candidate_paths.append(str(Path(local_bin) / "rtk"))
+
+    rtk_bin: Optional[str] = None
+    for p in candidate_paths:
+        if p and os.path.isfile(p) and os.access(p, os.X_OK):
+            rtk_bin = p
+            break
+
+    healed = None
+    version_str = "N/A"
+    if rtk_bin:
+        try:
+            res = subprocess.run([rtk_bin, "--version"], capture_output=True, text=True, timeout=5)
+            version_str = res.stdout.strip() or "rtk (active)"
+        except Exception:
+            version_str = "rtk (executable)"
+
+    latency_ms = int((time.time() - t0) * 1000)
+    exists = rtk_bin is not None
+
+    status = "ok" if exists else ("error" if strict else "warn")
+    remediation = "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
+    summary = (
+        f"{version_str} ({rtk_bin})"
+        if exists
+        else f"Binary 'rtk' không tìm thấy trên PATH; Semantic Pruning đang tắt. Cài đặt: {remediation}"
+    )
+
+    return {
+        "id": "rtk_binary",
+        "name": "RTK (Rust Token Killer) Context Proxy",
+        "status": status,
+        "latency_ms": latency_ms,
+        "summary": summary,
+        "remediation": remediation if not exists else None,
+        "healed": healed,
+    }
+
+
 def check_hooks_and_git(auto_heal: bool = True) -> Dict[str, Any]:
     """7. Check SLPC Lifecycle Hooks & Worktree Hook permissions."""
     hook_script = BASE_DIR / "scripts" / "worktree_hook.sh"
@@ -486,7 +546,7 @@ def check_recent_error_logs() -> Dict[str, Any]:
 
 
 def run_doctor(auto_heal: bool = True, in_process: bool = False) -> Dict[str, Any]:
-    """Run all 8 continuous doctor checks and return a structured health report."""
+    """Run all continuous doctor checks and return a structured health report."""
     t0 = time.time()
     checks = [
         check_dashboard_api(auto_heal=auto_heal, in_process=in_process),
@@ -495,9 +555,11 @@ def run_doctor(auto_heal: bool = True, in_process: bool = False) -> Dict[str, An
         check_codex_room_runtimes(auto_heal=auto_heal),
         check_work_items_hygiene(auto_heal=auto_heal),
         check_native_binary_and_learning(auto_heal=auto_heal),
+        check_rtk_binary(auto_heal=auto_heal),
         check_hooks_and_git(auto_heal=auto_heal),
         check_recent_error_logs(),
     ]
+
 
     ok_count = sum(1 for c in checks if c["status"] == "ok")
     warn_count = sum(1 for c in checks if c["status"] == "warn")
@@ -545,11 +607,13 @@ def print_report(report: Dict[str, Any]):
     print("-" * 92)
     for c in report["checks"]:
         icon = "✓" if c["status"] == "ok" else ("⚠" if c["status"] == "warn" else "✗")
-        print(f" [{icon}] {c['name']:<38} | {c['summary']}")
+        if c.get("remediation") and c["status"] != "ok":
+            print(f"     ↳ [HƯỚNG DẪN KHẮC PHỤC] {c['remediation']}")
         if c.get("healed"):
             h = c["healed"]
             print(f"     ↳ [AUTO-HEAL] {h['action']} -> {'SUCCESS' if h['success'] else 'FAILED'}")
     print("-" * 92)
+
 
 
 def main():

@@ -125,5 +125,6 @@ CREATE TABLE trace (
     duration_seconds INTEGER,
     token_estimate   INTEGER,
     harness_friction TEXT,
-    notes            TEXT
+    notes            TEXT,
+    run_id           TEXT
 );

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-scripts/agent_start.py - All-in-One CLI để quản lý, khởi chạy và giám sát các Agent SLPPC.
+scripts/agent_start.py - All-in-One CLI để quản lý, khởi chạy và giám sát các Agent SLPC.
 
 Sử dụng:
-  ./cli/agent-start                 Khởi chạy toàn bộ phòng multi-agent (idempotent, không mở trùng)
-  ./cli/agent-start <role>          Khởi chạy một agent cụ thể (pm, lead, peer, peer2, peer3, peer4, design, qc)
+  ./cli/agent-start                 Khởi chạy Controller multi-agent (idempotent, không mở trùng)
+  ./cli/agent-start <role>          Khởi chạy một agent cụ thể (lead, peer, peer2, peer3, peer4, design, qc)
   ./cli/agent-start status          Xem trạng thái chi tiết của tất cả các Agent và nhịp tim
   ./cli/agent-start restart         Khởi động lại toàn bộ các Agent
   ./cli/agent-start stop [role]     Đóng tab của agent (hoặc tất cả nếu dùng --all)
@@ -26,26 +26,22 @@ HB_FILE = SCRIPT_DIR / "bmad" / "rooms" / "heartbeats.json"
 
 AGENTS = {
     "supervisor": (
-        "[Supervisor] Scope & Intent Guard in SLPPC. "
-        "Chuyên trách quản trị phạm vi, tạo Epic/Task trên Harness DB, "
-        "điều phối PM, Lead, Peer, QC và bảo vệ Single-Ownership Invariant."
+        "[Supervisor] Scope, Intent Guard & Product Manager in SLPC (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách quản trị phạm vi, đánh giá Feasibility & Alignment (Kev System One <50ms hoặc Heuristic), "
+        "kiểm soát AC & trần vòng lặp (Turn Ceiling <= 3), tạo Epic/Task trên Harness DB, "
+        "điều phối Lead, Peer, QC, kiểm soát EVOS Release Gate (>= 98.5%) và bảo vệ Single-Ownership Invariant."
     ),
     "supervisor2": (
-        "[Supervisor 2] Nested Scope & Intent Guard in SLPPC. "
+        "[Supervisor 2] Nested Scope & Intent Guard in SLPC. "
         "Chuyên trách điều phối nhánh Sub-Epic hoặc Epic song song lồng ghép với Master Supervisor."
     ),
     "supervisor3": (
-        "[Supervisor 3] Nested Scope & Intent Guard in SLPPC. "
+        "[Supervisor 3] Nested Scope & Intent Guard in SLPC. "
         "Chuyên trách điều phối nhánh Sub-Epic hoặc Epic song song lồng ghép với Master Supervisor."
     ),
-    "pm": (
-        "[PM Agent] Product Manager & Decision Arbiter in SLPPC. "
-        "Chuyên trách đánh giá Feasibility và Alignment qua Kev System One (<50ms), "
-        "kiểm soát AC và kiểm tra bẫy lỗi cũ từ Harness Learn."
-    ),
     "lead": (
-        "[Lead Dev] Technical Architect. "
-        "Chuyên trách kiến trúc, phân rã task chuẩn Zero-Search và review code qua 7 tiêu chí."
+        "[Lead Dev] Technical Architect & Reviewer (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách kiến trúc, truy xuất Context-Bounded RAG (Top-3 chunks), phân rã task chuẩn Zero-Search (JSON Schema AgentHandoffEnvelope) và phản biện chéo (Cross-Critique)."
     ),
     "lead2": (
         "[Lead Dev 2] Technical Architect (Slot 2). "
@@ -56,8 +52,8 @@ AGENTS = {
         "Chuyên trách kiến trúc nhánh song song, phân rã task chuẩn Zero-Search và review code."
     ),
     "peer": (
-        "[Peer Dev] Code & UI Executor. "
-        "Chuyên trách thực thi mã nguồn Full-Stack, ánh xạ Figma/TDS UI tokens và nộp Resolved theo điều phối của Lead."
+        "[Peer Dev / Coder Agent] Code & UI Executor (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách thực thi mã nguồn Full-Stack trên Working Memory tinh gọn (<30k tokens), ánh xạ Figma/TDS UI tokens và nộp Resolved theo JSON Schema của Lead."
     ),
     "peer2": (
         "[Peer Dev 2] Code & UI Executor (Slot 2). "
@@ -76,8 +72,8 @@ AGENTS = {
         "Chuyên trách bóc tách Figma/TDS UI tokens và thiết kế giao diện chuẩn Angular 18."
     ),
     "qc": (
-        "[QC] 5-Stage ISTQB Verifier. "
-        "Chuyên trách sinh test matrix, nghiệm thu độc lập và đóng task."
+        "[QC / Tester & EVOS Verifier] 5-Stage ISTQB & Destructive Tester (Enterprise AI 4-Pillar Spec). "
+        "Chuyên trách sinh test matrix, thực thi kiểm thử phá hoại (gửi Feedback/Retry Loop kèm Error Stack Trace nếu lỗi), chạy EVOS Engine (Pass Rate >= 98.5%) và độc quyền đóng task."
     ),
     "qc2": (
         "[QC 2] 5-Stage ISTQB Verifier (Slot 2). "
@@ -90,10 +86,9 @@ AGENTS = {
 }
 
 TITLES = {
-    "supervisor": "[Supervisor] Scope & Intent Guard",
+    "supervisor": "[Supervisor] Scope, Intent & PM Guard",
     "supervisor2": "[Supervisor 2] Nested Scope Guard",
     "supervisor3": "[Supervisor 3] Nested Scope Guard",
-    "pm": "[PM] Feasibility & Alignment",
     "lead": "[Lead Dev] Technical Architect",
     "lead2": "[Lead Dev 2] Technical Architect",
     "lead3": "[Lead Dev 3] Technical Architect",
@@ -112,15 +107,14 @@ REASONINGS = {k: "high" for k in AGENTS}
 
 ROOM_CAPACITIES = {
     "supervisor": 3,
-    "pm": 1,
     "lead": 3,
     "peer": 5,
     "qc": 3,
 }
 
 PERSISTENT_ROLES = ["supervisor"]
-EPHEMERAL_ROLES = ["pm", "lead", "lead2", "lead3", "peer", "peer2", "peer3", "peer4", "peer_design", "qc", "qc2", "qc3"]
-ALL_ROLES = ["supervisor", "pm", "lead", "peer", "qc"]
+EPHEMERAL_ROLES = ["lead", "lead2", "lead3", "peer", "peer2", "peer3", "peer4", "peer_design", "qc", "qc2", "qc3"]
+ALL_ROLES = ["supervisor", "lead", "peer", "qc"]
 
 
 def normalize_room(role: str) -> str:
@@ -219,9 +213,14 @@ def run_cmd(args: list[str]) -> tuple[int, str]:
                 return 1, "Orca IDE CLI not found (blocked /usr/bin/orca GNOME Screen Reader)"
             args = [orca_bin] + args[1:]
         res = subprocess.run(args, capture_output=True, text=True, cwd=str(SCRIPT_DIR))
-        return res.returncode, res.stdout.strip()
+        out = res.stdout.strip()
+        err = res.stderr.strip()
+        if res.returncode != 0 and err:
+            out = f"{out}\n{err}".strip() if out else err
+        return res.returncode, out
     except Exception as exc:
         return 1, str(exc)
+
 
 
 def get_live_terminals() -> dict[str, dict]:
@@ -319,6 +318,14 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
         return primary_h
 
     prompt = AGENTS.get(slot_id, AGENTS.get(target_room, ""))
+    try:
+        sys.path.insert(0, str(SCRIPT_DIR / "tools"))
+        from agent_context_manager import build_rehydration_prompt  # type: ignore
+        hydration_block = build_rehydration_prompt(role=slot_id, user_id=os.environ.get("USER", "enterprise_user"), project_id="Room_Agent")
+        prompt = f"{prompt}\n\n{hydration_block}"
+    except Exception as exc:
+        sys.stderr.write(f"⚠️ [WARN] Memory rehydration failed for role '{slot_id}': {exc}\n")
+
     print(f"--- 🚀 Đang khởi chạy: {title} ({slot_id}) ---")
 
     wt_target = "name:main" if target_room == "supervisor" else (f"name:room-{target_room}" if target_room in ("pm", "lead", "peer", "qc") else "active")
@@ -376,7 +383,8 @@ def launch_single(role: str, registry: dict[str, dict], live_terms: dict[str, di
                 if eh and eh != handle and eh not in registered_room_handles:
                     run_cmd(["orca", "terminal", "close", "--terminal", eh, "--tab", "--json"])
     else:
-        print(f"  ⚠️  Không nhận được handle từ Orca cho agent {slot_id}.")
+        err_detail = f" (code={code}, output={out})" if out else f" (code={code})"
+        print(f"  ⚠️  Không nhận được handle từ Orca cho agent {slot_id}.{err_detail}", file=sys.stderr)
 
     time.sleep(1)
     return handle
@@ -390,7 +398,7 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
     live_terms = get_live_terminals()
 
     print("======================================================================")
-    print("⚡ [SLPPC MULTI-SLOT & RECURSIVE AGENT CONTROLLER] ⚡")
+    print("⚡ [SLPC MULTI-SLOT & RECURSIVE AGENT CONTROLLER] ⚡")
     print("======================================================================")
 
     if target_roles:
@@ -403,8 +411,8 @@ def cmd_start(target_roles: list[str], launch_all: bool = False) -> int:
         roles_to_run = ALL_ROLES
     else:
         roles_to_run = PERSISTENT_ROLES
-        print("💡 [SLPPC Architecture]: Mặc định khởi chạy Persistent Supervisor.")
-        print("   Hỗ trợ mở song song nhiều slot: peer, peer2..4, peer_design, lead, lead2..3, qc, qc2..3, supervisor2..3.")
+        print("💡 [SLPC Ephemeral Architecture]: Mặc định duy trì Persistent Supervisor (Context sạch, RAM nền = 0).")
+        print("   Các vai trò Ephemeral (Lead, Peer, QC) hỗ trợ mở nhiều slot (peer2..4, lead2..3, qc2..3) kèm 3-Tier Dynamic Hydration.")
 
     for role in roles_to_run:
         if role not in AGENTS:
@@ -428,7 +436,7 @@ def cmd_status() -> int:
         except Exception:
             pass
 
-    print("\n📋 TRẠNG THÁI HIỆN TẠI CỦA 5 PHÒNG AGENT SLPPC:")
+    print("\n📋 TRẠNG THÁI HIỆN TẠI CỦA CÁC AGENT SLPC:")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
     print(f"{'VAI TRÒ (ROLE)':<34} | {'HANDLE':<24} | {'STATUS':<12} | {'MODEL':<24} | {'HEARTBEAT':<12}")
     print("──────────────────────────────────────────────────────────────────────────────────────────────────────────")
@@ -507,8 +515,9 @@ def cmd_clear_ephemerals() -> int:
     if get_orca_ide_bin():
         try:
             subprocess.run(["python3", str(SCRIPT_DIR / "tools" / "zombie_reaper.py")], capture_output=True, text=True, timeout=5)
-        except Exception:
-            pass
+        except Exception as exc:
+            sys.stderr.write(f"⚠️ [WARN] Zombie reaper execution failed: {exc}\n")
+
     print("✨ Toàn bộ sub-agent tạm thời (Peer, QC) đã được đóng. Context đưa về trạng thái sạch sẽ, RAM đưa về 0.")
     return res
 
@@ -522,20 +531,19 @@ def cmd_restart(target_roles: list[str]) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Agent Start & Manager CLI cho hệ thống 5-Room SLPPC (Supervisor, PM, Lead, Peer, QC).",
+        description="Agent Start & Manager CLI cho hệ thống SLPC (Supervisor, Lead, Peer, QC).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ví dụ:
-  ./cli/agent-start                  Khởi chạy 3 Persistent Agents (Supervisor, PM, Lead)
+  ./cli/agent-start                  Khởi chạy Controller (Supervisor persistent, Lead/Peer/QC ephemeral)
   ./cli/agent-start clear            Đóng toàn bộ Sub-Agent tạm thời (Peer, QC)
-  ./cli/agent-start pm               Khởi chạy riêng PM Agent
   ./cli/agent-start lead peer qc     Khởi chạy Lead, Peer và QC
-  ./cli/agent-start status           Xem bảng trạng thái chi tiết 5 phòng
+  ./cli/agent-start status           Xem bảng trạng thái chi tiết các phòng
   ./cli/agent-start restart          Khởi động lại toàn bộ
   ./cli/agent-start stop --all       Đóng tất cả agent
 """
     )
-    parser.add_argument("roles", nargs="*", help="Tên vai trò (supervisor, pm, lead, peer, qc, status, restart, stop, clear)")
+    parser.add_argument("roles", nargs="*", help="Tên vai trò (supervisor, lead, peer, qc, status, restart, stop, clear)")
     parser.add_argument("--status", action="store_true", help="Xem bảng trạng thái")
     parser.add_argument("--stop", action="store_true", help="Dừng agent")
     parser.add_argument("--all", action="store_true", help="Áp dụng cho tất cả agent")
