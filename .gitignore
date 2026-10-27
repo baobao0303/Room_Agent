@@ -72,6 +72,8 @@ target/
 **/target/
 
 # 5. OS, IDE & Agent Runtime Symlinks
+.ua/
+**/.ua/
 .agents/
 .claude/
 */.claude/
