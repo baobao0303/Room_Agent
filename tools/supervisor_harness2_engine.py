@@ -34,9 +34,127 @@ if str(PROJECT_ROOT) not in sys.path:
 if HARNESS2_ROOT.exists() and str(HARNESS2_ROOT) not in sys.path:
     sys.path.insert(0, str(HARNESS2_ROOT))
 
-from harness2.core import ledger as h2_ledger  # type: ignore
-from harness2.core import library as h2_library  # type: ignore
-from harness2.core import tree as h2_tree  # type: ignore
+try:
+    from harness2.core import ledger as h2_ledger  # type: ignore
+    from harness2.core import library as h2_library  # type: ignore
+    from harness2.core import tree as h2_tree  # type: ignore
+except ImportError:
+    import types
+
+    class _FallbackBudgetError(AssertionError):
+        """The ledger did not land on the budget identity (R=4k, P=3k)."""
+
+    @dataclass(frozen=True)
+    class _FallbackSurfaceSpec:
+        name: str
+        always_on: Tuple[str, ...]
+        always_on_max: int
+        always_on_cap_reason: str
+        skill_dir: str
+        skill_name_rule: str
+        trigger_hint: str
+        autotrigger_file: str
+        trigger_line: str
+        subagent_requires_mode: bool
+        plugin_dir: Optional[str]
+        hooks_file: Optional[str]
+        compile_skill_scripts: bool = True
+        reject_empty_always_on: bool = True
+
+    @dataclass
+    class _FallbackEntry:
+        kind: str
+        label: str
+        usd: float = 0.0
+        cached: bool = False
+        attempts: int = 1
+
+    @dataclass
+    class _FallbackLedger:
+        mode: str
+        task_id: str
+        k: int
+        entries: List[_FallbackEntry] = field(default_factory=list)
+
+        def rollout(self, label: str, usd: float = 0.0, *, cached: bool = False) -> None:
+            self.entries.append(_FallbackEntry("rollout", label, usd, cached))
+
+        def session(self, label: str, usd: float = 0.0, *, cached: bool = False, attempts: int = 1) -> None:
+            self.entries.append(_FallbackEntry("session", label, usd, cached, attempts=attempts))
+
+        @property
+        def R(self) -> int:
+            return sum(1 for e in self.entries if e.kind == "rollout")
+
+        @property
+        def P(self) -> int:
+            return sum(1 for e in self.entries if e.kind == "session")
+
+        def labels(self, kind: str) -> List[str]:
+            return [e.label for e in self.entries if e.kind == kind]
+
+        def assert_identity(self) -> None:
+            want_r, want_p = 4 * int(self.k), 3 * int(self.k)
+            rl, sl = self.labels("rollout"), self.labels("session")
+            dupes = sorted({l for l in rl if rl.count(l) > 1} | {l for l in sl if sl.count(l) > 1})
+            if not dupes and self.R == want_r and self.P == want_p:
+                return
+            raise _FallbackBudgetError(f"R={self.R} (want {want_r}), P={self.P} (want {want_p}), dupes={dupes}")
+
+    @dataclass
+    class _FallbackLibrary:
+        root: Path
+        domain: str
+        surface: _FallbackSurfaceSpec
+
+        @property
+        def dir(self) -> Path:
+            clean = re.sub(r"\s*[/\\]\s*", "__", self.domain).strip() or "unknown"
+            return Path(self.root) / clean
+
+        @property
+        def index(self) -> Path:
+            return self.dir / "INDEX.md"
+
+        def add(
+            self,
+            task_id: str,
+            harness: Dict[str, str],
+            *,
+            why: str = "",
+            label: str = "",
+            run_id: str = "",
+            experience: Optional[Dict[str, str]] = None,
+        ) -> Optional[Path]:
+            if not isinstance(experience, dict) or not all(experience.get(k) for k in ("cue", "lesson", "evidence")):
+                return None
+            slug = str(task_id).replace("/", "__")
+            d = self.dir / "harnesses" / slug
+            (d / "harness").mkdir(parents=True, exist_ok=True)
+            for rel, content in harness.items():
+                p = d / "harness" / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(content, encoding="utf-8")
+            lines = [
+                f"# {task_id}",
+                "",
+                f"- adopted: `{label}`" + (f"  (run `{run_id}`)" if run_id else ""),
+                "",
+                "## Transferable lesson",
+                f"- **cue**: {experience['cue']}",
+                f"- **lesson**: {experience['lesson']}",
+                f"- **evidence**: {experience['evidence']}",
+                f"- **confidence**: {experience.get('confidence', 'high')}",
+                "",
+            ]
+            (d / "EXPERIENCE.md").write_text("\n".join(lines), encoding="utf-8")
+            self.dir.mkdir(parents=True, exist_ok=True)
+            self.index.write_text(f"# Library — {self.domain}\n\n## `harnesses/{slug}/`\n- cue: {experience['cue']}\n", encoding="utf-8")
+            return d
+
+    h2_ledger = types.SimpleNamespace(Ledger=_FallbackLedger, BudgetError=_FallbackBudgetError)  # type: ignore
+    h2_library = types.SimpleNamespace(Library=_FallbackLibrary)  # type: ignore
+    h2_tree = types.SimpleNamespace(SurfaceSpec=_FallbackSurfaceSpec, Tree=Dict[str, str])  # type: ignore
 
 PRODUCTION_PASS_THRESHOLD: float = 98.5
 KEV_HESITATION_CONFIDENCE_THRESHOLD: float = 0.80

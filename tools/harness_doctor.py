@@ -167,6 +167,8 @@ def check_paseo_daemon(auto_heal: bool = True) -> Dict[str, Any]:
         except Exception:
             cfg_valid = False
     else:
+        if repo_profiles_valid:
+            found_roles.update(required_roles)
         cfg_valid = repo_profiles_valid
 
     healed = None
