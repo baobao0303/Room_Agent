@@ -39,11 +39,12 @@ FORBIDDEN_GARBAGE_PATTERNS = [
 
 def get_sqlite_conn() -> Optional[sqlite3.Connection]:
     """Find and connect to an active harness.db containing harness_experience table."""
-    candidates = list(DB_CANDIDATES)
+    candidates = []
     if os.environ.get("HARNESS_DB"):
-        env_p = Path(os.environ["HARNESS_DB"])
-        if env_p not in candidates:
-            candidates.append(env_p)
+        candidates.append(Path(os.environ["HARNESS_DB"]))
+    for p in DB_CANDIDATES:
+        if p not in candidates:
+            candidates.append(p)
 
     for db_path in candidates:
         if db_path.exists():

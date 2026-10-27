@@ -894,7 +894,7 @@ def assess_supervisor_readiness() -> Dict[str, object]:
     has_soul = (SUPERVISOR_DIR / "SOUL.md").exists()
     has_memory = (SUPERVISOR_DIR / "MEMORY.md").exists()
     has_profile = (SUPERVISOR_DIR / "PROFILE.md").exists()
-    has_harness2_repo = (HARNESS2_ROOT / "harness2" / "core" / "recursion.py").exists()
+    has_harness2_repo = (HARNESS2_ROOT / "harness2" / "core" / "recursion.py").exists() or (h2_ledger is not None and hasattr(h2_ledger, "Ledger"))
 
     kev_status = check_uncertainty_with_kev(
         stage="governance",
