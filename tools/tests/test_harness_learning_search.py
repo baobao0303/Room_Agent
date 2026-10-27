@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import sqlite3
 import tempfile
 import unittest
@@ -51,9 +52,10 @@ class TestHarnessLearningSearch(unittest.TestCase):
             conn.commit()
             conn.close()
 
-            with patch.object(hls, "DB_CANDIDATES", [tmp_path]):
-                with patch("tools.floci_client.FlociHarnessDB._is_online", return_value=False):
-                    results = hls.search_experiences(query_text="mutating", domain="angular")
+            with patch.dict(os.environ, {"HARNESS_DB": str(tmp_path)}):
+                with patch.object(hls, "DB_CANDIDATES", [tmp_path]):
+                    with patch("tools.floci_client.FlociHarnessDB._is_online", return_value=False):
+                        results = hls.search_experiences(query_text="mutating", domain="angular")
                     self.assertEqual(len(results), 1)
                     self.assertEqual(results[0]["cue"], "State cue test")
                     self.assertGreater(results[0]["quality_score"], 0.5)
